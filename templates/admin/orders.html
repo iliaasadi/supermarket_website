@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Pending Orders -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-white">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-clock"></i> {{ get_translation('pending_orders') }}
+            </h3>
+        </div>
+        <div class="card-body">
+            {% if pending_orders %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>{{ get_translation('order_id') }}</th>
+                                <th>{{ get_translation('customer') }}</th>
+                                <th>{{ get_translation('items') }}</th>
+                                <th>{{ get_translation('total') }}</th>
+                                <th>{{ get_translation('delivery_type') }}</th>
+                                <th>{{ get_translation('location') }}</th>
+                                <th>{{ get_translation('date') }}</th>
+                                <th>{{ get_translation('actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in pending_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>
+                                        {{ order.user.username }}<br>
+                                        <small class="text-muted">{{ order.user.email }}</small>
+                                    </td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            {% for item in order.items %}
+                                                <li>{{ item.quantity }}x {{ item.product.name }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </td>
+                                    <td>{{ "%.0f"|format(order.total_amount) }} تومان</td>
+                                    <td>
+                                        <span class="badge {% if order.delivery_type == 'pickup' %}bg-info{% else %}bg-success{% endif %}">
+                                            {{ get_translation(order.delivery_type) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if order.delivery_type == 'pickup' %}
+                                            {% if order.store_location %}
+                                                {{ order.store_location.name }}<br>
+                                                <small class="text-muted">{{ order.store_location.address }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            {% if order.address %}
+                                                {{ order.address.street }}<br>
+                                                <small class="text-muted">{{ order.address.city }}, {{ order.address.state }}</small>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <form action="{{ url_for('approve_order', order_id=order.id) }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                <button type="submit" class="btn btn-success btn-sm" 
+                                                        onclick="return confirm('{{ get_translation('confirm_approve_order') }}')">
+                                                    <i class="fas fa-check"></i> {{ get_translation('approve') }}
+                                                </button>
+                                            </form>
+                                            <form action="{{ url_for('reject_order', order_id=order.id) }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                <button type="submit" class="btn btn-danger btn-sm"
+                                                        onclick="return confirm('{{ get_translation('confirm_reject_order') }}')">
+                                                    <i class="fas fa-times"></i> {{ get_translation('reject') }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">{{ get_translation('no_pending_orders') }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Preparing Orders -->
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-utensils"></i> {{ get_translation('orders_in_preparation') }}
+            </h3>
+        </div>
+        <div class="card-body">
+            {% if preparing_orders %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>{{ get_translation('order_id') }}</th>
+                                <th>{{ get_translation('customer') }}</th>
+                                <th>{{ get_translation('items') }}</th>
+                                <th>{{ get_translation('started') }}</th>
+                                <th>{{ get_translation('time_remaining') }}</th>
+                                <th>{{ get_translation('delivery_type') }}</th>
+                                <th>{{ get_translation('location') }}</th>
+                                <th>{{ get_translation('actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in preparing_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>
+                                        {{ order.user.username }}<br>
+                                        <small class="text-muted">{{ order.user.email }}</small>
+                                    </td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            {% for item in order.items %}
+                                                <li>{{ item.quantity }}x {{ item.product.name }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </td>
+                                    <td>{{ order.preparation_start.strftime('%H:%M') }}</td>
+                                    <td>
+                                        <div class="countdown" data-order-id="{{ order.id }}"
+                                             data-completion-time="{{ order.estimated_completion.isoformat() }}">
+                                            <span class="countdown-timer"></span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if order.delivery_type == 'pickup' %}bg-info{% else %}bg-success{% endif %}">
+                                            {{ get_translation(order.delivery_type) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if order.delivery_type == 'pickup' %}
+                                            {% if order.store_location %}
+                                                {{ order.store_location.name }}<br>
+                                                <small class="text-muted">{{ order.store_location.address }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            {% if order.address %}
+                                                {{ order.address.street }}<br>
+                                                <small class="text-muted">{{ order.address.city }}, {{ order.address.state }}</small>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form action="{{ url_for('complete_order', order_id=order.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="submit" class="btn btn-success btn-sm"
+                                                    onclick="return confirm('{{ get_translation('confirm_complete_order') }}')">
+                                                <i class="fas fa-check-circle"></i> {{ get_translation('mark_complete') }}
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">{{ get_translation('no_orders_in_preparation') }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function updateCountdowns() {
+    document.querySelectorAll('.countdown').forEach(countdownElement => {
+        const completionTime = new Date(countdownElement.dataset.completionTime);
+        const now = new Date();
+        const timeDiff = completionTime - now;
+
+        if (timeDiff <= 0) {
+            // Time's up - auto complete the order
+            const orderId = countdownElement.dataset.orderId;
+            fetch(`/api/auto_complete_order/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(response => {
+                if (response.ok) {
+                    location.reload(); // Refresh the page to show updated status
+                }
+            });
+            return;
+        }
+
+        // Calculate remaining time
+        const minutes = Math.floor(timeDiff / 60000);
+        const seconds = Math.floor((timeDiff % 60000) / 1000);
+        countdownElement.querySelector('.countdown-timer').textContent = 
+            `${minutes}m ${seconds}s`;
+    });
+}
+
+// Update countdowns every second
+setInterval(updateCountdowns, 1000);
+updateCountdowns(); // Initial update
+</script>
+{% endblock %} 

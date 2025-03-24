@@ -1,0 +1,1325 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, current_app, jsonify, session
+from flask_login import login_user, login_required, logout_user, current_user
+from forms import LoginForm, RegisterForm, ProfileForm, AddressForm, PasswordResetForm
+from models import User, Product, CartItem, Address, Order, OrderItem, StoreLocation, Wallet, WalletTransaction
+from extensions import db, login_manager, migrate
+import os
+from datetime import datetime, timedelta
+from werkzeug.utils import secure_filename
+import uuid
+from sqlalchemy import or_
+from flask_wtf.csrf import generate_csrf
+from translations import translations
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///supermarket.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['MAX_ADDRESSES'] = 10
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=31)
+app.config['SESSION_TYPE'] = 'filesystem'
+
+# Language configuration
+app.config['LANGUAGES'] = ['en', 'fa']
+app.config['DEFAULT_LANGUAGE'] = 'en'
+
+# Ensure upload directory exists
+os.makedirs(os.path.join(app.root_path, app.config['UPLOAD_FOLDER']), exist_ok=True)
+
+# Initialize extensions
+db.init_app(app)
+login_manager.init_app(app)
+migrate.init_app(app, db)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(id):
+    return User.query.get(int(id))
+
+def get_language():
+    return session.get('language', app.config['DEFAULT_LANGUAGE'])
+
+def get_translation(key):
+    """Get translation for the current language"""
+    language = session.get('language', 'en')
+    return translations[language].get(key, translations['en'].get(key, key))
+
+def flash_translated(message_key, category='message'):
+    """Flash a translated message"""
+    message = get_translation(message_key)
+    flash(message, category)
+
+@app.route('/set_language/<language>')
+def set_language(language):
+    if language in app.config['LANGUAGES']:
+        session['language'] = language
+    return redirect(request.referrer or url_for('index'))
+
+@app.context_processor
+def inject_translations():
+    return dict(
+        get_translation=get_translation,
+        current_language=get_language()
+    )
+
+@app.context_processor
+def inject_cart_count():
+    if current_user.is_authenticated:
+        cart_count = CartItem.query.filter_by(user_id=current_user.id).count()
+    else:
+        cart_count = 0
+    return dict(cart_count=cart_count)
+
+# Admin required decorator
+def admin_required(f):
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_admin:
+            flash_translated('access_denied', 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+# Routes
+@app.route('/')
+def index():
+    # Get categories from database
+    categories = list(set([p.category for p in Product.query.all()]))
+    
+    # Get featured products (only show verified-only products to verified users)
+    featured_products = Product.query.filter_by(is_featured=True)
+    if not current_user.is_authenticated or not current_user.is_verified:
+        featured_products = featured_products.filter_by(is_verified_only=False)
+    featured_products = featured_products.all()
+    
+    # Get products by category
+    products_by_category = {}
+    for category in categories:
+        products = Product.query.filter_by(category=category)
+        if not current_user.is_authenticated or not current_user.is_verified:
+            products = products.filter_by(is_verified_only=False)
+        products_by_category[category] = products.all()
+    
+    return render_template('index.html', 
+                         categories=categories,
+                         featured_products=featured_products,
+                         products_by_category=products_by_category)
+
+@app.route('/category/<category>')
+def category(category):
+    products = Product.query.filter_by(category=category)
+    if not current_user.is_authenticated or not current_user.is_verified:
+        products = products.filter_by(is_verified_only=False)
+    products = products.all()
+    return render_template('category.html', products=products, category=category)
+
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    # Get statistics
+    total_products = Product.query.count()
+    categories = list(set([p.category for p in Product.query.all()]))
+    locations = StoreLocation.query.all()
+    recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
+    products = Product.query.all()
+    
+    # Get delivery settings
+    delivery_fee_percentage = 10  # Default value
+    min_delivery_fee = 5000      # Default value in Tooman
+    
+    return render_template('admin/dashboard.html',
+                         total_products=total_products,
+                         categories=categories,
+                         locations=locations,
+                         recent_orders=recent_orders,
+                         products=products,
+                         delivery_fee_percentage=delivery_fee_percentage,
+                         min_delivery_fee=min_delivery_fee)
+
+@app.route('/admin/product/add', methods=['GET', 'POST'])
+@login_required
+def admin_add_product():
+    if not current_user.is_admin:
+        flash_translated('access_denied', 'danger')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        price = float(request.form.get('price'))
+        stock = int(request.form.get('stock'))
+        category = request.form.get('category')
+        image_url = request.form.get('image_url')
+        discount = float(request.form.get('discount', 0))
+        is_featured = 'is_featured' in request.form
+        is_verified_only = 'is_verified_only' in request.form
+        
+        product = Product(
+            name=name,
+            description=description,
+            price=price,
+            stock=stock,
+            category=category,
+            image_url=image_url,
+            discount=discount,
+            is_featured=is_featured,
+            is_verified_only=is_verified_only
+        )
+        
+        db.session.add(product)
+        db.session.commit()
+        
+        flash_translated('item_added', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
+    # Get all categories for the form
+    categories = db.session.query(Product.category).distinct().all()
+    categories = [cat[0] for cat in categories if cat[0]]
+    
+    return render_template('admin/add_product.html', categories=categories)
+
+@app.route('/admin/product/edit/<int:product_id>', methods=['GET', 'POST'])
+@login_required
+def admin_edit_product(product_id):
+    if not current_user.is_admin:
+        flash_translated('access_denied', 'danger')
+        return redirect(url_for('index'))
+    
+    product = Product.query.get_or_404(product_id)
+    
+    if request.method == 'POST':
+        product.name = request.form.get('name')
+        product.description = request.form.get('description')
+        product.price = float(request.form.get('price'))
+        product.stock = int(request.form.get('stock'))
+        product.category = request.form.get('category')
+        product.image_url = request.form.get('image_url')
+        product.discount = float(request.form.get('discount', 0))
+        product.is_featured = 'is_featured' in request.form
+        product.is_verified_only = 'is_verified_only' in request.form
+        
+        db.session.commit()
+        flash_translated('item_updated', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
+    # Get all categories for the form
+    categories = db.session.query(Product.category).distinct().all()
+    categories = [cat[0] for cat in categories if cat[0]]
+    
+    return render_template('admin/edit_product.html', product=product, categories=categories)
+
+@app.route('/admin/product/delete/<int:product_id>')
+@login_required
+def admin_delete_product(product_id):
+    if not current_user.is_admin:
+        flash_translated('access_denied', 'danger')
+        return redirect(url_for('index'))
+    
+    product = Product.query.get_or_404(product_id)
+    
+    # Delete associated cart items and order items
+    CartItem.query.filter_by(product_id=product_id).delete()
+    OrderItem.query.filter_by(product_id=product_id).delete()
+    
+    db.session.delete(product)
+    db.session.commit()
+    
+    flash_translated('item_deleted', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/category/add', methods=['POST'])
+@admin_required
+def admin_add_category():
+    category_name = request.form.get('category_name')
+    if category_name:
+        # Check if category already exists
+        existing_category = db.session.query(Product.category).filter_by(category=category_name).first()
+        if not existing_category:
+            # Create a placeholder product to establish the category
+            product = Product(
+                name=f'Sample {category_name}',
+                description=f'Sample product for {category_name} category',
+                price=0.0,
+                category=category_name,
+                stock=0,
+                image_url='https://via.placeholder.com/500'
+            )
+            db.session.add(product)
+            db.session.commit()
+            flash_translated('category_added')
+        else:
+            flash_translated('category_exists')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/category/edit/<category>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_category(category):
+    if request.method == 'POST':
+        new_name = request.form.get('category_name')
+        if new_name and new_name != category:
+            # Update all products in this category
+            Product.query.filter_by(category=category).update({'category': new_name})
+            db.session.commit()
+            flash_translated('category_updated')
+        return redirect(url_for('admin_dashboard'))
+    
+    return render_template('admin/edit_category.html', category=category)
+
+@app.route('/admin/category/delete/<category>')
+@admin_required
+def admin_delete_category(category):
+    # Check if category has any products
+    products = Product.query.filter_by(category=category).all()
+    if products:
+        # Delete all products in this category
+        for product in products:
+            # Delete related cart items
+            CartItem.query.filter_by(product_id=product.id).delete()
+            # Delete related order items
+            OrderItem.query.filter_by(product_id=product.id).delete()
+        # Delete the products
+        Product.query.filter_by(category=category).delete()
+        db.session.commit()
+        flash_translated('category_and_products_deleted')
+    else:
+        flash_translated('category_not_found_or_already_deleted')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        # Format the phone number before checking
+        formatted_phone = User.format_phone_number(form.phone_number.data)
+        user = User.query.filter_by(phone_number=formatted_phone).first()
+        if user is None or not user.check_password(form.password.data):
+            flash_translated('error')
+            return redirect(url_for('login'))
+        login_user(user, remember=form.remember_me.data)
+        next_page = request.args.get('next')
+        if not next_page or not next_page.startswith('/'):
+            next_page = url_for('index')
+        return redirect(next_page)
+    return render_template('login.html', title='Sign In', form=form)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegisterForm()
+    if form.validate_on_submit():
+        formatted_phone = User.format_phone_number(form.phone_number.data)
+        
+        user = User(
+            username=formatted_phone,  # Use phone number as username
+            phone_number=formatted_phone
+        )
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.flush()  # Get the user ID without committing
+        
+        # Create address for the new user
+        address = Address(
+            user_id=user.id,
+            street=form.street.data,
+            tag=form.tag.data,
+            building_unit_number=form.building_unit_number.data,
+            description=form.description.data,
+            is_default=True  # First address is always default
+        )
+        db.session.add(address)
+        db.session.commit()
+        
+        flash_translated('success')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+@app.route('/cart')
+@login_required
+def cart():
+    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    
+    # Calculate subtotal with discounts
+    subtotal = sum(
+        item.product.price * (1 - item.product.discount/100) * item.quantity 
+        for item in cart_items
+    )
+    
+    # Get delivery fee settings from session
+    delivery_fee_percentage = session.get('delivery_fee_percentage', 5.0)
+    min_delivery_fee = session.get('min_delivery_fee', 2.00)
+    
+    # Calculate delivery fee
+    delivery_fee = max(min_delivery_fee, subtotal * (delivery_fee_percentage / 100))
+    
+    # Calculate total
+    total = subtotal + delivery_fee
+    
+    # Get user's addresses and store locations
+    addresses = Address.query.filter_by(user_id=current_user.id).all()
+    locations = StoreLocation.query.filter_by(is_active=True).all()
+    
+    # Ensure user has a wallet
+    if not current_user.wallet:
+        wallet = Wallet(user_id=current_user.id)
+        db.session.add(wallet)
+        db.session.commit()
+    
+    return render_template('cart.html',
+                         cart_items=cart_items,
+                         subtotal=subtotal,
+                         delivery_fee=delivery_fee,
+                         total=total,
+                         addresses=addresses,
+                         locations=locations)
+
+@app.route('/cart/update/<int:item_id>', methods=['POST'])
+@login_required
+def update_cart(item_id):
+    cart_item = CartItem.query.get_or_404(item_id)
+    
+    # Verify the cart item belongs to the current user
+    if cart_item.user_id != current_user.id:
+        flash_translated('unauthorized_action', 'danger')
+        return redirect(url_for('cart'))
+    
+    quantity = int(request.form.get('quantity', 1))
+    
+    # Validate quantity
+    if quantity < 1:
+        flash_translated('quantity_must_be_at_least_1', 'danger')
+        return redirect(url_for('cart'))
+    
+    if quantity > cart_item.product.stock:
+        flash_translated('only_x_items_available_in_stock', {'x': cart_item.product.stock}, 'danger')
+        return redirect(url_for('cart'))
+    
+    cart_item.quantity = quantity
+    db.session.commit()
+    
+    flash_translated('cart_updated')
+    return redirect(url_for('cart'))
+
+@app.route('/add_to_cart/<int:product_id>', methods=['GET', 'POST'])
+@login_required
+def add_to_cart(product_id):
+    cart_item = CartItem.query.filter_by(
+        user_id=current_user.id,
+        product_id=product_id
+    ).first()
+    
+    if cart_item:
+        cart_item.quantity += 1
+    else:
+        cart_item = CartItem(user_id=current_user.id, product_id=product_id)
+        db.session.add(cart_item)
+    
+    db.session.commit()
+    flash_translated('product_added_to_cart')
+    
+    # Return to the previous page or home if no referrer
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/remove_from_cart/<int:item_id>', methods=['POST'])
+@login_required
+def remove_from_cart(item_id):
+    try:
+        cart_item = CartItem.query.get_or_404(item_id)
+        if cart_item.user_id != current_user.id:
+            flash_translated('access_denied', 'error')
+            return redirect(url_for('cart'))
+        
+        db.session.delete(cart_item)
+        db.session.commit()
+        flash_translated('item_removed_from_cart')
+    except Exception as e:
+        db.session.rollback()
+        flash_translated('error_removing_item_from_cart')
+    
+    return redirect(url_for('cart'))
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    form = ProfileForm()
+    if form.validate_on_submit():
+        if form.profile_picture.data:
+            profile_picture_path = save_file(form.profile_picture.data, 'profile_pictures')
+            if profile_picture_path:
+                current_user.profile_picture = profile_picture_path
+
+        if form.identity_card.data:
+            identity_card_path = save_file(form.identity_card.data, 'identity_cards')
+            if identity_card_path:
+                current_user.identity_card = identity_card_path
+                current_user.is_verified = False  # Reset verification when new ID is uploaded
+
+        current_user.username = form.username.data
+        current_user.phone_number = form.phone_number.data
+        
+        # Only update email if it's provided and not empty
+        if form.email.data and form.email.data.strip():
+            current_user.email = form.email.data
+        else:
+            current_user.email = None
+        
+        db.session.commit()
+        flash_translated('profile_updated')
+        return redirect(url_for('profile'))
+
+    # Pre-fill form with current user data
+    if request.method == 'GET':
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+        form.phone_number.data = current_user.phone_number
+
+    # Get recent orders and addresses
+    recent_orders = current_user.get_recent_orders(months=2)
+    addresses = Address.query.filter_by(user_id=current_user.id).all()
+    
+    # Get the order_id from the URL parameters if it exists
+    order_id = request.args.get('order_id')
+    
+    return render_template('profile.html', 
+                         form=form, 
+                         user=current_user,
+                         recent_orders=recent_orders,
+                         addresses=addresses,
+                         highlighted_order_id=order_id)
+
+@app.route('/address/add', methods=['GET', 'POST'])
+@login_required
+def add_address():
+    # Check if user has reached the maximum number of addresses
+    if Address.query.filter_by(user_id=current_user.id).count() >= app.config['MAX_ADDRESSES']:
+        flash_translated('reached_max_addresses', 'error')
+        return redirect(url_for('profile'))
+
+    form = AddressForm()
+    if form.validate_on_submit():
+        try:
+            # Create new address
+            address = Address(
+                user_id=current_user.id,
+                street=form.street.data,
+                tag=form.tag.data,
+                building_unit_number=form.building_unit_number.data,
+                description=form.description.data,
+                is_default=form.is_default.data
+            )
+            
+            # If this is set as default, update other addresses
+            if form.is_default.data:
+                Address.query.filter_by(user_id=current_user.id).update({'is_default': False})
+            
+            db.session.add(address)
+            db.session.commit()
+            
+            flash_translated('address_added')
+            return redirect(url_for('profile'))
+        except Exception as e:
+            db.session.rollback()
+            flash_translated('error_adding_address', 'error')
+            return redirect(url_for('add_address'))
+    
+    return render_template('address_form.html', form=form)
+
+@app.route('/address/edit/<int:address_id>', methods=['GET', 'POST'])
+@login_required
+def edit_address(address_id):
+    address = Address.query.get_or_404(address_id)
+    if address.user_id != current_user.id:
+        flash_translated('no_permission_to_edit_address')
+        return redirect(url_for('profile'))
+
+    form = AddressForm(obj=address)
+    if form.validate_on_submit():
+        address.street = form.street.data
+        address.tag = form.tag.data
+        address.building_unit_number = form.building_unit_number.data
+        address.description = form.description.data
+        
+        if form.is_default.data and not address.is_default:
+            # Set all other addresses as non-default
+            Address.query.filter_by(user_id=current_user.id).update({'is_default': False})
+        address.is_default = form.is_default.data
+        
+        db.session.commit()
+        flash_translated('address_updated')
+        return redirect(url_for('profile'))
+    
+    return render_template('address_form.html', form=form, address=address)
+
+@app.route('/address/delete/<int:address_id>')
+@login_required
+def delete_address(address_id):
+    address = Address.query.get_or_404(address_id)
+    if address.user_id != current_user.id:
+        flash_translated('no_permission_to_delete_address')
+        return redirect(url_for('profile'))
+
+    db.session.delete(address)
+    db.session.commit()
+    flash_translated('address_deleted')
+    return redirect(url_for('profile'))
+
+@app.route('/admin/verify_user/<int:user_id>')
+@admin_required
+def verify_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_verified = True
+    db.session.commit()
+    flash_translated('user_verified', {'username': user.username})
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    users = User.query.filter(User.identity_card.isnot(None), 
+                            User.is_verified.is_(False)).all()
+    return render_template('admin/users.html', users=users)
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+    if query:
+        products = Product.query.filter(
+            or_(
+                Product.name.ilike(f'%{query}%'),
+                Product.description.ilike(f'%{query}%'),
+                Product.category.ilike(f'%{query}%')
+            )
+        ).all()
+    else:
+        products = []
+    return render_template('search_results.html', products=products, query=query)
+
+@app.route('/checkout', methods=['GET', 'POST'])
+@login_required
+def checkout():
+    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    
+    if not cart_items:
+        flash_translated('cart_empty', 'error')
+        return redirect(url_for('cart'))
+    
+    # Calculate subtotal
+    subtotal = sum(item.product.price * item.quantity * (1 - item.product.discount/100) 
+                  for item in cart_items)
+    
+    if request.method == 'POST':
+        delivery_type = request.form.get('delivery_type')
+        delivery_fee = 0.0  # Default delivery fee
+        
+        if delivery_type == 'pickup':
+            store_location_id = request.form.get('store_location_id')
+            if not store_location_id:
+                flash_translated('please_select_store_location', 'error')
+                return redirect(url_for('cart'))
+            store_location = StoreLocation.query.get_or_404(store_location_id)
+        else:  # delivery
+            address_id = request.form.get('delivery_address_id')
+            if not address_id:
+                flash_translated('please_select_delivery_address', 'error')
+                return redirect(url_for('cart'))
+            address = Address.query.get_or_404(address_id)
+            # Calculate delivery fee (5% of subtotal with 20000 Tooman minimum)
+            delivery_fee = max(20000, subtotal * 0.05)  # Changed from 2.00 to 20000 Tooman
+        
+        # Calculate total with delivery fee
+        total = subtotal + delivery_fee
+        
+        # Get payment method
+        payment_method = request.form.get('payment_method', 'cash')
+        
+        # If payment method is wallet, check balance
+        if payment_method == 'wallet':
+            if not current_user.wallet or current_user.wallet.balance < total:
+                flash_translated('insufficient_wallet_balance', 'error')
+                return redirect(url_for('cart'))
+        
+        # Create order
+        order = Order(
+            user_id=current_user.id,
+            total_amount=total,
+            delivery_fee=delivery_fee,
+            status='pending_approval',
+            delivery_type=delivery_type,
+            payment_method=payment_method
+        )
+        
+        if delivery_type == 'pickup':
+            order.store_location_id = store_location_id
+        else:
+            order.address_id = address_id
+        
+        db.session.add(order)
+        
+        # Create order items
+        for cart_item in cart_items:
+            order_item = OrderItem(
+                order=order,
+                product_id=cart_item.product_id,
+                quantity=cart_item.quantity,
+                price=cart_item.product.price * (1 - cart_item.product.discount/100)
+            )
+            db.session.add(order_item)
+        
+        # Clear cart
+        for cart_item in cart_items:
+            db.session.delete(cart_item)
+        
+        db.session.commit()
+        
+        flash_translated('order_placed')
+        return redirect(url_for('profile', order_id=order.id))  # Redirect to profile with order_id
+    
+    # For GET request, calculate delivery fee for display
+    delivery_fee = max(20000, subtotal * 0.05)  # Changed from 2.00 to 20000 Tooman
+    total = subtotal + delivery_fee
+    
+    # Get user's addresses and store locations
+    addresses = Address.query.filter_by(user_id=current_user.id).all()
+    locations = StoreLocation.query.filter_by(is_active=True).all()
+    
+    return render_template('cart.html',
+                         cart_items=cart_items,
+                         subtotal=subtotal,
+                         delivery_fee=delivery_fee,
+                         total=total,
+                         addresses=addresses,
+                         locations=locations)
+
+@app.route('/orders')
+@login_required
+def order_status(order_id=None):
+    if order_id:
+        # View specific order
+        order = Order.query.get_or_404(order_id)
+        
+        # If user is admin, redirect to admin order details
+        if current_user.is_admin:
+            return redirect(url_for('admin_order_details', order_id=order_id))
+        
+        # For regular users, ensure they can only view their own orders
+        if order.user_id != current_user.id:
+            flash_translated('access_denied', 'error')
+            return redirect(url_for('profile'))
+        
+        return render_template('order_status.html', order=order)
+    else:
+        # View all orders
+        orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
+        return render_template('orders.html', orders=orders)
+
+@app.route('/admin/orders')
+@admin_required
+def admin_orders():
+    # Get orders that need approval
+    pending_orders = Order.query.filter_by(status='pending_approval').order_by(Order.created_at.desc()).all()
+    # Get orders that are being prepared
+    preparing_orders = Order.query.filter_by(status='preparing').order_by(Order.created_at.desc()).all()
+    return render_template('admin/orders.html', 
+                         pending_orders=pending_orders,
+                         preparing_orders=preparing_orders)
+
+@app.route('/admin/order/<int:order_id>/approve', methods=['POST'])
+@admin_required
+def approve_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.status != 'pending_approval':
+        flash_translated('this_order_has_already_been_processed')
+        return redirect(url_for('admin_orders'))
+    
+    # Check stock availability
+    for item in order.items:
+        if item.product.stock < item.quantity:
+            flash_translated('not_enough_stock', {'product_name': item.product.name})
+            return redirect(url_for('admin_orders'))
+        
+        # Reduce stock
+        item.product.stock -= item.quantity
+    
+    # Handle wallet payment if the order was paid with wallet
+    if order.payment_method == 'wallet':
+        user_wallet = order.user.wallet
+        if not user_wallet or user_wallet.balance < order.total_amount:
+            flash_translated('insufficient_wallet_balance', 'error')
+            return redirect(url_for('admin_orders'))
+        
+        # Create withdrawal transaction
+        transaction = WalletTransaction(
+            wallet_id=user_wallet.id,
+            amount=order.total_amount,
+            type='withdrawal',
+            description=get_translation('order_payment')
+        )
+        db.session.add(transaction)
+        
+        # Update wallet balance
+        user_wallet.balance -= order.total_amount
+    
+    order.status = 'preparing'
+    order.preparation_start = datetime.utcnow()
+    order.estimated_completion = datetime.utcnow() + timedelta(minutes=45)
+    db.session.commit()
+    
+    flash_translated('order_approved_and_moved_to_preparation')
+    return redirect(url_for('admin_orders'))
+
+@app.route('/admin/order/<int:order_id>/complete', methods=['POST'])
+@admin_required
+def complete_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.status != 'preparing':
+        flash_translated('this_order_is_not_in_preparation')
+        return redirect(url_for('admin_orders'))
+    
+    order.status = 'completed'
+    order.completed_at = datetime.utcnow()
+    db.session.commit()
+    
+    flash_translated('order_marked_as_completed')
+    return redirect(url_for('admin_orders'))
+
+@app.route('/admin/order/<int:order_id>/reject', methods=['POST'])
+@admin_required
+def reject_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.status != 'pending_approval':
+        flash_translated('this_order_cannot_be_rejected_anymore')
+        return redirect(url_for('admin_orders'))
+    
+    order.status = 'rejected'
+    db.session.commit()
+    
+    flash_translated('order_has_been_rejected')
+    return redirect(url_for('admin_orders'))
+
+@app.route('/api/auto_complete_order/<int:order_id>', methods=['POST'])
+@login_required
+def auto_complete_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.status == 'preparing' and datetime.utcnow() >= order.estimated_completion:
+        order.status = 'completed'
+        order.completed_at = datetime.utcnow()
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Order auto-completed'})
+    return jsonify({'status': 'error', 'message': 'Order cannot be auto-completed'}), 400
+
+@app.route('/admin/locations')
+@admin_required
+def admin_locations():
+    locations = StoreLocation.query.all()
+    return render_template('admin/locations.html', locations=locations)
+
+@app.route('/admin/location/add', methods=['GET', 'POST'])
+@admin_required
+def admin_add_location():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        address = request.form.get('address')
+        description = request.form.get('description')
+        latitude = request.form.get('latitude')
+        longitude = request.form.get('longitude')
+        is_active = 'is_active' in request.form
+        
+        location = StoreLocation(
+            name=name,
+            address=address,
+            description=description,
+            latitude=float(latitude) if latitude else None,
+            longitude=float(longitude) if longitude else None,
+            is_active=is_active
+        )
+        
+        db.session.add(location)
+        db.session.commit()
+        
+        flash_translated('location_added')
+        return redirect(url_for('admin_locations'))
+    
+    return render_template('admin/add_location.html')
+
+@app.route('/admin/location/edit/<int:location_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_location(location_id):
+    location = StoreLocation.query.get_or_404(location_id)
+    
+    if request.method == 'POST':
+        location.name = request.form.get('name')
+        location.address = request.form.get('address')
+        location.is_active = 'is_active' in request.form
+        
+        db.session.commit()
+        flash_translated('location_updated')
+        return redirect(url_for('admin_locations'))
+    
+    return render_template('admin/edit_location.html', location=location)
+
+@app.route('/admin/location/delete/<int:location_id>', methods=['POST'])
+@admin_required
+def admin_delete_location(location_id):
+    try:
+        location = StoreLocation.query.get_or_404(location_id)
+        
+        # Check if location has any orders
+        if Order.query.filter_by(store_location_id=location_id).first():
+            flash_translated('cannot_delete_location_with_associated_orders')
+            return redirect(url_for('admin_locations'))
+        
+        # Delete the location
+        db.session.delete(location)
+        db.session.commit()
+        
+        flash_translated('location_deleted')
+    except Exception as e:
+        db.session.rollback()
+        flash_translated('error_deleting_location', 'error')
+        print(f"Error deleting location: {str(e)}")
+    
+    return redirect(url_for('admin_locations'))
+
+@app.route('/admin/update_delivery_settings', methods=['POST'])
+@admin_required
+def admin_update_delivery_settings():
+    delivery_fee_percentage = float(request.form.get('delivery_fee_percentage', 10))
+    min_delivery_fee = float(request.form.get('min_delivery_fee', 5000))
+    
+    # Save to database or config file
+    # For now, we'll just flash a success message
+    flash_translated('settings_updated')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/update_category_icon/<category>', methods=['POST'])
+@admin_required
+def admin_update_category_icon(category):
+    icon = request.form.get('icon')
+    if icon:
+        category_icons = session.get('category_icons', {})
+        category_icons[category] = icon
+        session['category_icons'] = category_icons
+        flash_translated('category_icon_updated')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/order/<int:order_id>')
+@admin_required
+def admin_order_details(order_id):
+    order = Order.query.get_or_404(order_id)
+    return render_template('admin/order_details.html', order=order)
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+@login_required
+def reset_password():
+    form = PasswordResetForm()
+    if form.validate_on_submit():
+        current_user.set_password(form.new_password.data)
+        db.session.commit()
+        flash_translated('password_updated')
+        return redirect(url_for('profile'))
+    return render_template('reset_password.html', form=form)
+
+@app.cli.command("create-admin")
+def create_admin():
+    """Create the admin user if it doesn't exist"""
+    admin = User.query.filter_by(phone_number='+989137597568').first()
+    if not admin:
+        admin = User(
+            username='Admin',
+            phone_number='+989137597568',
+            is_admin=True,
+            is_verified=True
+        )
+        admin.set_password('admin123')
+        db.session.add(admin)
+        db.session.commit()
+        print("Admin user created successfully!")
+    else:
+        print("Admin user already exists!")
+
+@app.cli.command("reset-admin-password")
+def reset_admin_password():
+    """Reset the admin user's password"""
+    admin = User.query.filter_by(phone_number='+989137597568').first()
+    if admin:
+        admin.set_password('admin123')
+        db.session.commit()
+        print("Admin password reset successfully!")
+    else:
+        print("Admin user not found!")
+
+@app.cli.command("create-sample-products")
+def create_sample_products():
+    """Delete existing products and create new sample products in Farsi"""
+    # Delete all existing products
+    Product.query.delete()
+    
+    # Sample products in Farsi with prices in Tooman
+    products = [
+        # میوه‌ها و سبزیجات
+        {
+            "name": "سیب قرمز",
+            "description": "سیب قرمز تازه و آبدار",
+            "price": 45000,
+            "stock": 100,
+            "category": "میوه‌ها و سبزیجات",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/a6/Pink_lady_and_cross_section.jpg",
+            "discount": 0
+        },
+        {
+            "name": "موز",
+            "description": "موز تازه و رسیده",
+            "price": 35000,
+            "stock": 150,
+            "category": "میوه‌ها و سبزیجات",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg",
+            "discount": 5
+        },
+        {
+            "name": "گوجه فرنگی",
+            "description": "گوجه فرنگی تازه و محلی",
+            "price": 25000,
+            "stock": 200,
+            "category": "میوه‌ها و سبزیجات",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/89/Tomato_je.jpg",
+            "discount": 0
+        },
+        
+        # لبنیات و تخم مرغ
+        {
+            "name": "شیر تازه",
+            "description": "شیر تازه محلی",
+            "price": 55000,
+            "stock": 50,
+            "category": "لبنیات و تخم مرغ",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fresh_milk.jpg",
+            "discount": 0
+        },
+        {
+            "name": "پنیر محلی",
+            "description": "پنیر محلی تازه",
+            "price": 85000,
+            "stock": 30,
+            "category": "لبنیات و تخم مرغ",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/White_cheese.jpg",
+            "discount": 10
+        },
+        {
+            "name": "تخم مرغ محلی",
+            "description": "تخم مرغ تازه محلی",
+            "price": 45000,
+            "stock": 100,
+            "category": "لبنیات و تخم مرغ",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/5f/White_eggs.jpg",
+            "discount": 0
+        },
+        
+        # نان و شیرینی
+        {
+            "name": "نان تازه",
+            "description": "نان تازه محلی",
+            "price": 15000,
+            "stock": 200,
+            "category": "نان و شیرینی",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/33/Fresh_made_whole_meal_bread_loaves.jpg",
+            "discount": 0
+        },
+        {
+            "name": "کیک شکلاتی",
+            "description": "کیک شکلاتی تازه",
+            "price": 95000,
+            "stock": 20,
+            "category": "نان و شیرینی",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Pound_layer_cake.jpg",
+            "discount": 15
+        },
+        
+        # گوشت و مرغ
+        {
+            "name": "گوشت گوسفندی",
+            "description": "گوشت تازه گوسفندی",
+            "price": 450000,
+            "stock": 30,
+            "category": "گوشت و مرغ",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Lamb_cuts.svg",
+            "discount": 0
+        },
+        {
+            "name": "مرغ تازه",
+            "description": "مرغ تازه محلی",
+            "price": 150000,
+            "stock": 40,
+            "category": "گوشت و مرغ",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Chicken_meat.jpg",
+            "discount": 5
+        },
+        
+        # برنج و حبوبات
+        {
+            "name": "برنج ایرانی",
+            "description": "برنج ایرانی با کیفیت عالی",
+            "price": 250000,
+            "stock": 50,
+            "category": "برنج و حبوبات",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/7b/White-rice-cooked.jpg",
+            "discount": 0
+        },
+        {
+            "name": "عدس",
+            "description": "عدس تازه و تمیز",
+            "price": 85000,
+            "stock": 100,
+            "category": "برنج و حبوبات",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/70/Red_Lentil.JPG",
+            "discount": 10
+        },
+        
+        # روغن و چاشنی
+        {
+            "name": "روغن زیتون",
+            "description": "روغن زیتون اصل",
+            "price": 350000,
+            "stock": 40,
+            "category": "روغن و چاشنی",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Olive_oil.jpg",
+            "discount": 0
+        },
+        {
+            "name": "زعفران",
+            "description": "زعفران اصل قائنات",
+            "price": 950000,
+            "stock": 20,
+            "category": "روغن و چاشنی",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Saffron_threads.jpg",
+            "discount": 0
+        },
+        
+        # نوشیدنی‌ها
+        {
+            "name": "دوغ محلی",
+            "description": "دوغ محلی تازه",
+            "price": 25000,
+            "stock": 100,
+            "category": "نوشیدنی‌ها",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Doogh.jpg",
+            "discount": 0
+        },
+        {
+            "name": "شربت زعفران",
+            "description": "شربت زعفران خانگی",
+            "price": 45000,
+            "stock": 50,
+            "category": "نوشیدنی‌ها",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Saffron_syrup.jpg",
+            "discount": 5
+        },
+        
+        # تنقلات
+        {
+            "name": "پسته",
+            "description": "پسته تازه رفسنجان",
+            "price": 450000,
+            "stock": 30,
+            "category": "تنقلات",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Pistachios.jpg",
+            "discount": 0
+        },
+        {
+            "name": "بادام",
+            "description": "بادام تازه محلی",
+            "price": 350000,
+            "stock": 40,
+            "category": "تنقلات",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Almonds.jpg",
+            "discount": 10
+        },
+        
+        # مواد شوینده
+        {
+            "name": "مایع ظرفشویی",
+            "description": "مایع ظرفشویی با کیفیت",
+            "price": 45000,
+            "stock": 100,
+            "category": "مواد شوینده",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Dishwashing_liquid.jpg",
+            "discount": 0
+        },
+        {
+            "name": "پودر لباسشویی",
+            "description": "پودر لباسشویی با کیفیت",
+            "price": 85000,
+            "stock": 50,
+            "category": "مواد شوینده",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Laundry_detergent.jpg",
+            "discount": 5
+        },
+        
+        # لوازم بهداشتی
+        {
+            "name": "صابون گلیسیرینه",
+            "description": "صابون گلیسیرینه مراقبت پوست",
+            "price": 35000,
+            "stock": 100,
+            "category": "لوازم بهداشتی",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Glycerin_soap.jpg",
+            "discount": 0
+        },
+        {
+            "name": "خمیر دندان",
+            "description": "خمیر دندان با کیفیت",
+            "price": 45000,
+            "stock": 80,
+            "category": "لوازم بهداشتی",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Toothpaste.jpg",
+            "discount": 0
+        }
+    ]
+    
+    # Add products to database
+    for product_data in products:
+        product = Product(**product_data)
+        db.session.add(product)
+    
+    db.session.commit()
+    print("Sample products created successfully!")
+
+def init_db():
+    """Initialize the database"""
+    with app.app_context():
+        db.create_all()
+        # Create admin user
+        admin = User.query.filter_by(phone_number='+989137597568').first()
+        if not admin:
+            admin = User(
+                username='Admin',
+                phone_number='+989137597568',
+                is_admin=True,
+                is_verified=True
+            )
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            print("Admin user created successfully!")
+
+@app.route('/wallet')
+@login_required
+def wallet():
+    # Get or create wallet for user
+    if not current_user.wallet:
+        wallet = Wallet(user_id=current_user.id)
+        db.session.add(wallet)
+        db.session.commit()
+    else:
+        wallet = current_user.wallet
+    
+    # Get transaction history
+    transactions = WalletTransaction.query.filter_by(wallet_id=wallet.id).order_by(WalletTransaction.created_at.desc()).all()
+    
+    return render_template('wallet.html', wallet=wallet, transactions=transactions)
+
+@app.route('/order/<int:order_id>/cancel', methods=['POST'])
+@login_required
+def cancel_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    
+    # Check if order belongs to user
+    if order.user_id != current_user.id:
+        flash(get_translation('access_denied'), 'error')
+        return redirect(url_for('profile'))
+    
+    # Check if order can be cancelled
+    if order.status not in ['pending_approval', 'preparing']:
+        flash(get_translation('order_cannot_be_cancelled'), 'error')
+        return redirect(url_for('order_status', order_id=order_id))
+    
+    # Update order status
+    order.status = 'cancelled'
+    order.cancelled_by = 'user'
+    order.cancelled_at = datetime.utcnow()
+    
+    # Add refund to wallet
+    if not current_user.wallet:
+        wallet = Wallet(user_id=current_user.id)
+        db.session.add(wallet)
+    else:
+        wallet = current_user.wallet
+    
+    # Create refund transaction
+    transaction = WalletTransaction(
+        wallet_id=wallet.id,
+        amount=order.total_amount,
+        type='deposit',
+        description=get_translation('order_cancelled_refund')
+    )
+    db.session.add(transaction)
+    
+    # Update wallet balance
+    wallet.balance += order.total_amount
+    
+    db.session.commit()
+    flash(get_translation('order_cancelled'), 'success')
+    return redirect(url_for('order_status', order_id=order_id))
+
+@app.route('/admin/order/<int:order_id>/cancel', methods=['POST'])
+@admin_required
+def admin_cancel_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    
+    # Check if order can be cancelled
+    if order.status not in ['pending_approval', 'preparing']:
+        flash(get_translation('order_cannot_be_cancelled'), 'error')
+        return redirect(url_for('admin_order_details', order_id=order_id))
+    
+    # Update order status
+    order.status = 'cancelled'
+    order.cancelled_by = 'admin'
+    order.cancelled_at = datetime.utcnow()
+    
+    # Add refund to user's wallet
+    if not order.user.wallet:
+        wallet = Wallet(user_id=order.user_id)
+        db.session.add(wallet)
+    else:
+        wallet = order.user.wallet
+    
+    # Create refund transaction
+    transaction = WalletTransaction(
+        wallet_id=wallet.id,
+        amount=order.total_amount,
+        type='deposit',
+        description=get_translation('order_cancelled_refund')
+    )
+    db.session.add(transaction)
+    
+    # Update wallet balance
+    wallet.balance += order.total_amount
+    
+    db.session.commit()
+    flash(get_translation('order_cancelled'), 'success')
+    return redirect(url_for('admin_order_details', order_id=order_id))
+
+@app.route('/product/<int:product_id>')
+def product_details(product_id):
+    product = Product.query.get_or_404(product_id)
+    
+    # Check if user can access verified-only product
+    if product.is_verified_only and (not current_user.is_authenticated or not current_user.is_verified):
+        flash(get_translation('login_to_view_verified_product'), 'warning')
+        return redirect(url_for('login'))
+    
+    return render_template('product_details.html', product=product)
+
+if __name__ == '__main__':
+    with app.app_context():
+        init_db()  # Initialize the database with sample data
+    app.run(debug=True, port=8080) 

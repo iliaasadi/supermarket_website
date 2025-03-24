@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('store_locations') }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{{ get_translation('store_locations') }}</h2>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('admin_add_location') }}" class="btn" style="background-color: var(--primary-red); color: white;">
+                <i class="fas fa-plus me-2"></i>{{ get_translation('add_new_location') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>{{ get_translation('store_name') }}</th>
+                            <th>{{ get_translation('address') }}</th>
+                            <th>{{ get_translation('description') }}</th>
+                            <th>{{ get_translation('status') }}</th>
+                            <th>{{ get_translation('actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for location in locations %}
+                        <tr>
+                            <td>{{ location.name }}</td>
+                            <td>{{ location.address }}</td>
+                            <td>{{ location.description }}</td>
+                            <td>
+                                <span class="badge {% if location.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ get_translation('active') if location.is_active else get_translation('inactive') }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin_edit_location', location_id=location.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i> {{ get_translation('edit') }}
+                                    </a>
+                                    <form action="{{ url_for('admin_delete_location', location_id=location.id) }}" 
+                                          method="POST" 
+                                          class="d-inline"
+                                          onsubmit="return confirm('{{ get_translation('confirm_delete_location') }}')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i> {{ get_translation('delete') }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+    }
+
+    .table th {
+        font-weight: 600;
+        color: var(--dark-text);
+        border-top: none;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .badge {
+        padding: 0.5em 0.8em;
+        font-weight: 500;
+    }
+
+    .btn-outline-primary {
+        border-color: var(--primary-red);
+        color: var(--primary-red);
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary-red);
+        color: white;
+    }
+
+    .btn-outline-danger {
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+
+    .btn-outline-danger:hover {
+        background-color: var(--danger);
+        color: white;
+    }
+</style>
+{% endblock %} 

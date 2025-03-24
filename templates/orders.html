@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('my_orders') }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">{{ get_translation('my_orders') }}</h2>
+    
+    {% if orders %}
+    <div class="row">
+        {% for order in orders %}
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">{{ get_translation('order') }} #{{ order.id }}</h5>
+                        <span class="badge {% if order.status == 'completed' %}bg-success
+                                         {% elif order.status == 'pending_approval' %}bg-warning
+                                         {% elif order.status == 'preparing' %}bg-info
+                                         {% elif order.status == 'cancelled' %}bg-danger
+                                         {% else %}bg-secondary{% endif %}">
+                            {{ get_translation('order_status_' + order.status) }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">{{ get_translation('order_date') }}:</small>
+                        <div>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">{{ get_translation('delivery_type') }}:</small>
+                        <div>{{ get_translation(order.delivery_type) }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">{{ get_translation('order_total') }}:</small>
+                        <div>{{ "%.0f"|format(order.total_amount) }} {{ get_translation('tooman') }}</div>
+                    </div>
+                    
+                    <a href="{{ url_for('order_status', order_id=order.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-eye me-2"></i>{{ get_translation('view_details') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-bag fa-3x mb-3" style="color: var(--primary-red);"></i>
+        <h3>{{ get_translation('no_orders') }}</h3>
+        <p class="text-muted">{{ get_translation('start_shopping') }}</p>
+        <a href="{{ url_for('index') }}" class="btn" style="background-color: var(--primary-red); color: white;">
+            <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('start_shopping') }}
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

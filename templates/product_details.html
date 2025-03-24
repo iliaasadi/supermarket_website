@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Product Image -->
+        <div class="col-md-6 mb-4">
+            <div class="position-relative">
+                {% if product.image_url %}
+                    <img src="{{ product.image_url }}" class="img-fluid rounded" alt="{{ product.name }}">
+                {% endif %}
+                {% if product.discount > 0 %}
+                    <div class="position-absolute top-0 end-0 m-3">
+                        <span class="badge bg-danger fs-5">-{{ product.discount }}%</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Product Details -->
+        <div class="col-md-6">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">{{ get_translation('home') }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('category', category=product.category) }}">{{ product.category }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-3">{{ product.name }}</h1>
+            
+            {% if product.is_verified_only %}
+                <span class="badge bg-success mb-3">{{ get_translation('verified_product') }}</span>
+            {% endif %}
+            
+            <div class="mb-3">
+                <span class="badge bg-success">{{ product.category }}</span>
+                {% if product.discount > 0 %}
+                    <span class="badge bg-danger">-{{ product.discount }}%</span>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                {% if product.discount > 0 %}
+                    <span class="text-decoration-line-through text-muted h5">{{ "%.0f"|format(product.price) }} تومان</span>
+                    <span class="text-success h4 ms-2">{{ "%.0f"|format(product.price * (1 - product.discount/100)) }} تومان</span>
+                {% else %}
+                    <span class="text-primary h4">{{ "%.0f"|format(product.price) }} تومان</span>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <h3 class="mb-2">{{ get_translation('stock') }}</h3>
+                <p class="mb-0">{{ product.stock }} {{ get_translation('items') }}</p>
+            </div>
+            
+            <p class="mb-4">{{ product.description }}</p>
+            
+            {% if current_user.is_authenticated %}
+                <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="mb-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="input-group mb-3" style="max-width: 200px;">
+                        <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(-1)">-</button>
+                        <input type="number" class="form-control text-center" name="quantity" id="quantity" value="1" min="1" max="{{ product.stock }}">
+                        <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(1)">+</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-cart-plus"></i> {{ get_translation('add_to_cart') }}
+                    </button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary">
+                    {{ get_translation('login') }} {{ get_translation('to_add_to_cart') }}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function updateQuantity(change) {
+    const input = document.getElementById('quantity');
+    const newValue = parseInt(input.value) + change;
+    if (newValue >= 1 && newValue <= {{ product.stock }}) {
+        input.value = newValue;
+    }
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title">Order Confirmation</h2>
+            <div class="alert alert-success">
+                Thank you for your order! Your order has been placed successfully.
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <h4>Order Details</h4>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ "%.0f"|format(item.price) }} تومان</td>
+                                <td>{{ "%.0f"|format(item.price * item.quantity) }} تومان</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Subtotal:</strong></td>
+                                <td>{{ "%.0f"|format(order.total_amount - order.delivery_fee) }} تومان</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Delivery Fee:</strong></td>
+                                <td>{{ "%.0f"|format(order.delivery_fee) }} تومان</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                                <td><strong>{{ "%.0f"|format(order.total_amount) }} تومان</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="col-md-4">
+                    <h4>Delivery Information</h4>
+                    <p><strong>Delivery Type:</strong> {{ order.delivery_type|title }}</p>
+                    {% if order.delivery_type == 'pickup' %}
+                        {% if order.location %}
+                        <p><strong>Pickup Location:</strong><br>
+                        {{ order.location.name }}<br>
+                        {{ order.location.address }}</p>
+                        {% endif %}
+                    {% else %}
+                        {% if order.address %}
+                        <p><strong>Delivery Address:</strong><br>
+                        {{ order.address.street }}<br>
+                        {{ order.address.city }}, {{ order.address.state }} {{ order.address.postal_code }}</p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a href="{{ url_for('profile') }}" class="btn btn-primary">View Order History</a>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Continue Shopping</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

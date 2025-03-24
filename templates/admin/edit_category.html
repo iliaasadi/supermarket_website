@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('edit_category') }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="card-title mb-0">{{ get_translation('edit_category') }}</h2>
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>{{ get_translation('back_to_dashboard') }}
+                        </a>
+                    </div>
+
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        
+                        <div class="mb-3">
+                            <label for="category_name" class="form-label">{{ get_translation('category_name') }}</label>
+                            <input type="text" class="form-control" id="category_name" name="category_name" 
+                                   value="{{ category }}" required>
+                        </div>
+
+                        <button type="submit" class="btn" style="background-color: var(--primary-red); color: white;">
+                            <i class="fas fa-save me-2"></i>{{ get_translation('save') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+    }
+
+    .card-title {
+        color: var(--dark-text);
+        font-weight: 600;
+    }
+
+    .form-label {
+        color: var(--dark-text);
+        font-weight: 500;
+    }
+
+    .form-control {
+        border: 2px solid var(--light-gray);
+        border-radius: 8px;
+        padding: 0.8rem 1rem;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-red);
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    }
+
+    .btn-outline-primary {
+        border-color: var(--primary-red);
+        color: var(--primary-red);
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary-red);
+        color: white;
+    }
+</style>
+{% endblock %} 

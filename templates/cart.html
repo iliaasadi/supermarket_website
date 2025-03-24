@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('cart') }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">{{ get_translation('cart') }}</h2>
+    
+    {% if cart_items %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>{{ get_translation('product') }}</th>
+                                    <th>{{ get_translation('price') }}</th>
+                                    <th>{{ get_translation('quantity') }}</th>
+                                    <th>{{ get_translation('total') }}</th>
+                                    <th>{{ get_translation('actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.product.image_url }}" 
+                                                 alt="{{ item.product.name }}" 
+                                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"
+                                                 class="me-3">
+                                            <div>
+                                                <h6 class="mb-0">{{ item.product.name }}</h6>
+                                                <small class="text-muted">{{ item.product.category }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if item.product.discount > 0 %}
+                                        <span class="text-decoration-line-through text-muted">{{ "%.0f"|format(item.product.price) }} {{ get_translation('tooman') }}</span>
+                                        <span class="text-success ms-2">{{ "%.0f"|format(item.product.price * (1 - item.product.discount/100)) }} {{ get_translation('tooman') }}</span>
+                                        {% else %}
+                                        {{ "%.0f"|format(item.product.price) }} {{ get_translation('tooman') }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="input-group input-group-sm" style="width: 120px;">
+                                                <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity({{ item.id }}, {{ item.quantity - 1 }})">-</button>
+                                                <input type="number" id="quantity-{{ item.id }}" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" 
+                                                       class="form-control text-center" readonly>
+                                                <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity({{ item.id }}, {{ item.quantity + 1 }})">+</button>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="submitQuantityUpdate({{ item.id }})">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if item.product.discount > 0 %}
+                                        {{ "%.0f"|format(item.product.price * (1 - item.product.discount/100) * item.quantity) }} {{ get_translation('tooman') }}
+                                        {% else %}
+                                        {{ "%.0f"|format(item.product.price * item.quantity) }} {{ get_translation('tooman') }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form action="{{ url_for('remove_from_cart', item_id=item.id) }}" method="POST" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ get_translation('order_summary') }}</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ get_translation('subtotal') }}</span>
+                        <span>{{ "%.0f"|format(subtotal) }} {{ get_translation('tooman') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ get_translation('delivery_fee') }}</span>
+                        <span class="delivery-fee">{{ "%.0f"|format(delivery_fee) }} {{ get_translation('tooman') }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>{{ get_translation('total') }}</strong>
+                        <strong class="total-amount">{{ "%.0f"|format(total) }} {{ get_translation('tooman') }}</strong>
+                    </div>
+                    
+                    <!-- Delivery Options -->
+                    <div class="mb-3">
+                        <h6 class="mb-2">{{ get_translation('delivery_type') }}</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="delivery_type" id="pickup" value="pickup" checked>
+                            <label class="form-check-label" for="pickup">
+                                {{ get_translation('pickup_from_store') }}
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="delivery_type" id="delivery" value="delivery">
+                            <label class="form-check-label" for="delivery">
+                                {{ get_translation('delivery_to_address').format("%.0f"|format(delivery_fee)) }} {{ get_translation('tooman') }}
+                            </label>
+                        </div>
+                        
+                        <!-- Store Location Selection -->
+                        <div id="store-location" class="mb-3">
+                            <label for="store_location_id" class="form-label">{{ get_translation('select_store_location') }}</label>
+                            <select class="form-select" id="store_location_id" name="store_location_id" required>
+                                <option value="">{{ get_translation('choose_location') }}</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}">{{ location.name }} - {{ location.address }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Delivery Address Selection -->
+                        <div id="delivery-address" class="mb-3" style="display: none;">
+                            <label class="form-label">{{ get_translation('select_delivery_address') }}</label>
+                            {% if addresses %}
+                            <select class="form-select" id="delivery_address_id" name="delivery_address_id">
+                                <option value="">{{ get_translation('choose_address') }}</option>
+                                {% for address in addresses %}
+                                <option value="{{ address.id }}">{{ address.street }}, {{ address.tag }}</option>
+                                {% endfor %}
+                            </select>
+                            {% else %}
+                            <div class="alert alert-info">
+                                {{ get_translation('no_delivery_addresses') }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Payment Method Selection -->
+                    <div class="mb-3">
+                        <h6 class="mb-2">{{ get_translation('payment_method') }}</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="payment_method" id="cash" value="cash" checked>
+                            <label class="form-check-label" for="cash">
+                                {{ get_translation('cash_on_delivery') }}
+                            </label>
+                        </div>
+                        {% if current_user.wallet and current_user.wallet.balance > 0 %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="wallet" value="wallet">
+                            <label class="form-check-label" for="wallet">
+                                {{ get_translation('pay_with_wallet') }} ({{ "%.0f"|format(current_user.wallet.balance) }} {{ get_translation('tooman') }})
+                            </label>
+                        </div>
+                        <div id="wallet-payment-info" class="alert alert-info" style="display: none;">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>{{ get_translation('wallet_balance') }}:</span>
+                                <span class="text-success">{{ "%.0f"|format(current_user.wallet.balance) }} {{ get_translation('tooman') }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>{{ get_translation('order_total') }}:</span>
+                                <span class="text-primary">{{ "%.0f"|format(total) }} {{ get_translation('tooman') }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>{{ get_translation('wallet_withdrawal') }}:</span>
+                                <span class="text-danger wallet-withdrawal">{{ "%.0f"|format(current_user.wallet.balance) }} {{ get_translation('tooman') }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ get_translation('remaining_balance') }}:</strong>
+                                <strong class="remaining-balance">{{ "%.0f"|format(total) }} {{ get_translation('tooman') }}</strong>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <form action="{{ url_for('checkout') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="delivery_type" id="delivery_type_input" value="pickup">
+                        <input type="hidden" name="store_location_id" id="store_location_input">
+                        <input type="hidden" name="delivery_address_id" id="delivery_address_input">
+                        <input type="hidden" name="payment_method" id="payment_method_input" value="cash">
+                        
+                        <button type="submit" class="btn w-100" style="background-color: var(--primary-red); color: white;">
+                            <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('proceed_to_checkout') }}
+                        </button>
+                    </form>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary w-100 mt-3">
+                        <i class="fas fa-arrow-left me-2"></i>{{ get_translation('continue_shopping') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-3x mb-3" style="color: var(--primary-red);"></i>
+        <h3>{{ get_translation('empty_cart') }}</h3>
+        <p class="text-muted">{{ get_translation('add_some_products') }}</p>
+        <a href="{{ url_for('index') }}" class="btn" style="background-color: var(--primary-red); color: white;">
+            <i class="fas fa-arrow-left me-2"></i>{{ get_translation('continue_shopping') }}
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+    }
+
+    .card-title {
+        color: var(--dark-text);
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .table th {
+        font-weight: 600;
+        color: var(--dark-text);
+        border-top: none;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .form-control {
+        border: 2px solid var(--light-gray);
+        border-radius: 8px;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-red);
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    }
+
+    .btn-outline-primary {
+        border-color: var(--primary-red);
+        color: var(--primary-red);
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary-red);
+        color: white;
+    }
+
+    .btn-outline-danger {
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+
+    .btn-outline-danger:hover {
+        background-color: var(--danger);
+        color: white;
+    }
+
+    hr {
+        margin: 1rem 0;
+    }
+</style>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deliveryTypeInputs = document.querySelectorAll('input[name="delivery_type"]');
+    const storeLocationDiv = document.getElementById('store-location');
+    const deliveryAddressDiv = document.getElementById('delivery-address');
+    const storeLocationSelect = document.getElementById('store_location_id');
+    const deliveryAddressSelect = document.getElementById('delivery_address_id');
+    const deliveryTypeInput = document.getElementById('delivery_type_input');
+    const storeLocationInput = document.getElementById('store_location_input');
+    const deliveryAddressInput = document.getElementById('delivery_address_input');
+    const deliveryFeeSpan = document.querySelector('.delivery-fee');
+    const totalSpan = document.querySelector('.total-amount');
+    const walletPaymentInfo = document.getElementById('wallet-payment-info');
+    const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
+    const paymentMethodInput = document.getElementById('payment_method_input');
+
+    function updateDeliveryOptions() {
+        const selectedType = document.querySelector('input[name="delivery_type"]:checked').value;
+        deliveryTypeInput.value = selectedType;
+        
+        if (selectedType === 'pickup') {
+            storeLocationDiv.style.display = 'block';
+            deliveryAddressDiv.style.display = 'none';
+            storeLocationSelect.required = true;
+            deliveryAddressSelect.required = false;
+            deliveryFeeSpan.textContent = '0 {{ get_translation("tooman") }}';
+            updateTotal(0);
+            storeLocationInput.value = storeLocationSelect.value;
+            deliveryAddressInput.value = '';
+        } else {
+            storeLocationDiv.style.display = 'none';
+            deliveryAddressDiv.style.display = 'block';
+            storeLocationSelect.required = false;
+            deliveryAddressSelect.required = true;
+            const subtotal = parseFloat('{{ subtotal }}');
+            const deliveryFee = Math.max(20000, subtotal * 0.05); // 5% delivery fee with 20000 Tooman minimum
+            deliveryFeeSpan.textContent = `${deliveryFee.toLocaleString()} {{ get_translation("tooman") }}`;
+            updateTotal(deliveryFee);
+            deliveryAddressInput.value = deliveryAddressSelect.value;
+            storeLocationInput.value = '';
+        }
+    }
+
+    function updatePaymentMethod() {
+        const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        paymentMethodInput.value = selectedMethod;
+        
+        if (selectedMethod === 'wallet' && walletPaymentInfo) {
+            walletPaymentInfo.style.display = 'block';
+            updateWalletPaymentInfo();
+        } else {
+            walletPaymentInfo.style.display = 'none';
+        }
+    }
+
+    function updateWalletPaymentInfo() {
+        const total = parseFloat('{{ total }}');
+        const walletBalance = parseFloat('{{ current_user.wallet.balance if current_user.wallet else 0 }}');
+        const walletWithdrawal = Math.min(total, walletBalance);
+        const remainingBalance = Math.max(0, total - walletBalance);
+        
+        document.querySelector('.wallet-withdrawal').textContent = 
+            `${walletWithdrawal.toLocaleString()} {{ get_translation("tooman") }}`;
+        document.querySelector('.remaining-balance').textContent = 
+            `${remainingBalance.toLocaleString()} {{ get_translation("tooman") }}`;
+    }
+
+    function updateTotal(deliveryFee) {
+        const subtotal = parseFloat('{{ subtotal }}');
+        const total = subtotal + deliveryFee;
+        totalSpan.textContent = `${total.toLocaleString()} {{ get_translation("tooman") }}`;
+        
+        // Update wallet payment info if visible
+        if (walletPaymentInfo && walletPaymentInfo.style.display === 'block') {
+            updateWalletPaymentInfo();
+        }
+    }
+
+    // Add event listeners
+    deliveryTypeInputs.forEach(input => {
+        input.addEventListener('change', updateDeliveryOptions);
+    });
+
+    paymentMethodInputs.forEach(input => {
+        input.addEventListener('change', updatePaymentMethod);
+    });
+
+    storeLocationSelect.addEventListener('change', function() {
+        storeLocationInput.value = this.value;
+    });
+
+    deliveryAddressSelect.addEventListener('change', function() {
+        deliveryAddressInput.value = this.value;
+    });
+
+    // Initialize
+    updateDeliveryOptions();
+    updatePaymentMethod();
+});
+
+function updateQuantity(itemId, newQuantity) {
+    if (newQuantity < 1) return;
+    
+    fetch(`/cart/update/${itemId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `quantity=${newQuantity}`
+    }).then(response => {
+        if (response.ok) {
+            window.location.reload();
+        }
+    });
+}
+
+function submitQuantityUpdate(itemId) {
+    const input = document.getElementById(`quantity-${itemId}`);
+    const quantity = input.value;
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/cart/update/${itemId}`;
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = '{{ csrf_token }}';
+    form.appendChild(csrfInput);
+    
+    const quantityInput = document.createElement('input');
+    quantityInput.type = 'hidden';
+    quantityInput.name = 'quantity';
+    quantityInput.value = quantity;
+    form.appendChild(quantityInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}
+{% endblock %} 

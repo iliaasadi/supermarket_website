@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('wallet') }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Wallet Balance Card -->
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ get_translation('wallet_balance') }}</h5>
+                    <h2 class="display-4 mb-3">{{ "%.0f"|format(wallet.balance) }} تومان</h2>
+                    <p class="text-muted">{{ get_translation('last_updated') }}: {{ wallet.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ get_translation('quick_actions') }}</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('profile') }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-arrow-left me-2"></i>{{ get_translation('back_to_profile') }}
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-success w-100">
+                        <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('continue_shopping') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <!-- Transaction History -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ get_translation('transaction_history') }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if transactions %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>{{ get_translation('date') }}</th>
+                                    <th>{{ get_translation('type') }}</th>
+                                    <th>{{ get_translation('amount') }}</th>
+                                    <th>{{ get_translation('description') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <span class="badge {% if transaction.type == 'deposit' %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ get_translation(transaction.type) }}
+                                        </span>
+                                    </td>
+                                    <td class="{% if transaction.type == 'deposit' %}text-success{% else %}text-danger{% endif %}">
+                                        {{ "%.0f"|format(transaction.amount) }} تومان
+                                    </td>
+                                    <td>{{ transaction.description }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">{{ get_translation('no_transactions') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+        background-color: white;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        border-radius: 12px 12px 0 0 !important;
+    }
+
+    .table th {
+        font-weight: 600;
+        color: var(--dark-text);
+        border-top: none;
+    }
+
+    .badge {
+        padding: 0.5em 0.8em;
+        font-weight: 500;
+    }
+
+    .btn {
+        border-radius: 8px;
+        padding: 0.8rem;
+    }
+
+    .display-4 {
+        color: var(--primary-red);
+        font-weight: 600;
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title mb-4">{{ get_translation('order_details') }} #{{ order.id }}</h2>
+            
+            <!-- Order Status -->
+            <div class="mb-4">
+                <h4>{{ get_translation('order_status') }}</h4>
+                {% set status_colors = {
+                    'pending_approval': 'warning',
+                    'preparing': 'info',
+                    'completed': 'success',
+                    'rejected': 'danger',
+                    'cancelled': 'secondary'
+                } %}
+                <div class="alert alert-{{ status_colors[order.status] }}">
+                    {% if order.status == 'pending_approval' %}
+                        <i class="fas fa-clock"></i> {{ get_translation('order_status_pending') }}
+                    {% elif order.status == 'preparing' %}
+                        <i class="fas fa-utensils"></i> {{ get_translation('order_status_preparing') }}
+                        <div class="mt-2">
+                            <small>{{ get_translation('started') }}: {{ order.preparation_start.strftime('%Y-%m-%d %H:%M') }}</small><br>
+                            <small>{{ get_translation('estimated_completion') }}: {{ order.estimated_completion.strftime('%Y-%m-%d %H:%M') }}</small>
+                            <div id="countdown" class="mt-2" data-order-id="{{ order.id }}" 
+                                 data-completion-time="{{ order.estimated_completion.isoformat() }}">
+                                {{ get_translation('time_remaining') }}: <span class="countdown-timer"></span>
+                            </div>
+                        </div>
+                    {% elif order.status == 'completed' %}
+                        <i class="fas fa-check-circle"></i> {{ get_translation('order_status_completed') }}
+                        <div class="mt-2">
+                            <small>{{ get_translation('completed_at') }}: {{ order.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                    {% elif order.status == 'cancelled' %}
+                        <i class="fas fa-ban"></i> {{ get_translation('order_status_cancelled') }}
+                        <div class="mt-2">
+                            <small>{{ get_translation('cancelled_at') }}: {{ order.cancelled_at.strftime('%Y-%m-%d %H:%M') }}</small><br>
+                            <small>{{ get_translation('cancelled_by') }}: {{ get_translation('order_cancelled_by_' + order.cancelled_by) }}</small>
+                        </div>
+                    {% else %}
+                        <i class="fas fa-times-circle"></i> {{ get_translation('order_status_rejected') }}
+                    {% endif %}
+                </div>
+
+                {% if order.status in ['pending_approval', 'preparing'] %}
+                <form action="{{ url_for('cancel_order', order_id=order.id) }}" method="POST" class="mt-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('{{ get_translation('confirm_cancel_order') }}')">
+                        <i class="fas fa-ban me-2"></i>{{ get_translation('cancel_order') }}
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            
+            <!-- Order Items -->
+            <div class="mb-4">
+                <h4>{{ get_translation('order_items') }}</h4>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>{{ get_translation('product') }}</th>
+                                <th>{{ get_translation('quantity') }}</th>
+                                <th>{{ get_translation('price') }}</th>
+                                <th>{{ get_translation('subtotal') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ "%.0f"|format(item.price) }} تومان</td>
+                                    <td>{{ "%.0f"|format(item.price * item.quantity) }} تومان</td>
+                                </tr>
+                            {% endfor %}
+                            <tr class="table-active">
+                                <td colspan="3" class="text-end"><strong>{{ get_translation('total') }}:</strong></td>
+                                <td><strong>{{ "%.0f"|format(order.total_amount) }} تومان</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Delivery Information -->
+            <div class="mb-4">
+                <h4>{{ get_translation('delivery_type') }}</h4>
+                {% if order.delivery_type == 'pickup' %}
+                    <p>{{ get_translation('pickup_from') }}: {{ order.store_location.name }}</p>
+                    <p>{{ order.store_location.address }}</p>
+                {% else %}
+                    <p>{{ get_translation('delivery_to') }}:</p>
+                    <p class="mb-1">{{ order.address.street }}</p>
+                    <p class="mb-1">{{ order.address.tag }}</p>
+                    <p>{{ order.address.building_unit_number }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Order Date -->
+            <div>
+                <h4>{{ get_translation('order_date') }}</h4>
+                <p>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>{{ get_translation('continue_shopping') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if order.status == 'preparing' %}
+<script>
+function updateCountdown() {
+    const countdownElement = document.getElementById('countdown');
+    if (!countdownElement) return;
+
+    const completionTime = new Date(countdownElement.dataset.completionTime);
+    const now = new Date();
+    const timeDiff = completionTime - now;
+
+    if (timeDiff <= 0) {
+        // Time's up - auto complete the order
+        const orderId = countdownElement.dataset.orderId;
+        fetch(`/api/auto_complete_order/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload(); // Refresh the page to show completed status
+            }
+        });
+        return;
+    }
+
+    // Calculate minutes and seconds
+    const minutes = Math.floor(timeDiff / 60000);
+    const seconds = Math.floor((timeDiff % 60000) / 1000);
+
+    // Update the countdown display
+    const timerElement = countdownElement.querySelector('.countdown-timer');
+    timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Update countdown every second
+setInterval(updateCountdown, 1000);
+updateCountdown(); // Initial update
+</script>
+{% endif %}
+{% endblock %} 

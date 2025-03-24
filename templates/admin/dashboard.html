@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('admin_dashboard') }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{{ get_translation('admin_dashboard') }}</h2>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('admin_add_product') }}" class="btn" style="background-color: var(--primary-red); color: white;">
+                <i class="fas fa-plus me-2"></i>{{ get_translation('add_new_product') }}
+            </a>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ get_translation('total_products') }}</h5>
+                    <p class="card-text display-4">{{ total_products }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ get_translation('categories') }}</h5>
+                    <p class="card-text display-4">{{ categories|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ get_translation('store_locations') }}</h5>
+                    <p class="card-text display-4">{{ locations|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ get_translation('recent_orders') }}</h5>
+                    <p class="card-text display-4">{{ recent_orders|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Management -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ get_translation('store_locations') }}</h5>
+            <a href="{{ url_for('admin_add_location') }}" class="btn btn-sm" style="background-color: var(--primary-red); color: white;">
+                <i class="fas fa-plus me-2"></i>{{ get_translation('add_location') }}
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>{{ get_translation('name') }}</th>
+                            <th>{{ get_translation('address') }}</th>
+                            <th>{{ get_translation('status') }}</th>
+                            <th>{{ get_translation('actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for location in locations %}
+                        <tr>
+                            <td>{{ location.name }}</td>
+                            <td>{{ location.address }}</td>
+                            <td>
+                                <span class="badge {% if location.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ get_translation('active') if location.is_active else get_translation('inactive') }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin_edit_location', location_id=location.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ url_for('admin_delete_location', location_id=location.id) }}" 
+                                          method="POST" 
+                                          class="d-inline"
+                                          onsubmit="return confirm('{{ get_translation('confirm_delete_location') }}')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Settings -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">{{ get_translation('delivery_settings') }}</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin_update_delivery_settings') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="delivery_fee_percentage" class="form-label">{{ get_translation('delivery_fee_percentage') }}</label>
+                            <input type="number" class="form-control" id="delivery_fee_percentage" 
+                                   name="delivery_fee_percentage" value="{{ delivery_fee_percentage }}" 
+                                   min="0" max="100" step="0.1" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="min_delivery_fee" class="form-label">{{ get_translation('min_delivery_fee') }}</label>
+                            <input type="number" class="form-control" id="min_delivery_fee" 
+                                   name="min_delivery_fee" value="{{ min_delivery_fee }}" 
+                                   min="0" step="0.01" required>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn" style="background-color: var(--primary-red); color: white;">
+                    <i class="fas fa-save me-2"></i>{{ get_translation('save_delivery_settings') }}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Product Management -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">{{ get_translation('product_management') }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>{{ get_translation('image') }}</th>
+                            <th>{{ get_translation('name') }}</th>
+                            <th>{{ get_translation('category') }}</th>
+                            <th>{{ get_translation('price') }}</th>
+                            <th>{{ get_translation('stock') }}</th>
+                            <th>{{ get_translation('discount') }}</th>
+                            <th>{{ get_translation('featured') }}</th>
+                            <th>{{ get_translation('verified_only') }}</th>
+                            <th>{{ get_translation('actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
+                            </td>
+                            <td>{{ product.name }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ product.category }}</span>
+                            </td>
+                            <td>
+                                {% if product.discount > 0 %}
+                                <span class="text-decoration-line-through text-muted">{{ "%.0f"|format(product.price) }} تومان</span>
+                                <span class="text-success ms-2">{{ "%.0f"|format(product.price * (1 - product.discount/100)) }} تومان</span>
+                                {% else %}
+                                {{ "%.0f"|format(product.price) }} تومان
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if product.stock < 10 %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ product.stock }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if product.discount > 0 %}
+                                <span class="badge bg-success">{{ product.discount }}%</span>
+                                {% else %}
+                                <span class="badge bg-secondary">0%</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.is_featured %}
+                                <span class="badge bg-primary">{{ get_translation('yes') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ get_translation('no') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.is_verified_only %}
+                                <span class="badge bg-warning">{{ get_translation('yes') }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ get_translation('no') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i> {{ get_translation('edit') }}
+                                    </a>
+                                    <a href="{{ url_for('admin_delete_product', product_id=product.id) }}" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('{{ get_translation('confirm_delete_product') }}')">
+                                        <i class="fas fa-trash"></i> {{ get_translation('delete') }}
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Management -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">{{ get_translation('category_management') }}</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin_add_category') }}" class="row g-3 mb-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="col-md-8">
+                    <input type="text" class="form-control" name="category_name" placeholder="{{ get_translation('new_category_name') }}" required>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn w-100" style="background-color: var(--primary-red); color: white;">
+                        <i class="fas fa-plus me-2"></i>{{ get_translation('add_category') }}
+                    </button>
+                </div>
+            </form>
+            
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>{{ get_translation('category_name') }}</th>
+                            <th>{{ get_translation('actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>{{ category }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin_edit_category', category=category) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i> {{ get_translation('edit') }}
+                                    </a>
+                                    <a href="{{ url_for('admin_delete_category', category=category) }}" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('{{ get_translation('confirm_delete_category') }}')">
+                                        <i class="fas fa-trash"></i> {{ get_translation('delete') }}
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+    }
+
+    .card-header {
+        border-bottom: 1px solid var(--light-gray);
+        padding: 1rem;
+    }
+
+    .card-title {
+        color: var(--dark-text);
+        font-weight: 600;
+    }
+
+    .table th {
+        font-weight: 600;
+        color: var(--dark-text);
+        border-top: none;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .badge {
+        padding: 0.5em 0.8em;
+        font-weight: 500;
+    }
+
+    .btn-outline-primary {
+        border-color: var(--primary-red);
+        color: var(--primary-red);
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary-red);
+        color: white;
+    }
+
+    .btn-outline-danger {
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+
+    .btn-outline-danger:hover {
+        background-color: var(--danger);
+        color: white;
+    }
+
+    .form-control {
+        border: 2px solid var(--light-gray);
+        border-radius: 8px;
+        padding: 0.8rem 1rem;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-red);
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    }
+
+    .form-select {
+        border: 2px solid var(--light-gray);
+        border-radius: 8px;
+        padding: 0.8rem 1rem;
+    }
+
+    .form-select:focus {
+        border-color: var(--primary-red);
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    }
+</style>
+{% endblock %} 

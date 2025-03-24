@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Fresh Market - {{ get_translation('home') }}{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-4">{{ get_translation('fresh_food_fresh_life') }}</h1>
+        <p class="lead mb-4">{{ get_translation('discover_quality') }}</p>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form action="{{ url_for('search') }}" method="GET" class="d-flex">
+                    <input type="search" name="q" class="search-input" 
+                           placeholder="{{ get_translation('search_placeholder') }}" aria-label="Search">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Categories -->
+<section class="mb-4">
+    <h2 class="section-title mb-3">{{ get_translation('categories') }}</h2>
+    <div class="row row-cols-4 row-cols-md-6 row-cols-lg-8 g-1">
+        {% for category in categories %}
+        <div class="col">
+            <a href="{{ url_for('category', category=category) }}" class="text-decoration-none">
+                <div class="category-card h-100">
+                    {% if 'میوه' in category or 'سبزی' in category %}
+                        <i class="fas fa-apple-alt category-icon"></i>
+                    {% elif 'لبنیات' in category or 'تخم' in category %}
+                        <i class="fas fa-egg category-icon"></i>
+                    {% elif 'نان' in category or 'شیرینی' in category %}
+                        <i class="fas fa-bread-slice category-icon"></i>
+                    {% elif 'گوشت' in category or 'ماهی' in category %}
+                        <i class="fas fa-fish category-icon"></i>
+                    {% elif 'نوشیدنی' in category %}
+                        <i class="fas fa-coffee category-icon"></i>
+                    {% elif 'مواد غذایی' in category or 'خشکبار' in category %}
+                        <i class="fas fa-box-open category-icon"></i>
+                    {% elif 'تنقلات' in category %}
+                        <i class="fas fa-cookie category-icon"></i>
+                    {% else %}
+                        <i class="fas fa-shopping-basket category-icon"></i>
+                    {% endif %}
+                    <h6 class="mb-0 small">{{ category }}</h6>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section class="mb-4">
+    <h2 class="section-title mb-3">{{ get_translation('featured_products') }}</h2>
+    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-6 g-2">
+        {% for product in featured_products %}
+        <div class="col">
+            <a href="{{ url_for('product_details', product_id=product.id) }}" class="text-decoration-none">
+                <div class="product-card h-100 position-relative">
+                    {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="product-image w-100" alt="{{ product.name }}">
+                    {% endif %}
+                    {% if product.discount > 0 %}
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-danger">-{{ product.discount }}%</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Categories with Products -->
+{% for category in categories %}
+<section class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="section-title mb-0">{{ category }}</h2>
+        <a href="{{ url_for('category', category=category) }}" class="btn btn-outline-success btn-sm">
+            {{ get_translation('view_all') }} <i class="fas fa-arrow-right ms-1"></i>
+        </a>
+    </div>
+    
+    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-6 g-2">
+        {% for product in products_by_category[category] %}
+        <div class="col">
+            <a href="{{ url_for('product_details', product_id=product.id) }}" class="text-decoration-none">
+                <div class="product-card h-100 position-relative">
+                    {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="product-image w-100" alt="{{ product.name }}">
+                    {% endif %}
+                    {% if product.discount > 0 %}
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-danger">-{{ product.discount }}%</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+{% endblock %} 

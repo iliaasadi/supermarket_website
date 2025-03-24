@@ -1,0 +1,198 @@
+                                <div class="order-details">
+                                    <!-- Order Header -->
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="mb-0">#{{ order.id }}</h5>
+                                        <span class="badge bg-{{ 'success' if order.status == 'completed' else 'warning' if order.status == 'pending' else 'info' if order.status == 'preparing' else 'danger' if order.status == 'cancelled' else 'primary' }}">
+                                            {{ get_translation(order.status) }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Customer Information -->
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <i class="fas fa-user me-2"></i>{{ get_translation('customer_info') }}
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p class="mb-1"><strong>{{ get_translation('name') }}:</strong> {{ order.user.username }}</p>
+                                                    <p class="mb-1"><strong>{{ get_translation('phone') }}:</strong> {{ order.user.phone }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p class="mb-1"><strong>{{ get_translation('email') }}:</strong> {{ order.user.email }}</p>
+                                                    <p class="mb-1"><strong>{{ get_translation('order_date') }}:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Delivery Information -->
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <i class="fas fa-truck me-2"></i>{{ get_translation('delivery_info') }}
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p class="mb-1"><strong>{{ get_translation('delivery_type') }}:</strong></p>
+                                                    {% if order.delivery_type == 'pickup' %}
+                                                        <span class="badge bg-info">
+                                                            <i class="fas fa-store me-1"></i>
+                                                            {{ get_translation('pickup_from_store') }}
+                                                        </span>
+                                                        <p class="mt-2 mb-1"><strong>{{ get_translation('store_location') }}:</strong> {{ order.store_location.name }}</p>
+                                                    {% else %}
+                                                        <span class="badge bg-primary">
+                                                            <i class="fas fa-truck me-1"></i>
+                                                            {{ get_translation('delivery_to_address') }}
+                                                        </span>
+                                                        <p class="mt-2 mb-1"><strong>{{ get_translation('delivery_address') }}:</strong> {{ order.delivery_address.street }}</p>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p class="mb-1"><strong>{{ get_translation('delivery_fee') }}:</strong> {{ "%.0f"|format(order.delivery_fee) }} {{ get_translation('tooman') }}</p>
+                                                    {% if order.estimated_completion_time %}
+                                                        <p class="mb-1"><strong>{{ get_translation('estimated_completion') }}:</strong> {{ order.estimated_completion_time.strftime('%H:%M') }}</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Order Items -->
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('order_items') }}
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>{{ get_translation('product') }}</th>
+                                                            <th>{{ get_translation('quantity') }}</th>
+                                                            <th>{{ get_translation('price') }}</th>
+                                                            <th>{{ get_translation('subtotal') }}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in order.items %}
+                                                        <tr>
+                                                            <td>
+                                                                <div class="d-flex align-items-center">
+                                                                    <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                                                    <div>
+                                                                        <div>{{ item.product.name }}</div>
+                                                                        <small class="text-muted">{{ item.product.description }}</small>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td>{{ item.quantity }}</td>
+                                                            <td>{{ "%.0f"|format(item.price) }} {{ get_translation('tooman') }}</td>
+                                                            <td>{{ "%.0f"|format(item.price * item.quantity) }} {{ get_translation('tooman') }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr>
+                                                            <td colspan="3" class="text-end"><strong>{{ get_translation('subtotal') }}:</strong></td>
+                                                            <td><strong>{{ "%.0f"|format(order.subtotal) }} {{ get_translation('tooman') }}</strong></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td colspan="3" class="text-end"><strong>{{ get_translation('delivery_fee') }}:</strong></td>
+                                                            <td><strong>{{ "%.0f"|format(order.delivery_fee) }} {{ get_translation('tooman') }}</strong></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td colspan="3" class="text-end"><strong>{{ get_translation('total') }}:</strong></td>
+                                                            <td><strong>{{ "%.0f"|format(order.total) }} {{ get_translation('tooman') }}</strong></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Payment Information -->
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <i class="fas fa-credit-card me-2"></i>{{ get_translation('payment_info') }}
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p class="mb-1"><strong>{{ get_translation('payment_method') }}:</strong></p>
+                                                    {% if order.payment_method == 'wallet' %}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-wallet me-1"></i>
+                                                            {{ get_translation('pay_with_wallet') }}
+                                                        </span>
+                                                        <p class="mt-2 mb-1"><strong>{{ get_translation('wallet_withdrawal') }}:</strong> {{ "%.0f"|format(order.total) }} {{ get_translation('tooman') }}</p>
+                                                    {% else %}
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="fas fa-money-bill-wave me-1"></i>
+                                                            {{ get_translation('cash_on_delivery') }}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p class="mb-1"><strong>{{ get_translation('payment_status') }}:</strong></p>
+                                                    {% if order.payment_method == 'wallet' and order.status == 'completed' %}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check-circle me-1"></i>
+                                                            {{ get_translation('paid') }}
+                                                        </span>
+                                                    {% elif order.payment_method == 'cash' %}
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            {{ get_translation('pending_payment') }}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Order Actions -->
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            {% if order.status == 'pending' %}
+                                                <form action="{{ url_for('approve_order', order_id=order.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        <i class="fas fa-check me-1"></i>{{ get_translation('approve_order') }}
+                                                    </button>
+                                                </form>
+                                                <form action="{{ url_for('reject_order', order_id=order.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-times me-1"></i>{{ get_translation('reject_order') }}
+                                                    </button>
+                                                </form>
+                                            {% elif order.status == 'preparing' %}
+                                                <form action="{{ url_for('mark_ready', order_id=order.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-check-circle me-1"></i>{{ get_translation('mark_as_ready') }}
+                                                    </button>
+                                                </form>
+                                            {% elif order.status == 'ready' %}
+                                                <form action="{{ url_for('complete_order', order_id=order.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        <i class="fas fa-check-double me-1"></i>
+                                                        {% if session.get('language') == 'fa' %}
+                                                            {{ get_translation('mark_as_complete_fa') }}
+                                                        {% else %}
+                                                            {{ get_translation('mark_as_complete') }}
+                                                        {% endif %}
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <a href="{{ url_for('admin_order_details', order_id=order.id) }}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye me-1"></i>{{ get_translation('view_details') }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div> 

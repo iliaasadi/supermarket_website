@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('register') }} - Apple SuperMarket{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <i class="fas fa-user-plus"></i>
+            <h1>{{ get_translation('create_account') }}</h1>
+            <p>{{ get_translation('join_to_start_shopping') }}</p>
+        </div>
+        <form method="POST" class="auth-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="phone_number">
+                        <i class="fas fa-phone"></i>
+                        {{ get_translation('phone_number') }} <span class="required">*</span>
+                    </label>
+                    {{ form.phone_number(class="form-control", placeholder=get_translation('enter_phone_number')) }}
+                    {% if form.phone_number.errors %}
+                    <div class="error-message">
+                        {% for error in form.phone_number.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i>
+                        {{ get_translation('password') }} <span class="required">*</span>
+                    </label>
+                    {{ form.password(class="form-control", placeholder=get_translation('choose_password')) }}
+                    {% if form.password.errors %}
+                    <div class="error-message">
+                        {% for error in form.password.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">
+                        <i class="fas fa-lock"></i>
+                        {{ get_translation('confirm_password') }} <span class="required">*</span>
+                    </label>
+                    {{ form.confirm_password(class="form-control", placeholder=get_translation('confirm_password')) }}
+                    {% if form.confirm_password.errors %}
+                    <div class="error-message">
+                        {% for error in form.confirm_password.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="section-divider">
+                <span>{{ get_translation('address_information') }}</span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="street">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ get_translation('street_address') }} <span class="required">*</span>
+                    </label>
+                    {{ form.street(class="form-control", placeholder=get_translation('enter_street_address')) }}
+                    {% if form.street.errors %}
+                    <div class="error-message">
+                        {% for error in form.street.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="tag">
+                        <i class="fas fa-tag"></i>
+                        {{ get_translation('tag') }} <span class="required">*</span>
+                    </label>
+                    {{ form.tag(class="form-control", placeholder=get_translation('enter_tag')) }}
+                    {% if form.tag.errors %}
+                    <div class="error-message">
+                        {% for error in form.tag.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="building_unit_number">
+                        <i class="fas fa-building"></i>
+                        {{ get_translation('building_unit_number') }} <span class="optional">({{ get_translation('optional') }})</span>
+                    </label>
+                    {{ form.building_unit_number(class="form-control", placeholder=get_translation('enter_building_unit_number')) }}
+                    {% if form.building_unit_number.errors %}
+                    <div class="error-message">
+                        {% for error in form.building_unit_number.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="description">
+                        <i class="fas fa-info-circle"></i>
+                        {{ get_translation('description') }} <span class="optional">({{ get_translation('optional') }})</span>
+                    </label>
+                    {{ form.description(class="form-control", rows="3", placeholder=get_translation('enter_description')) }}
+                    {% if form.description.errors %}
+                    <div class="error-message">
+                        {% for error in form.description.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                {{ form.submit(class="btn btn-primary btn-block", value=get_translation('register')) }}
+            </div>
+
+            <div class="auth-footer">
+                <p>{{ get_translation('already_have_account') }} <a href="{{ url_for('login') }}">{{ get_translation('login') }}</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .auth-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, var(--light-red) 0%, var(--white) 100%);
+    }
+
+    .auth-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 600px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .auth-header i {
+        font-size: 3rem;
+        color: var(--primary-red);
+        margin-bottom: 1rem;
+    }
+
+    .auth-header h1 {
+        font-size: 1.8rem;
+        color: var(--dark-text);
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-header p {
+        color: var(--gray-text);
+        font-size: 0.9rem;
+    }
+
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: -1rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+    }
+
+    .form-group label {
+        color: var(--dark-text);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-group label i {
+        color: var(--primary-red);
+    }
+
+    .required {
+        color: var(--primary-red);
+        font-size: 0.8rem;
+        margin-left: 0.2rem;
+    }
+
+    .optional {
+        color: var(--gray-text);
+        font-size: 0.8rem;
+        margin-left: 0.2rem;
+    }
+
+    .form-control {
+        padding: 0.8rem 1rem;
+        border: 2px solid var(--light-gray);
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-red);
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    }
+
+    .error-message {
+        color: var(--primary-red);
+        font-size: 0.8rem;
+        margin-top: 0.3rem;
+    }
+
+    .btn-primary {
+        background: var(--primary-red);
+        color: white;
+        padding: 1rem;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .btn-primary:hover {
+        background: var(--secondary-red);
+        transform: translateY(-2px);
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 2rem;
+        color: var(--gray-text);
+    }
+
+    .link {
+        color: var(--primary-red);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+    .link:hover {
+        color: var(--secondary-red);
+    }
+
+    .section-divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 1.5rem 0;
+        color: var(--gray-text);
+    }
+
+    .section-divider::before,
+    .section-divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid var(--light-gray);
+    }
+
+    .section-divider span {
+        padding: 0 1rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    @media (max-width: 576px) {
+        .auth-card {
+            padding: 2rem;
+        }
+
+        .auth-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .form-row {
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 0;
+        }
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('order_details') }} #{{ order.id }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{{ get_translation('order_details') }} #{{ order.id }}</h2>
+            <p class="text-muted">{{ get_translation('ordered_on') }} {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-success">
+                <i class="fas fa-arrow-left me-2"></i>{{ get_translation('back_to_orders') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Order Items -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">{{ get_translation('order_items') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>{{ get_translation('product') }}</th>
+                                    <th>{{ get_translation('price') }}</th>
+                                    <th>{{ get_translation('quantity') }}</th>
+                                    <th>{{ get_translation('subtotal') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ "%.0f"|format(item.price) }} تومان</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ "%.0f"|format(item.price * item.quantity) }} تومان</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>{{ get_translation('total') }}:</strong></td>
+                                    <td><strong>{{ "%.0f"|format(order.total_amount) }} تومان</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Order Status -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">{{ get_translation('order_status') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ get_translation('current_status') }}</label>
+                        <div>
+                            <span class="badge {% if order.status == 'pending_approval' %}bg-warning
+                                              {% elif order.status == 'preparing' %}bg-info
+                                              {% elif order.status == 'completed' %}bg-success
+                                              {% elif order.status == 'cancelled' %}bg-secondary
+                                              {% else %}bg-danger{% endif %}">
+                                {{ get_translation(order.status) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if order.status == 'pending_approval' %}
+                    <form action="{{ url_for('approve_order', order_id=order.id) }}" method="POST" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-check me-2"></i>{{ get_translation('approve_order') }}
+                        </button>
+                    </form>
+                    <form action="{{ url_for('reject_order', order_id=order.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="fas fa-times me-2"></i>{{ get_translation('reject_order') }}
+                        </button>
+                    </form>
+                    {% elif order.status == 'preparing' %}
+                    <form action="{{ url_for('complete_order', order_id=order.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-check me-2"></i>{{ get_translation('mark_as_completed') }}
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if order.status in ['pending_approval', 'preparing'] %}
+                    <form action="{{ url_for('admin_cancel_order', order_id=order.id) }}" method="POST" class="mt-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('{{ get_translation('confirm_cancel_order') }}')">
+                            <i class="fas fa-times me-2"></i>{{ get_translation('cancel_order') }}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">{{ get_translation('customer_information') }}</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>{{ get_translation('name') }}:</strong> {{ order.user.username }}</p>
+                    <p><strong>{{ get_translation('email') }}:</strong> {{ order.user.email }}</p>
+                    <p><strong>{{ get_translation('phone') }}:</strong> {{ order.user.phone_number }}</p>
+                    <hr>
+                    <h6 class="mb-3">{{ get_translation('delivery_address') }}:</h6>
+                    <p class="mb-0">{{ order.address.street }}</p>
+                    <p class="mb-0">{{ order.address.city }}, {{ order.address.state }} {{ order.address.postal_code }}</p>
+                    <p class="mb-0">{{ order.address.country }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

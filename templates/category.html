@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{{ category }}</h2>
+        </div>
+        {% if current_user.is_admin %}
+        <div class="col-auto">
+            <a href="{{ url_for('admin_add_product') }}" class="btn btn-sm" style="background-color: var(--primary-red); color: white;">
+                <i class="fas fa-plus me-2"></i>Add Product
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if products %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+        {% for product in products %}
+        <div class="col">
+            <div class="card h-100">
+                <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text">{{ product.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% if product.discount > 0 %}
+                            <span class="text-decoration-line-through text-muted">{{ "%.0f"|format(product.price) }} تومان</span>
+                            <span class="text-success ms-2">{{ "%.0f"|format(product.price * (1 - product.discount/100)) }} تومان</span>
+                            {% else %}
+                            <span class="text-primary">{{ "%.0f"|format(product.price) }} تومان</span>
+                            {% endif %}
+                        </div>
+                        <span class="badge {% if product.stock < 10 %}bg-danger{% else %}bg-success{% endif %}">
+                            {{ product.stock }} in stock
+                        </span>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                        <div class="mt-3">
+                            <a href="{{ url_for('add_to_cart', product_id=product.id) }}" 
+                               class="btn w-100" 
+                               style="background-color: var(--primary-red); color: white;">
+                                <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('add_to_cart') }}
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="mt-3">
+                            <a href="{{ url_for('login') }}" class="btn w-100" style="background-color: var(--primary-red); color: white;">
+                                <i class="fas fa-sign-in-alt me-2"></i>ورود برای سفارش
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-box-open fa-3x mb-3" style="color: var(--primary-red);"></i>
+        <h3>No products found</h3>
+        <p class="text-muted">We don't have any products in this category yet.</p>
+        <a href="{{ url_for('index') }}" class="btn mt-3" style="background-color: var(--primary-red); color: white;">
+            <i class="fas fa-arrow-left me-2"></i>Back to Home
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .card-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .card-title {
+        color: var(--dark-text);
+        font-weight: 600;
+    }
+
+    .card-text {
+        color: var(--gray-text);
+        font-size: 0.9rem;
+    }
+
+    .btn-outline-primary {
+        border-color: var(--primary-red);
+        color: var(--primary-red);
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary-red);
+        color: white;
+    }
+</style>
+{% endblock %} 

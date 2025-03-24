@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('profile') }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Profile Information -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    {% if user.profile_picture %}
+                        <img src="{{ url_for('static', filename=user.profile_picture) }}" 
+                             alt="{{ get_translation('profile_picture') }}" 
+                             class="rounded-circle mb-3" 
+                             style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-light mb-3 d-flex align-items-center justify-content-center mx-auto" 
+                             style="width: 150px; height: 150px;">
+                            <i class="fas fa-user fa-4x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <h4>{{ user.username }}</h4>
+                    <p class="text-muted">{{ user.email or user.phone_number }}</p>
+                    
+                    {% if not user.is_verified %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> {{ get_translation('account_not_verified') }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> {{ get_translation('account_verified') }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ get_translation('edit_profile') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.csrf_token }}
+                        
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                {{ get_translation('username') }} <span class="optional">({{ get_translation('optional') }})</span>
+                            </label>
+                            {{ form.username(class="form-control") }}
+                            {% if form.username.errors %}
+                                {% for error in form.username.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                {{ get_translation('email') }} <span class="optional">({{ get_translation('optional') }})</span>
+                            </label>
+                            {{ form.email(class="form-control") }}
+                            {% if form.email.errors %}
+                                {% for error in form.email.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.phone_number.label(class="form-label") }}
+                            {{ form.phone_number(class="form-control") }}
+                            {% if form.phone_number.errors %}
+                                {% for error in form.phone_number.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="profile_picture" class="form-label">
+                                {{ get_translation('profile_picture') }} <span class="optional">({{ get_translation('optional') }})</span>
+                            </label>
+                            {{ form.profile_picture(class="form-control") }}
+                            {% if form.profile_picture.errors %}
+                                {% for error in form.profile_picture.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="identity_card" class="form-label">
+                                {{ get_translation('identity_card') }} <span class="optional">({{ get_translation('optional') }})</span>
+                            </label>
+                            {{ form.identity_card(class="form-control", disabled=user.is_verified) }}
+                            {% if form.identity_card.errors %}
+                                {% for error in form.identity_card.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                            <small class="text-muted">{{ get_translation('upload_id_for_verification') }}</small>
+                        </div>
+
+                        <div class="profile-actions">
+                            <div class="d-grid gap-3">
+                                <a href="{{ url_for('wallet') }}" class="btn btn-wallet">
+                                    <div class="btn-content">
+                                        <i class="fas fa-wallet"></i>
+                                        <span>{{ get_translation('wallet') }}</span>
+                                    </div>
+                                    <div class="btn-hover-effect"></div>
+                                </a>
+                                <a href="{{ url_for('reset_password') }}" class="btn btn-password">
+                                    <div class="btn-content">
+                                        <i class="fas fa-key"></i>
+                                        <span>{{ get_translation('change_password') }}</span>
+                                    </div>
+                                    <div class="btn-hover-effect"></div>
+                                </a>
+                                <a href="{{ url_for('logout') }}" class="btn btn-logout">
+                                    <div class="btn-content">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        <span>{{ get_translation('logout') }}</span>
+                                    </div>
+                                    <div class="btn-hover-effect"></div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">{{ get_translation('update_profile') }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders and Addresses -->
+        <div class="col-md-8">
+            <!-- Recent Orders -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ get_translation('recent_orders') }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_orders %}
+                    <div class="list-group">
+                        {% for order in recent_orders %}
+                        <a href="{{ url_for('order_status', order_id=order.id) }}" 
+                           class="list-group-item list-group-item-action {% if highlighted_order_id and highlighted_order_id|int == order.id %}active{% endif %}"
+                           id="order-{{ order.id }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ get_translation('order') }} #{{ order.id }}</h6>
+                                    <p class="mb-1">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    <small class="text-muted">
+                                        {{ order.items|length }} {{ get_translation('items') }}
+                                        {% if order.delivery_type == 'pickup' %}
+                                            • {{ get_translation('pickup_from') }} {{ order.store_location.name }}
+                                        {% else %}
+                                            • {{ get_translation('delivery_to') }} {{ order.address.street }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div>
+                                    <span class="badge {% if order.status == 'pending_approval' %}bg-warning
+                                                      {% elif order.status == 'preparing' %}bg-info
+                                                      {% elif order.status == 'completed' %}bg-success
+                                                      {% elif order.status == 'cancelled' %}bg-secondary
+                                                      {% else %}bg-danger{% endif %}">
+                                        {{ get_translation(order.status) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">{{ get_translation('no_recent_orders') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Addresses -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ get_translation('saved_addresses') }}</h5>
+                    <a href="{{ url_for('add_address') }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> {{ get_translation('add_address') }}
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if addresses %}
+                    <div class="row">
+                        {% for address in addresses %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-title mb-2">
+                                                {% if address.is_default %}
+                                                <span class="badge bg-success me-2">{{ get_translation('default') }}</span>
+                                                {% endif %}
+                                                {{ address.tag }} - {{ address.street }}
+                                            </h6>
+                                            <p class="card-text mb-1">{{ get_translation('unit') }} {{ address.building_unit_number }}</p>
+                                            {% if address.description %}
+                                            <p class="card-text mb-1 text-muted">{{ address.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('edit_address', address_id=address.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('delete_address', address_id=address.id) }}" 
+                                               class="btn btn-sm btn-outline-danger"
+                                               onclick="return confirm('{{ get_translation('confirm_delete_address') }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">{{ get_translation('no_saved_addresses') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if highlighted_order_id %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const orderElement = document.getElementById('order-{{ highlighted_order_id }}');
+    if (orderElement) {
+        orderElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+</script>
+{% endif %}
+
+<style>
+    .profile-actions {
+        margin: 1.5rem 0;
+    }
+
+    .profile-actions .btn {
+        position: relative;
+        overflow: hidden;
+        border: none;
+        padding: 1rem;
+        border-radius: 12px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .profile-actions .btn-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .profile-actions .btn i {
+        font-size: 1.2rem;
+    }
+
+    .profile-actions .btn-hover-effect {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
+    }
+
+    .profile-actions .btn:hover .btn-hover-effect {
+        transform: translateX(100%);
+    }
+
+    .profile-actions .btn-password {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+    }
+
+    .profile-actions .btn-password:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+        color: white;
+    }
+
+    .profile-actions .btn-logout {
+        background: linear-gradient(135deg, #f44336, #d32f2f);
+        color: white;
+        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.2);
+    }
+
+    .profile-actions .btn-logout:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(244, 67, 54, 0.3);
+        color: white;
+    }
+
+    .profile-actions .btn-wallet {
+        background: linear-gradient(135deg, #FFA500, #FF8C00);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 165, 0, 0.2);
+    }
+
+    .profile-actions .btn-wallet:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 165, 0, 0.3);
+        color: white;
+    }
+
+    @media (max-width: 576px) {
+        .profile-actions .btn {
+            padding: 0.8rem;
+        }
+    }
+</style>
+{% endblock %} 

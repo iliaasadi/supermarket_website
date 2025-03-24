@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">{{ get_translation('edit_address') if address else get_translation('add_new_address') }}</h3>
+                    
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group">
+                            <label for="street">
+                                <i class="fas fa-map-marker-alt"></i>
+                                {{ get_translation('street_address') }} <span class="required">*</span>
+                            </label>
+                            {{ form.street(class="form-control", placeholder=get_translation('enter_street_address')) }}
+                            {% if form.street.errors %}
+                            <div class="error-message">
+                                {% for error in form.street.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tag">
+                                <i class="fas fa-tag"></i>
+                                {{ get_translation('tag') }} <span class="required">*</span>
+                            </label>
+                            {{ form.tag(class="form-control", placeholder=get_translation('tag_placeholder')) }}
+                            {% if form.tag.errors %}
+                            <div class="error-message">
+                                {% for error in form.tag.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="building_unit_number">
+                                <i class="fas fa-building"></i>
+                                {{ get_translation('building_unit_number') }} <span class="optional">({{ get_translation('optional') }})</span>
+                            </label>
+                            {{ form.building_unit_number(class="form-control", placeholder=get_translation('enter_building_unit')) }}
+                            {% if form.building_unit_number.errors %}
+                            <div class="error-message">
+                                {% for error in form.building_unit_number.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description">
+                                <i class="fas fa-info-circle"></i>
+                                {{ get_translation('description') }} <span class="optional">({{ get_translation('optional') }})</span>
+                            </label>
+                            {{ form.description(class="form-control", rows="3", placeholder=get_translation('address_description_placeholder')) }}
+                            {% if form.description.errors %}
+                            <div class="error-message">
+                                {% for error in form.description.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                {{ form.is_default(class="form-check-input") }}
+                                <label class="form-check-label" for="is_default">
+                                    {{ get_translation('set_as_default') }}
+                                </label>
+                            </div>
+                        </div>
+                        
+                        {{ form.submit(class="btn btn-primary", value=get_translation('save_address')) }}
+                        <a href="{{ url_for('profile') }}" class="btn btn-secondary">{{ get_translation('cancel') }}</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h2>{{ get_translation('users_pending_verification') }}</h2>
+    
+    <div class="row">
+        {% for user in users %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ user.username }}</h5>
+                        <p class="card-text">
+                            <strong>{{ get_translation('email') }}:</strong> {{ user.email }}<br>
+                            <strong>{{ get_translation('phone') }}:</strong> {{ user.phone_number }}<br>
+                            <strong>{{ get_translation('age') }}:</strong> {{ user.age }}<br>
+                            <strong>{{ get_translation('sex') }}:</strong> {{ get_translation(user.sex) }}<br>
+                            <strong>{{ get_translation('registered') }}:</strong> {{ user.created_at.strftime('%Y-%m-%d') }}
+                        </p>
+                        
+                        {% if user.identity_card %}
+                            <div class="mb-3">
+                                <strong>{{ get_translation('identity_card') }}:</strong><br>
+                                <img src="{{ url_for('static', filename=user.identity_card) }}" 
+                                     class="img-fluid" 
+                                     style="max-height: 200px;">
+                            </div>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('verify_user', user_id=user.id) }}" 
+                           class="btn btn-success"
+                           onclick="return confirm('{{ get_translation('confirm_verify_user') }}')">
+                            {{ get_translation('verify_user') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col">
+                <p class="text-muted">{{ get_translation('no_users_pending_verification') }}</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 
