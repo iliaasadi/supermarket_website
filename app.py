@@ -23,7 +23,7 @@ app.config['SESSION_TYPE'] = 'filesystem'
 
 # Language configuration
 app.config['LANGUAGES'] = ['en', 'fa']
-app.config['DEFAULT_LANGUAGE'] = 'en'
+app.config['DEFAULT_LANGUAGE'] = 'fa'
 
 # Ensure upload directory exists
 os.makedirs(os.path.join(app.root_path, app.config['UPLOAD_FOLDER']), exist_ok=True)
@@ -39,12 +39,12 @@ def load_user(id):
     return User.query.get(int(id))
 
 def get_language():
-    return session.get('language', app.config['DEFAULT_LANGUAGE'])
+    return session.get('language', 'fa')
 
 def get_translation(key):
     """Get translation for the current language"""
-    language = session.get('language', 'en')
-    return translations[language].get(key, translations['en'].get(key, key))
+    language = session.get('language', 'fa')
+    return translations[language].get(key, translations['fa'].get(key, key))
 
 def flash_translated(message_key, category='message'):
     """Flash a translated message"""
