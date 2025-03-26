@@ -1455,14 +1455,46 @@ def admin_order_comments():
     # Convert string date to datetime
     filter_date = datetime.strptime(selected_date, '%Y-%m-%d')
     
+    # Get completed orders for the selected date
+    completed_orders = Order.query.filter(
+        Order.status == 'completed',
+        func.date(Order.completed_at) == filter_date.date()
+    ).order_by(Order.completed_at.desc()).all()
+    
     # Get comments for the selected date
     comments = OrderComment.query.join(Order).filter(
         Order.status == 'completed',
         func.date(OrderComment.created_at) == filter_date.date()
     ).order_by(OrderComment.created_at.desc()).all()
     
+    # Create a set of order IDs that have comments
+    commented_order_ids = {comment.order_id for comment in comments}
+    
+    # Add "Waiting For User Comment" entries for completed orders without comments
+    waiting_comments = []
+    for order in completed_orders:
+        if order.id not in commented_order_ids:
+            # Create a custom object for waiting comments
+            waiting_comment = type('WaitingComment', (), {
+                'order': order,
+                'created_at': order.completed_at,
+                'is_waiting': True,
+                'food_quality': '-',
+                'delivery_service': '-',
+                'packaging': '-',
+                'value_for_money': '-',
+                'overall_experience': '-',
+                'comment': '-'
+            })
+            waiting_comments.append(waiting_comment)
+    
+    # Combine comments and waiting comments
+    all_entries = comments + waiting_comments
+    # Sort by created_at in descending order
+    all_entries.sort(key=lambda x: x.created_at, reverse=True)
+    
     return render_template('admin/order_comments.html', 
-                         comments=comments,
+                         entries=all_entries,
                          selected_date=selected_date)
 
 @app.route('/api/order/<int:order_id>/status')

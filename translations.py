@@ -17,6 +17,9 @@ translations = {
         'english': 'English',
         'farsi': 'فارسی',
         'order_summary': 'Order Summary',
+        'total_orders': 'Total Orders',
+        'orders_with_comments': 'Orders with Comments',
+        'orders_waiting_for_comments': 'Orders Waiting for Comments',
         
         # Forms and Buttons
         'submit': 'Submit',
@@ -477,6 +480,12 @@ translations = {
         'view_comments': 'View Comments',
         'view_order_comments_description': 'View and manage customer feedback and ratings',
         'manage_orders_description': 'View and manage all customer orders',
+        'select_date': 'Select Date',
+        'filter': 'Filter',
+        'order_id': 'Order ID',
+        'user': 'User',
+        'waiting_for_user_comment': 'Waiting For User Comment',
+        'no_comments_found': 'No comments found for this date',
     },
     'fa': {
         # Navigation and Common
@@ -495,7 +504,10 @@ translations = {
         'language': 'زبان',
         'english': 'English',
         'farsi': 'فارسی',
-        'order_summary': 'خلاصه سفارش',
+        'order_summary': 'خلاصه سفارشات',
+        'total_orders': 'کل سفارشات',
+        'orders_with_comments': 'سفارشات با نظر',
+        'orders_waiting_for_comments': 'سفارشات در انتظار نظر',
         
         # Forms and Buttons
         'submit': 'ارسال',
@@ -957,5 +969,11 @@ translations = {
         'view_comments': 'مشاهده نظرات',
         'view_order_comments_description': 'مشاهده و مدیریت بازخورد و امتیازات مشتریان',
         'manage_orders_description': 'مشاهده و مدیریت تمام سفارشات مشتریان',
+        'select_date': 'انتخاب تاریخ',
+        'filter': 'فیلتر',
+        'order_id': 'شماره سفارش',
+        'user': 'کاربر',
+        'waiting_for_user_comment': 'در انتظار نظر کاربر',
+        'no_comments_found': 'هیچ نظری برای این تاریخ یافت نشد',
     }
 } 
