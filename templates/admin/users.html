@@ -22,8 +22,10 @@
                             <div class="mb-3">
                                 <strong>{{ get_translation('identity_card') }}:</strong><br>
                                 <img src="{{ url_for('static', filename=user.identity_card) }}" 
-                                     class="img-fluid" 
-                                     style="max-height: 200px;">
+                                     class="img-fluid identity-card-img" 
+                                     style="max-height: 200px; cursor: pointer;"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#identityCardModal{{ user.id }}">
                             </div>
                         {% endif %}
                         
@@ -35,6 +37,25 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Identity Card Modal -->
+            {% if user.identity_card %}
+            <div class="modal fade" id="identityCardModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ get_translation('identity_card') }} - {{ user.username }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <img src="{{ url_for('static', filename=user.identity_card) }}" 
+                                 class="img-fluid" 
+                                 style="max-height: 80vh;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         {% else %}
             <div class="col">
                 <p class="text-muted">{{ get_translation('no_users_pending_verification') }}</p>
@@ -42,4 +63,23 @@
         {% endfor %}
     </div>
 </div>
+
+<style>
+    .identity-card-img {
+        transition: transform 0.2s;
+    }
+    .identity-card-img:hover {
+        transform: scale(1.05);
+    }
+    .modal-content {
+        background-color: #fff;
+        border-radius: 12px;
+    }
+    .modal-header {
+        border-bottom: 1px solid #dee2e6;
+    }
+    .modal-body {
+        padding: 1rem;
+    }
+</style>
 {% endblock %} 

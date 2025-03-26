@@ -125,6 +125,7 @@ class Order(db.Model):
     completed_at = db.Column(db.DateTime)
     cancelled_at = db.Column(db.DateTime)
     cancelled_by = db.Column(db.String(20))  # 'user' or 'admin'
+    description = db.Column(db.Text)  # New field for order description
     
     # Delivery information
     delivery_type = db.Column(db.String(20), nullable=False)  # 'pickup' or 'delivery'
@@ -193,4 +194,32 @@ class WalletTransaction(db.Model):
         self.amount = amount
         self.type = type
         self.description = description
-        self.created_at = datetime.utcnow() 
+        self.created_at = datetime.utcnow()
+
+class OrderComment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Rating categories (1-5 stars)
+    food_quality = db.Column(db.Integer, nullable=False)  # کیفیت غذا
+    delivery_service = db.Column(db.Integer, nullable=False)  # کیفیت سرویس دهی
+    packaging = db.Column(db.Integer, nullable=False)  # بسته بندی
+    value_for_money = db.Column(db.Integer, nullable=False)  # ارزش به پول
+    overall_experience = db.Column(db.Integer, nullable=False)  # تجربه کلی
+    
+    comment = db.Column(db.Text)  # Optional text comment
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    order = db.relationship('Order', backref=db.backref('comment', uselist=False))
+    user = db.relationship('User', backref=db.backref('order_comments', lazy=True))
+
+    def get_average_rating(self):
+        """Calculate average rating from all categories"""
+        ratings = [self.food_quality, self.delivery_service, self.packaging, 
+                  self.value_for_money, self.overall_experience]
+        return sum(ratings) / len(ratings)
+
+    def __repr__(self):
+        return f'<OrderComment {self.id} - Order {self.order_id}>' 

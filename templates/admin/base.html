@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{% block admin_title %}{% endblock %} - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Admin Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-shield-alt me-2"></i>{{ get_translation('admin_dashboard') }}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-home me-1"></i>{{ get_translation('dashboard') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
+                            <i class="fas fa-shopping-cart me-1"></i>{{ get_translation('manage_orders') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_order_comments') }}">
+                            <i class="fas fa-comments me-1"></i>{{ get_translation('order_comments') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_identity_cards') }}">
+                            <i class="fas fa-id-card me-1"></i>{{ get_translation('identity_cards') }}
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                        <i class="fas fa-sign-out-alt me-1"></i>{{ get_translation('logout') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Content -->
+    <div class="admin-content">
+        {% block admin_content %}{% endblock %}
+    </div>
+</div>
+
+<style>
+.admin-content {
+    padding: 20px;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+.nav-link {
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: var(--primary-red) !important;
+}
+
+.nav-link.active {
+    color: var(--primary-red) !important;
+}
+</style>
+{% endblock %} 

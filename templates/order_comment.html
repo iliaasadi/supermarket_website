@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('rate_order') }} - Deniz Supermarket{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h4 class="card-title mb-0">{{ get_translation('rate_order') }} #{{ order.id }}</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('submit_order_comment', order_id=order.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        
+                        <!-- Food Quality Rating -->
+                        <div class="mb-4">
+                            <label class="form-label">{{ get_translation('food_quality') }}</label>
+                            <div class="rating">
+                                {% for i in range(5, 0, -1) %}
+                                <input type="radio" name="food_quality" value="{{ i }}" id="food_quality_{{ i }}" required>
+                                <label for="food_quality_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Delivery Service Rating -->
+                        <div class="mb-4">
+                            <label class="form-label">{{ get_translation('delivery_service') }}</label>
+                            <div class="rating">
+                                {% for i in range(5, 0, -1) %}
+                                <input type="radio" name="delivery_service" value="{{ i }}" id="delivery_service_{{ i }}" required>
+                                <label for="delivery_service_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Packaging Rating -->
+                        <div class="mb-4">
+                            <label class="form-label">{{ get_translation('packaging') }}</label>
+                            <div class="rating">
+                                {% for i in range(5, 0, -1) %}
+                                <input type="radio" name="packaging" value="{{ i }}" id="packaging_{{ i }}" required>
+                                <label for="packaging_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Value for Money Rating -->
+                        <div class="mb-4">
+                            <label class="form-label">{{ get_translation('value_for_money') }}</label>
+                            <div class="rating">
+                                {% for i in range(5, 0, -1) %}
+                                <input type="radio" name="value_for_money" value="{{ i }}" id="value_for_money_{{ i }}" required>
+                                <label for="value_for_money_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Overall Experience Rating -->
+                        <div class="mb-4">
+                            <label class="form-label">{{ get_translation('overall_experience') }}</label>
+                            <div class="rating">
+                                {% for i in range(5, 0, -1) %}
+                                <input type="radio" name="overall_experience" value="{{ i }}" id="overall_experience_{{ i }}" required>
+                                <label for="overall_experience_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Additional Comments -->
+                        <div class="mb-4">
+                            <label for="comment" class="form-label">{{ get_translation('additional_comments') }}</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="3" 
+                                    placeholder="{{ get_translation('comment_placeholder') }}"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn w-100" style="background-color: var(--primary-red); color: white;">
+                            <i class="fas fa-paper-plane me-2"></i>{{ get_translation('submit_rating') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.rating input {
+    display: none;
+}
+
+.rating label {
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: #ddd;
+    padding: 0 0.2rem;
+}
+
+.rating label:hover,
+.rating label:hover ~ label,
+.rating input:checked ~ label {
+    color: #ffd700;
+}
+
+.form-control {
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+}
+
+.form-control:focus {
+    border-color: var(--primary-red);
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+</style>
+{% endblock %} 

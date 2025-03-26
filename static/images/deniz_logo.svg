@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background Circle -->
+    <circle cx="100" cy="100" r="95" fill="#dc3545" opacity="0.1"/>
+    
+    <!-- Main Circle -->
+    <circle cx="100" cy="100" r="85" fill="#dc3545" opacity="0.1"/>
+    
+    <!-- Wave Pattern -->
+    <path d="M20,100 Q50,50 80,100 T140,100" 
+          stroke="#dc3545" 
+          stroke-width="8" 
+          fill="none" 
+          stroke-linecap="round"/>
+    
+    <!-- D Letter -->
+    <path d="M60,40 L60,160 L100,160 Q120,160 120,140 L120,60 Q120,40 100,40 Z" 
+          fill="#dc3545"/>
+    
+    <!-- S Letter -->
+    <path d="M70,80 Q90,80 90,60 Q90,40 70,40 L70,60 Q80,60 80,70 Q80,80 70,80 Z
+             M70,120 Q90,120 90,140 Q90,160 70,160 L70,140 Q80,140 80,130 Q80,120 70,120 Z" 
+          fill="#dc3545"/>
+    
+    <!-- Decorative Elements -->
+    <circle cx="100" cy="100" r="5" fill="#dc3545"/>
+    <circle cx="100" cy="100" r="2" fill="#ffffff"/>
+    
+    <!-- Additional Decorative Elements -->
+    <path d="M30,100 Q50,80 70,100" 
+          stroke="#dc3545" 
+          stroke-width="3" 
+          fill="none" 
+          opacity="0.5"/>
+    <path d="M130,100 Q150,80 170,100" 
+          stroke="#dc3545" 
+          stroke-width="3" 
+          fill="none" 
+          opacity="0.5"/>
+</svg> 

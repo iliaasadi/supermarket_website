@@ -1,0 +1,30 @@
+.rating-input {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.rating-input input {
+  display: none;
+}
+
+.rating-input label {
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 0 2px;
+}
+
+.rating-input label i {
+  color: #ddd;
+  transition: color 0.2s;
+}
+
+.rating-input label:hover i,
+.rating-input label:hover ~ label i,
+.rating-input input:checked ~ label i {
+  color: #ffc107;
+}
+
+.text-warning {
+  color: #ffc107 !important;
+} 

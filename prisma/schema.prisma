@@ -1,0 +1,18 @@
+model Order {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  // other order fields
+  comments  Comment[]
+}
+
+model Comment {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId           String   @db.ObjectId
+  food_quality      Int
+  delivery_service  Int
+  packaging         Int
+  value_for_money   Int
+  overall_experience Int
+  comment           String?
+  createdAt         DateTime @default(now())
+  order             Order    @relation(fields: [orderId], references: [id])
+} 

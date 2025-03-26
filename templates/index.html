@@ -104,4 +104,41 @@
     </div>
 </section>
 {% endfor %}
+
+<style>
+.category-scroll {
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    margin: 0 -15px;
+    padding: 0 15px;
+}
+
+.category-scroll::-webkit-scrollbar {
+    height: 8px;
+}
+
+.category-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.category-scroll::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.category-scroll::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.row.flex-nowrap {
+    margin-right: -15px;
+    margin-left: -15px;
+}
+
+.row.flex-nowrap > [class*='col-'] {
+    padding-right: 15px;
+    padding-left: 15px;
+}
+</style>
 {% endblock %} 

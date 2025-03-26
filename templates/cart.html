@@ -19,7 +19,7 @@
                                     <th>{{ get_translation('price') }}</th>
                                     <th>{{ get_translation('quantity') }}</th>
                                     <th>{{ get_translation('total') }}</th>
-                                    <th>{{ get_translation('actions') }}</th>
+                                    <th style="min-width: 100px;">{{ get_translation('actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -112,7 +112,7 @@
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="radio" name="delivery_type" id="delivery" value="delivery">
                             <label class="form-check-label" for="delivery">
-                                {{ get_translation('delivery_to_address').format("%.0f"|format(delivery_fee)) }} {{ get_translation('tooman') }}
+                                {{ get_translation('delivery_to_address').format("%.0f"|format(delivery_fee)) }}
                             </label>
                         </div>
                         
@@ -188,6 +188,13 @@
                         <input type="hidden" name="store_location_id" id="store_location_input">
                         <input type="hidden" name="delivery_address_id" id="delivery_address_input">
                         <input type="hidden" name="payment_method" id="payment_method_input" value="cash">
+                        
+                        <!-- Order Description -->
+                        <div class="mb-3">
+                            <label for="order_description" class="form-label">{{ get_translation('order_description') }}</label>
+                            <textarea class="form-control" id="order_description" name="order_description" rows="3" 
+                                    placeholder="{{ get_translation('order_description_placeholder') }}"></textarea>
+                        </div>
                         
                         <button type="submit" class="btn w-100" style="background-color: var(--primary-red); color: white;">
                             <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('proceed_to_checkout') }}
@@ -267,148 +274,102 @@
     hr {
         margin: 1rem 0;
     }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 1rem;
+    }
+    
+    .table {
+        min-width: 800px;  /* Ensure table has minimum width for scrolling */
+    }
+    
+    .table td, .table th {
+        white-space: nowrap;
+    }
 </style>
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const deliveryTypeInputs = document.querySelectorAll('input[name="delivery_type"]');
-    const storeLocationDiv = document.getElementById('store-location');
-    const deliveryAddressDiv = document.getElementById('delivery-address');
-    const storeLocationSelect = document.getElementById('store_location_id');
-    const deliveryAddressSelect = document.getElementById('delivery_address_id');
-    const deliveryTypeInput = document.getElementById('delivery_type_input');
-    const storeLocationInput = document.getElementById('store_location_input');
-    const deliveryAddressInput = document.getElementById('delivery_address_input');
-    const deliveryFeeSpan = document.querySelector('.delivery-fee');
-    const totalSpan = document.querySelector('.total-amount');
-    const walletPaymentInfo = document.getElementById('wallet-payment-info');
-    const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
-    const paymentMethodInput = document.getElementById('payment_method_input');
-
-    function updateDeliveryOptions() {
-        const selectedType = document.querySelector('input[name="delivery_type"]:checked').value;
-        deliveryTypeInput.value = selectedType;
-        
-        if (selectedType === 'pickup') {
-            storeLocationDiv.style.display = 'block';
-            deliveryAddressDiv.style.display = 'none';
-            storeLocationSelect.required = true;
-            deliveryAddressSelect.required = false;
-            deliveryFeeSpan.textContent = '0 {{ get_translation("tooman") }}';
-            updateTotal(0);
-            storeLocationInput.value = storeLocationSelect.value;
-            deliveryAddressInput.value = '';
-        } else {
-            storeLocationDiv.style.display = 'none';
-            deliveryAddressDiv.style.display = 'block';
-            storeLocationSelect.required = false;
-            deliveryAddressSelect.required = true;
+    // Update delivery fee and total when delivery type changes
+    document.querySelectorAll('input[name="delivery_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const deliveryFee = parseFloat('{{ delivery_fee }}');
             const subtotal = parseFloat('{{ subtotal }}');
-            const deliveryFee = Math.max(20000, subtotal * 0.05); // 5% delivery fee with 20000 Tooman minimum
-            deliveryFeeSpan.textContent = `${deliveryFee.toLocaleString()} {{ get_translation("tooman") }}`;
-            updateTotal(deliveryFee);
-            deliveryAddressInput.value = deliveryAddressSelect.value;
-            storeLocationInput.value = '';
-        }
-    }
+            const total = subtotal + deliveryFee;
+            
+            document.querySelector('.delivery-fee').textContent = deliveryFee.toLocaleString() + ' {{ get_translation("tooman") }}';
+            document.querySelector('.total-amount').textContent = total.toLocaleString() + ' {{ get_translation("tooman") }}';
+            
+            // Update hidden input
+            document.getElementById('delivery_type_input').value = this.value;
+            
+            // Show/hide address selection
+            document.getElementById('store-location').style.display = this.value === 'pickup' ? 'block' : 'none';
+            document.getElementById('delivery-address').style.display = this.value === 'delivery' ? 'block' : 'none';
+        });
+    });
 
-    function updatePaymentMethod() {
-        const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
-        paymentMethodInput.value = selectedMethod;
+    // Update wallet payment info when payment method changes
+    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const walletInfo = document.getElementById('wallet-payment-info');
+            if (walletInfo) {
+                walletInfo.style.display = this.value === 'wallet' ? 'block' : 'none';
+            }
+            document.getElementById('payment_method_input').value = this.value;
+        });
+    });
+
+    // Update store location and delivery address hidden inputs
+    document.getElementById('store_location_id').addEventListener('change', function() {
+        document.getElementById('store_location_input').value = this.value;
+    });
+
+    document.getElementById('delivery_address_id').addEventListener('change', function() {
+        document.getElementById('delivery_address_input').value = this.value;
+    });
+
+    // Handle form submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        // Update order description hidden input
+        document.getElementById('order_description_input').value = document.getElementById('order_description').value;
+    });
+
+    // Update quantity function
+    function updateQuantity(itemId, newQuantity) {
+        const input = document.getElementById(`quantity-${itemId}`);
+        const max = parseInt(input.getAttribute('max'));
+        const min = parseInt(input.getAttribute('min'));
         
-        if (selectedMethod === 'wallet' && walletPaymentInfo) {
-            walletPaymentInfo.style.display = 'block';
-            updateWalletPaymentInfo();
-        } else {
-            walletPaymentInfo.style.display = 'none';
+        if (newQuantity >= min && newQuantity <= max) {
+            input.value = newQuantity;
         }
     }
 
-    function updateWalletPaymentInfo() {
-        const total = parseFloat('{{ total }}');
-        const walletBalance = parseFloat('{{ current_user.wallet.balance if current_user.wallet else 0 }}');
-        const walletWithdrawal = Math.min(total, walletBalance);
-        const remainingBalance = Math.max(0, total - walletBalance);
+    // Submit quantity update
+    function submitQuantityUpdate(itemId) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/cart/update/${itemId}`;
         
-        document.querySelector('.wallet-withdrawal').textContent = 
-            `${walletWithdrawal.toLocaleString()} {{ get_translation("tooman") }}`;
-        document.querySelector('.remaining-balance').textContent = 
-            `${remainingBalance.toLocaleString()} {{ get_translation("tooman") }}`;
-    }
-
-    function updateTotal(deliveryFee) {
-        const subtotal = parseFloat('{{ subtotal }}');
-        const total = subtotal + deliveryFee;
-        totalSpan.textContent = `${total.toLocaleString()} {{ get_translation("tooman") }}`;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = document.querySelector('input[name="csrf_token"]').value;
         
-        // Update wallet payment info if visible
-        if (walletPaymentInfo && walletPaymentInfo.style.display === 'block') {
-            updateWalletPaymentInfo();
-        }
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'hidden';
+        quantityInput.name = 'quantity';
+        quantityInput.value = document.getElementById(`quantity-${itemId}`).value;
+        
+        form.appendChild(csrfInput);
+        form.appendChild(quantityInput);
+        
+        document.body.appendChild(form);
+        form.submit();
     }
-
-    // Add event listeners
-    deliveryTypeInputs.forEach(input => {
-        input.addEventListener('change', updateDeliveryOptions);
-    });
-
-    paymentMethodInputs.forEach(input => {
-        input.addEventListener('change', updatePaymentMethod);
-    });
-
-    storeLocationSelect.addEventListener('change', function() {
-        storeLocationInput.value = this.value;
-    });
-
-    deliveryAddressSelect.addEventListener('change', function() {
-        deliveryAddressInput.value = this.value;
-    });
-
-    // Initialize
-    updateDeliveryOptions();
-    updatePaymentMethod();
-});
-
-function updateQuantity(itemId, newQuantity) {
-    if (newQuantity < 1) return;
-    
-    fetch(`/cart/update/${itemId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `quantity=${newQuantity}`
-    }).then(response => {
-        if (response.ok) {
-            window.location.reload();
-        }
-    });
-}
-
-function submitQuantityUpdate(itemId) {
-    const input = document.getElementById(`quantity-${itemId}`);
-    const quantity = input.value;
-    
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `/cart/update/${itemId}`;
-    
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = 'csrf_token';
-    csrfInput.value = '{{ csrf_token }}';
-    form.appendChild(csrfInput);
-    
-    const quantityInput = document.createElement('input');
-    quantityInput.type = 'hidden';
-    quantityInput.name = 'quantity';
-    quantityInput.value = quantity;
-    form.appendChild(quantityInput);
-    
-    document.body.appendChild(form);
-    form.submit();
-}
 </script>
 {% endblock %}
 {% endblock %} 

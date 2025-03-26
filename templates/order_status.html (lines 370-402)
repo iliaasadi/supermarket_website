@@ -1,0 +1,108 @@
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">{{ get_translation('rate_your_order') }}</h5>
+                </div>
+                <div class="card-body">
+                    <form id="ratingForm" method="POST" action="{{ url_for('order_comment', order_id=order.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ get_translation('food_quality') }}</label>
+                                    <div class="rating-input">
+                                        {% for i in range(5) %}
+                                        <input type="radio" name="food_quality" value="{{ i + 1 }}" id="food_quality_{{ i + 1 }}" required>
+                                        <label for="food_quality_{{ i + 1 }}">
+                                            <i class="fas fa-star"></i>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ get_translation('delivery_service') }}</label>
+                                    <div class="rating-input">
+                                        {% for i in range(5) %}
+                                        <input type="radio" name="delivery_service" value="{{ i + 1 }}" id="delivery_service_{{ i + 1 }}" required>
+                                        <label for="delivery_service_{{ i + 1 }}">
+                                            <i class="fas fa-star"></i>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ get_translation('packaging') }}</label>
+                                    <div class="rating-input">
+                                        {% for i in range(5) %}
+                                        <input type="radio" name="packaging" value="{{ i + 1 }}" id="packaging_{{ i + 1 }}" required>
+                                        <label for="packaging_{{ i + 1 }}">
+                                            <i class="fas fa-star"></i>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ get_translation('value_for_money') }}</label>
+                                    <div class="rating-input">
+                                        {% for i in range(5) %}
+                                        <input type="radio" name="value_for_money" value="{{ i + 1 }}" id="value_for_money_{{ i + 1 }}" required>
+                                        <label for="value_for_money_{{ i + 1 }}">
+                                            <i class="fas fa-star"></i>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ get_translation('overall_experience') }}</label>
+                                    <div class="rating-input">
+                                        {% for i in range(5) %}
+                                        <input type="radio" name="overall_experience" value="{{ i + 1 }}" id="overall_experience_{{ i + 1 }}" required>
+                                        <label for="overall_experience_{{ i + 1 }}">
+                                            <i class="fas fa-star"></i>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">{{ get_translation('comment') }}</label>
+                                    <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">{{ get_translation('submit_rating') }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+<script>
+    document.getElementById('ratingForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        console.log('Form submitted'); // Log when the form is submitted
+        console.log(this.action); // Log the action URL
+        console.log(document.querySelector('input[name="csrf_token"]').value); // Log the CSRF token
+
+        // Submit the form using fetch
+        fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+        })
+        .then(response => {
+            if (response.ok) {
+                // Redirect to the profile page after successful submission
+                window.location.href = '/profile'; // Change this to your actual profile page URL
+            } else {
+                // Handle errors if needed
+                return response.text().then(text => {
+                    console.error('Error submitting the form:', text);
+                    alert('There was an error submitting your rating. Please try again.');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('There was an error submitting your rating. Please check your network connection and try again.');
+        });
+    });
+</script> 

@@ -54,6 +54,18 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Order Note -->
+            {% if order.description %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">{{ get_translation('order_note') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="order-note">{{ order.description }}</div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <div class="col-md-4">
@@ -128,4 +140,57 @@
         </div>
     </div>
 </div>
+
+<style>
+.card {
+    border-radius: 12px;
+    border: none;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.table td {
+    font-size: 0.9rem;
+}
+
+.badge {
+    padding: 0.5em 0.8em;
+    font-weight: 500;
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.btn-outline-primary {
+    color: var(--primary-red);
+    border-color: var(--primary-red);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-red);
+    color: white;
+}
+
+.order-note {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+</style>
 {% endblock %} 

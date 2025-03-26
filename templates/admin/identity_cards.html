@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('identity_cards') }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{{ get_translation('identity_cards') }}</h2>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>{{ get_translation('back_to_dashboard') }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filter Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="filterForm" method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" id="searchInput" 
+                           placeholder="{{ get_translation('search_by_username_or_email') }}"
+                           value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="verification_status" id="verificationFilter">
+                        <option value="all" {% if request.args.get('verification_status') == 'all' %}selected{% endif %}>
+                            {{ get_translation('all_users') }}
+                        </option>
+                        <option value="verified" {% if request.args.get('verification_status') == 'verified' %}selected{% endif %}>
+                            {{ get_translation('verified_users') }}
+                        </option>
+                        <option value="unverified" {% if request.args.get('verification_status') == 'unverified' %}selected{% endif %}>
+                            {{ get_translation('unverified_users') }}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="sort_by" id="sortBy">
+                        <option value="newest" {% if request.args.get('sort_by') == 'newest' %}selected{% endif %}>
+                            {{ get_translation('newest_first') }}
+                        </option>
+                        <option value="oldest" {% if request.args.get('sort_by') == 'oldest' %}selected{% endif %}>
+                            {{ get_translation('oldest_first') }}
+                        </option>
+                        <option value="username" {% if request.args.get('sort_by') == 'username' %}selected{% endif %}>
+                            {{ get_translation('username_asc') }}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">{{ get_translation('filter') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Identity Cards Grid -->
+    <div class="row" id="identityCardsGrid">
+        {% for user in users %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">{{ user.username }}</h5>
+                            <span class="badge {% if user.is_verified %}bg-success{% else %}bg-warning{% endif %}">
+                                {{ get_translation('verified') if user.is_verified else get_translation('unverified') }}
+                            </span>
+                        </div>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                {{ get_translation('registered') }}: {{ user.created_at.strftime('%Y-%m-%d') }}
+                            </small>
+                        </p>
+                        
+                        {% if user.identity_card %}
+                            <div class="mb-3">
+                                <img src="{{ url_for('static', filename=user.identity_card) }}" 
+                                     class="img-fluid identity-card-img" 
+                                     style="max-height: 200px; cursor: pointer;"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#identityCardModal{{ user.id }}">
+                            </div>
+                        {% endif %}
+                        
+                        {% if not user.is_verified %}
+                            <a href="{{ url_for('verify_user', user_id=user.id) }}" 
+                               class="btn btn-success btn-sm"
+                               onclick="return confirm('{{ get_translation('confirm_verify_user') }}')">
+                                {{ get_translation('verify_user') }}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Identity Card Modal -->
+            {% if user.identity_card %}
+            <div class="modal fade" id="identityCardModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ get_translation('identity_card') }} - {{ user.username }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <img src="{{ url_for('static', filename=user.identity_card) }}" 
+                                 class="img-fluid" 
+                                 style="max-height: 80vh;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="col">
+                <p class="text-muted">{{ get_translation('no_identity_cards_found') }}</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .identity-card-img {
+        transition: transform 0.2s;
+    }
+    .identity-card-img:hover {
+        transform: scale(1.05);
+    }
+    .modal-content {
+        background-color: #fff;
+        border-radius: 12px;
+    }
+    .modal-header {
+        border-bottom: 1px solid #dee2e6;
+    }
+    .modal-body {
+        padding: 1rem;
+    }
+    .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    const searchInput = document.getElementById('searchInput');
+    const verificationFilter = document.getElementById('verificationFilter');
+    const sortBy = document.getElementById('sortBy');
+
+    // Auto-submit form when filters change
+    verificationFilter.addEventListener('change', () => filterForm.submit());
+    sortBy.addEventListener('change', () => filterForm.submit());
+
+    // Debounce search input
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => filterForm.submit(), 500);
+    });
+});
+</script>
+{% endblock %} 

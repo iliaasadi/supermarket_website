@@ -1,0 +1,21 @@
+{% block scripts %}
+<script>
+    // Function to check if order status has changed
+    function checkOrderStatus() {
+        fetch('/api/order/{{ order.id }}/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== '{{ order.status }}') {
+                    // If status has changed, refresh the page
+                    window.location.reload();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Check status every 30 seconds if order is not completed or cancelled
+    {% if order.status not in ['completed', 'cancelled'] %}
+    setInterval(checkOrderStatus, 30000);
+    {% endif %}
+</script>
+{% endblock %} 

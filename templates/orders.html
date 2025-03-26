@@ -1,46 +1,74 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('my_orders') }} - Fresh Market{% endblock %}
+{% block title %}{{ get_translation('orders') }} - Deniz Supermarket{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">{{ get_translation('my_orders') }}</h2>
+<div class="container py-4">
+    <h2 class="mb-4">{{ get_translation('recent_orders') }}</h2>
     
     {% if orders %}
     <div class="row">
         {% for order in orders %}
         <div class="col-md-6 mb-4">
             <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">{{ get_translation('order') }} #{{ order.id }}</h5>
-                        <span class="badge {% if order.status == 'completed' %}bg-success
-                                         {% elif order.status == 'pending_approval' %}bg-warning
-                                         {% elif order.status == 'preparing' %}bg-info
-                                         {% elif order.status == 'cancelled' %}bg-danger
-                                         {% else %}bg-secondary{% endif %}">
-                            {{ get_translation('order_status_' + order.status) }}
-                        </span>
+                        <span class="badge bg-primary">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                     </div>
-                    
+                </div>
+                <div class="card-body">
+                    <!-- Order Status -->
                     <div class="mb-3">
-                        <small class="text-muted">{{ get_translation('order_date') }}:</small>
-                        <div>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                        <small class="text-muted d-block">{{ get_translation('order_status') }}</small>
+                        <div class="d-flex align-items-center">
+                            <span class="badge {% if order.status == 'completed' %}bg-success
+                                             {% elif order.status == 'pending_approval' %}bg-warning
+                                             {% elif order.status == 'preparing' %}bg-info
+                                             {% elif order.status == 'cancelled' %}bg-danger
+                                             {% elif order.status == 'rejected' %}bg-danger
+                                             {% endif %}">
+                                {{ get_translation('order_status_' + order.status) }}
+                            </span>
+                        </div>
                     </div>
-                    
+
+                    <!-- Order Details -->
                     <div class="mb-3">
-                        <small class="text-muted">{{ get_translation('delivery_type') }}:</small>
-                        <div>{{ get_translation(order.delivery_type) }}</div>
+                        <small class="text-muted d-block">{{ get_translation('order_items') }}</small>
+                        <div>{{ order.items|length }} {{ get_translation('items') }}</div>
                     </div>
-                    
+
+                    <!-- Delivery Type -->
                     <div class="mb-3">
-                        <small class="text-muted">{{ get_translation('order_total') }}:</small>
-                        <div>{{ "%.0f"|format(order.total_amount) }} {{ get_translation('tooman') }}</div>
+                        <small class="text-muted d-block">{{ get_translation('delivery_type') }}</small>
+                        <div>
+                            {% if order.delivery_type == 'pickup' %}
+                                {{ get_translation('pickup_from') }} {{ order.store_location.name }}
+                            {% else %}
+                                {{ get_translation('delivery_to') }} {{ order.address.street }}
+                            {% endif %}
+                        </div>
                     </div>
-                    
-                    <a href="{{ url_for('order_status', order_id=order.id) }}" class="btn btn-outline-primary">
-                        <i class="fas fa-eye me-2"></i>{{ get_translation('view_details') }}
-                    </a>
+
+                    <!-- Order Total -->
+                    <div class="mb-3">
+                        <small class="text-muted d-block">{{ get_translation('order_total') }}</small>
+                        <div>{{ "{:,.0f}".format(order.total_amount) }} {{ get_translation('tooman') }}</div>
+                    </div>
+
+                    <!-- Order Actions -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('order_status', order_id=order.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-2"></i>{{ get_translation('view_details') }}
+                        </a>
+                        
+                        {% if order.status == 'completed' and not order.comment %}
+                        <a href="{{ url_for('order_comment', order_id=order.id) }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-star me-2"></i>{{ get_translation('rate_order') }}
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -49,12 +77,55 @@
     {% else %}
     <div class="text-center py-5">
         <i class="fas fa-shopping-bag fa-3x mb-3" style="color: var(--primary-red);"></i>
-        <h3>{{ get_translation('no_orders') }}</h3>
-        <p class="text-muted">{{ get_translation('start_shopping') }}</p>
-        <a href="{{ url_for('index') }}" class="btn" style="background-color: var(--primary-red); color: white;">
-            <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('start_shopping') }}
-        </a>
+        <h3>{{ get_translation('no_recent_orders') }}</h3>
     </div>
     {% endif %}
 </div>
+
+<style>
+.card {
+    border-radius: 12px;
+    border: none;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+.badge {
+    padding: 0.5em 0.8em;
+    font-weight: 500;
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+}
+
+.btn-outline-primary {
+    color: var(--primary-red);
+    border-color: var(--primary-red);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-red);
+    color: white;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+</style>
 {% endblock %} 

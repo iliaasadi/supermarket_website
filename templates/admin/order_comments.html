@@ -1,0 +1,175 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}{{ get_translation('order_comments') }}{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">{{ get_translation('order_comments') }}</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>{{ get_translation('back_to_dashboard') }}
+        </a>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ get_translation('date') }}</label>
+                    <input type="date" name="date" class="form-control" value="{{ selected_date }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>{{ get_translation('filter') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if comments %}
+    <div class="row">
+        {% for comment in comments %}
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">{{ get_translation('order') }} #{{ comment.order.id }}</h5>
+                        <span class="badge bg-success">{{ get_translation('completed') }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Customer Information -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">{{ get_translation('customer_information') }}</h6>
+                        <p class="mb-1"><strong>{{ get_translation('name') }}:</strong> {{ comment.order.user.username }}</p>
+                        <p class="mb-1"><strong>{{ get_translation('phone') }}:</strong> {{ comment.order.user.phone_number }}</p>
+                        <p class="mb-1"><strong>{{ get_translation('address') }}:</strong> {{ comment.order.address }}</p>
+                    </div>
+
+                    <!-- Order Details -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">{{ get_translation('order_details') }}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>{{ get_translation('item') }}</th>
+                                        <th>{{ get_translation('quantity') }}</th>
+                                        <th>{{ get_translation('price') }}</th>
+                                        <th>{{ get_translation('total') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in comment.order.items %}
+                                    <tr>
+                                        <td>{{ item.product.name }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>{{ "{:,.0f}".format(item.price|default(0)) }} {{ get_translation('tooman') }}</td>
+                                        <td>{{ "{:,.0f}".format((item.price|default(0)) * (item.quantity|default(0))) }} {{ get_translation('tooman') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>{{ get_translation('subtotal') }}:</strong></td>
+                                        <td>{{ "{:,.0f}".format(comment.order.subtotal|default(0)) }} {{ get_translation('tooman') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>{{ get_translation('delivery_fee') }}:</strong></td>
+                                        <td>{{ "{:,.0f}".format(comment.order.delivery_fee|default(0)) }} {{ get_translation('tooman') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>{{ get_translation('total') }}:</strong></td>
+                                        <td><strong>{{ "{:,.0f}".format(comment.order.total_amount|default(0)) }} {{ get_translation('tooman') }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="mt-2">
+                            <p class="mb-1"><strong>{{ get_translation('order_date') }}:</strong> {{ comment.order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            <p class="mb-1"><strong>{{ get_translation('payment_method') }}:</strong> {{ get_translation(comment.order.payment_method) }}</p>
+                            <p class="mb-1"><strong>{{ get_translation('payment_status') }}:</strong> {{ get_translation(comment.order.payment_status) }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Ratings -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">{{ get_translation('ratings') }}</h6>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">{{ get_translation('food_quality') }}</small>
+                                <div class="rating-stars">
+                                    {% for i in range(5) %}
+                                        <i class="fas fa-star {% if i < comment.food_quality %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">{{ get_translation('delivery_service') }}</small>
+                                <div class="rating-stars">
+                                    {% for i in range(5) %}
+                                        <i class="fas fa-star {% if i < comment.delivery_service %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">{{ get_translation('packaging') }}</small>
+                                <div class="rating-stars">
+                                    {% for i in range(5) %}
+                                        <i class="fas fa-star {% if i < comment.packaging %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">{{ get_translation('value_for_money') }}</small>
+                                <div class="rating-stars">
+                                    {% for i in range(5) %}
+                                        <i class="fas fa-star {% if i < comment.value_for_money %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <small class="text-muted d-block">{{ get_translation('overall_experience') }}</small>
+                                <div class="rating-stars">
+                                    {% for i in range(5) %}
+                                        <i class="fas fa-star {% if i < comment.overall_experience %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comment -->
+                    {% if comment.comment %}
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">{{ get_translation('comment') }}</h6>
+                        <p class="mb-0">{{ comment.comment }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">{{ get_translation('no_comments') }}</h5>
+            <p class="text-muted mb-0">{{ get_translation('no_comments_message') }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.rating-stars {
+    font-size: 1.2rem;
+}
+.table {
+    margin-bottom: 0;
+}
+</style>
+{% endblock %} 

@@ -9,6 +9,9 @@
             <h2>{{ get_translation('admin_dashboard') }}</h2>
         </div>
         <div class="col-auto">
+            <a href="{{ url_for('admin_identity_cards') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-id-card me-2"></i>{{ get_translation('identity_cards') }}
+            </a>
             <a href="{{ url_for('admin_add_product') }}" class="btn" style="background-color: var(--primary-red); color: white;">
                 <i class="fas fa-plus me-2"></i>{{ get_translation('add_new_product') }}
             </a>
@@ -111,29 +114,29 @@
             <h5 class="mb-0">{{ get_translation('delivery_settings') }}</h5>
         </div>
         <div class="card-body">
-            <form method="POST" action="{{ url_for('admin_update_delivery_settings') }}">
+            <form method="POST" action="{{ url_for('admin_update_delivery_settings') }}" class="row g-3">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="delivery_fee_percentage" class="form-label">{{ get_translation('delivery_fee_percentage') }}</label>
-                            <input type="number" class="form-control" id="delivery_fee_percentage" 
-                                   name="delivery_fee_percentage" value="{{ delivery_fee_percentage }}" 
-                                   min="0" max="100" step="0.1" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="min_delivery_fee" class="form-label">{{ get_translation('min_delivery_fee') }}</label>
-                            <input type="number" class="form-control" id="min_delivery_fee" 
-                                   name="min_delivery_fee" value="{{ min_delivery_fee }}" 
-                                   min="0" step="0.01" required>
-                        </div>
+                <div class="col-md-6">
+                    <label for="delivery_fee_percentage" class="form-label">{{ get_translation('delivery_fee_percentage') }}</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="delivery_fee_percentage" name="delivery_fee_percentage" 
+                               value="{{ delivery_fee_percentage }}" step="0.1" min="0" max="100" required>
+                        <span class="input-group-text">%</span>
                     </div>
                 </div>
-                <button type="submit" class="btn" style="background-color: var(--primary-red); color: white;">
-                    <i class="fas fa-save me-2"></i>{{ get_translation('save_delivery_settings') }}
-                </button>
+                <div class="col-md-6">
+                    <label for="min_delivery_fee" class="form-label">{{ get_translation('min_delivery_fee') }}</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="min_delivery_fee" name="min_delivery_fee" 
+                               value="{{ min_delivery_fee }}" min="0" required>
+                        <span class="input-group-text">{{ get_translation('tooman') }}</span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn" style="background-color: var(--primary-red); color: white;">
+                        <i class="fas fa-save me-2"></i>{{ get_translation('save_settings') }}
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -272,6 +275,32 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ get_translation('manage_orders') }}</h5>
+                    <p class="card-text">{{ get_translation('manage_orders_description') }}</p>
+                    <a href="{{ url_for('admin_orders') }}" class="btn btn-primary">
+                        <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('manage_orders') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ get_translation('order_comments') }}</h5>
+                    <p class="card-text">{{ get_translation('view_order_comments_description') }}</p>
+                    <a href="{{ url_for('admin_order_comments') }}" class="btn btn-primary">
+                        <i class="fas fa-comments me-2"></i>{{ get_translation('view_comments') }}
+                    </a>
+                </div>
             </div>
         </div>
     </div>

@@ -21,6 +21,7 @@
                                 <th>{{ get_translation('total') }}</th>
                                 <th>{{ get_translation('delivery_type') }}</th>
                                 <th>{{ get_translation('location') }}</th>
+                                <th>{{ get_translation('order_description') }}</th>
                                 <th>{{ get_translation('date') }}</th>
                                 <th>{{ get_translation('actions') }}</th>
                             </tr>
@@ -57,6 +58,31 @@
                                                 {{ order.address.street }}<br>
                                                 <small class="text-muted">{{ order.address.city }}, {{ order.address.state }}</small>
                                             {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.description %}
+                                            <div class="order-description">
+                                                <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#pendingDescriptionModal{{ order.id }}">
+                                                    <i class="fas fa-sticky-note"></i> {{ get_translation('view_notes') }}
+                                                </button>
+                                                <!-- Modal -->
+                                                <div class="modal fade" id="pendingDescriptionModal{{ order.id }}" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">{{ get_translation('order_notes') }} #{{ order.id }}</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p class="text-muted">{{ order.description }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">{{ get_translation('no_notes') }}</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
@@ -109,6 +135,7 @@
                                 <th>{{ get_translation('time_remaining') }}</th>
                                 <th>{{ get_translation('delivery_type') }}</th>
                                 <th>{{ get_translation('location') }}</th>
+                                <th>{{ get_translation('order_description') }}</th>
                                 <th>{{ get_translation('actions') }}</th>
                             </tr>
                         </thead>
@@ -153,6 +180,31 @@
                                         {% endif %}
                                     </td>
                                     <td>
+                                        {% if order.description %}
+                                            <div class="order-description">
+                                                <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#preparingDescriptionModal{{ order.id }}">
+                                                    <i class="fas fa-sticky-note"></i> {{ get_translation('view_notes') }}
+                                                </button>
+                                                <!-- Modal -->
+                                                <div class="modal fade" id="preparingDescriptionModal{{ order.id }}" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">{{ get_translation('order_notes') }} #{{ order.id }}</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p class="text-muted">{{ order.description }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">{{ get_translation('no_notes') }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         <form action="{{ url_for('complete_order', order_id=order.id) }}" method="POST">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                             <button type="submit" class="btn btn-success btn-sm"
@@ -172,6 +224,42 @@
         </div>
     </div>
 </div>
+
+<style>
+.order-description {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-link {
+    color: var(--primary-red);
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    color: var(--primary-red);
+    text-decoration: underline;
+}
+
+.modal-content {
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-body p {
+    margin-bottom: 0;
+    line-height: 1.6;
+}
+</style>
 
 <script>
 function updateCountdowns() {
@@ -208,4 +296,33 @@ function updateCountdowns() {
 setInterval(updateCountdowns, 1000);
 updateCountdowns(); // Initial update
 </script>
+
+{% for order in orders %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">{{ get_translation('order_details') }}</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>{{ get_translation('order_id') }}:</strong> #{{ order.id }}</p>
+                    <p><strong>{{ get_translation('order_date') }}:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>{{ get_translation('order_status') }}:</strong> 
+                        <span class="badge bg-{{ order.status_color }}">{{ get_translation(order.status) }}</span>
+                    </p>
+                    <p><strong>{{ get_translation('total_amount') }}:</strong> {{ order.total_amount }} {{ get_translation('currency') }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>{{ get_translation('customer') }}:</strong> {{ order.user.username }}</p>
+                    <p><strong>{{ get_translation('email') }}:</strong> {{ order.user.email }}</p>
+                    <p><strong>{{ get_translation('phone') }}:</strong> {{ order.user.phone }}</p>
+                </div>
+            </div>
+            {% if order.description %}
+            <div class="mt-3">
+                <h6 class="mb-2">{{ get_translation('order_description') }}:</h6>
+                <p class="text-muted">{{ order.description }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
 {% endblock %} 

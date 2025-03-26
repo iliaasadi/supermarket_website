@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, current_app, jsonify, session
 from flask_login import login_user, login_required, logout_user, current_user
 from forms import LoginForm, RegisterForm, ProfileForm, AddressForm, PasswordResetForm
-from models import User, Product, CartItem, Address, Order, OrderItem, StoreLocation, Wallet, WalletTransaction
+from models import User, Product, CartItem, Address, Order, OrderItem, StoreLocation, Wallet, WalletTransaction, OrderComment
 from extensions import db, login_manager, migrate
 import os
 from datetime import datetime, timedelta
@@ -10,6 +10,7 @@ import uuid
 from sqlalchemy import or_
 from flask_wtf.csrf import generate_csrf
 from translations import translations
+from sqlalchemy.sql import func
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -55,6 +56,10 @@ def set_language(language):
     if language in app.config['LANGUAGES']:
         session['language'] = language
     return redirect(request.referrer or url_for('index'))
+
+@app.context_processor
+def inject_csrf_token():
+    return dict(csrf_token=generate_csrf())
 
 @app.context_processor
 def inject_translations():
@@ -125,9 +130,9 @@ def admin_dashboard():
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
     products = Product.query.all()
     
-    # Get delivery settings
-    delivery_fee_percentage = 10  # Default value
-    min_delivery_fee = 5000      # Default value in Tooman
+    # Get delivery settings from session or use defaults
+    delivery_fee_percentage = session.get('delivery_fee_percentage', 5.0)
+    min_delivery_fee = session.get('min_delivery_fee', 20000)
     
     return render_template('admin/dashboard.html',
                          total_products=total_products,
@@ -137,6 +142,26 @@ def admin_dashboard():
                          products=products,
                          delivery_fee_percentage=delivery_fee_percentage,
                          min_delivery_fee=min_delivery_fee)
+
+@app.route('/admin/update_delivery_settings', methods=['POST'])
+@admin_required
+def admin_update_delivery_settings():
+    try:
+        delivery_fee_percentage = float(request.form.get('delivery_fee_percentage', 5))
+        min_delivery_fee = float(request.form.get('min_delivery_fee', 20000))
+        
+        if delivery_fee_percentage < 0 or delivery_fee_percentage > 100 or min_delivery_fee < 0:
+            flash_translated('invalid_delivery_settings', 'error')
+            return redirect(url_for('admin_dashboard'))
+        
+        session['delivery_fee_percentage'] = delivery_fee_percentage
+        session['min_delivery_fee'] = min_delivery_fee
+        
+        flash_translated('delivery_settings_updated', 'success')
+    except ValueError:
+        flash_translated('invalid_delivery_settings', 'error')
+    
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/product/add', methods=['GET', 'POST'])
 @login_required
@@ -451,6 +476,12 @@ def remove_from_cart(item_id):
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
+    # Get user's orders
+    orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
+    
+    # Get user's order comments
+    order_comments = OrderComment.query.filter_by(user_id=current_user.id).order_by(OrderComment.created_at.desc()).all()
+    
     form = ProfileForm()
     if form.validate_on_submit():
         if form.profile_picture.data:
@@ -495,7 +526,9 @@ def profile():
                          user=current_user,
                          recent_orders=recent_orders,
                          addresses=addresses,
-                         highlighted_order_id=order_id)
+                         highlighted_order_id=order_id,
+                         orders=orders,
+                         order_comments=order_comments)
 
 @app.route('/address/add', methods=['GET', 'POST'])
 @login_required
@@ -655,7 +688,8 @@ def checkout():
             delivery_fee=delivery_fee,
             status='pending_approval',
             delivery_type=delivery_type,
-            payment_method=payment_method
+            payment_method=payment_method,
+            description=request.form.get('order_description', '')  # Add description field
         )
         
         if delivery_type == 'pickup':
@@ -702,25 +736,17 @@ def checkout():
 
 @app.route('/orders')
 @login_required
-def order_status(order_id=None):
-    if order_id:
-        # View specific order
-        order = Order.query.get_or_404(order_id)
-        
-        # If user is admin, redirect to admin order details
-        if current_user.is_admin:
-            return redirect(url_for('admin_order_details', order_id=order_id))
-        
-        # For regular users, ensure they can only view their own orders
-        if order.user_id != current_user.id:
-            flash_translated('access_denied', 'error')
-            return redirect(url_for('profile'))
-        
-        return render_template('order_status.html', order=order)
-    else:
-        # View all orders
-        orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
-        return render_template('orders.html', orders=orders)
+def orders():
+    # View all orders
+    orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
+    return render_template('orders.html', orders=orders)
+
+@app.route('/order/<int:order_id>', methods=['GET'])
+@login_required
+def order_status(order_id):
+    order = Order.query.filter_by(id=order_id, user_id=current_user.id).first_or_404()
+    # Ensure the comment is included in the order object
+    return render_template('order_status.html', order=order)
 
 @app.route('/admin/orders')
 @admin_required
@@ -889,17 +915,6 @@ def admin_delete_location(location_id):
         print(f"Error deleting location: {str(e)}")
     
     return redirect(url_for('admin_locations'))
-
-@app.route('/admin/update_delivery_settings', methods=['POST'])
-@admin_required
-def admin_update_delivery_settings():
-    delivery_fee_percentage = float(request.form.get('delivery_fee_percentage', 10))
-    min_delivery_fee = float(request.form.get('min_delivery_fee', 5000))
-    
-    # Save to database or config file
-    # For now, we'll just flash a success message
-    flash_translated('settings_updated')
-    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/update_category_icon/<category>', methods=['POST'])
 @admin_required
@@ -1318,6 +1333,153 @@ def product_details(product_id):
         return redirect(url_for('login'))
     
     return render_template('product_details.html', product=product)
+
+def save_file(file, folder):
+    """Save an uploaded file securely"""
+    if file and file.filename:
+        # Get file extension
+        filename = secure_filename(file.filename)
+        # Create unique filename
+        unique_filename = f"{uuid.uuid4()}_{filename}"
+        # Create folder path
+        folder_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], folder)
+        # Ensure folder exists
+        os.makedirs(folder_path, exist_ok=True)
+        # Full file path
+        file_path = os.path.join(folder_path, unique_filename)
+        # Save file
+        file.save(file_path)
+        # Return relative path for database
+        return os.path.join('uploads', folder, unique_filename)
+    return None
+
+@app.route('/admin/identity-cards')
+@login_required
+@admin_required
+def admin_identity_cards():
+    # Get query parameters for filtering and sorting
+    verification_status = request.args.get('verification_status', 'all')
+    sort_by = request.args.get('sort_by', 'newest')
+    search = request.args.get('search', '').lower()
+
+    # Base query for users with identity cards
+    query = User.query.filter(User.identity_card.isnot(None))
+
+    # Apply verification filter
+    if verification_status == 'verified':
+        query = query.filter(User.is_verified == True)
+    elif verification_status == 'unverified':
+        query = query.filter(User.is_verified == False)
+
+    # Apply search filter
+    if search:
+        query = query.filter(
+            db.or_(
+                User.username.ilike(f'%{search}%'),
+                User.email.ilike(f'%{search}%')
+            )
+        )
+
+    # Apply sorting
+    if sort_by == 'newest':
+        query = query.order_by(User.created_at.desc())
+    elif sort_by == 'oldest':
+        query = query.order_by(User.created_at.asc())
+    elif sort_by == 'username':
+        query = query.order_by(User.username.asc())
+
+    # Get the filtered and sorted users
+    users = query.all()
+
+    return render_template('admin/identity_cards.html', users=users)
+
+@app.route('/order/<int:order_id>/comment', methods=['GET', 'POST'])
+@login_required
+def order_comment(order_id):
+    order = Order.query.get_or_404(order_id)
+    
+    # Check if order belongs to user and is completed
+    if order.user_id != current_user.id:
+        flash(get_translation('unauthorized_access'), 'error')
+        return redirect(url_for('orders'))
+    
+    if order.status != 'completed':
+        flash(get_translation('can_only_rate_completed_orders'), 'error')
+        return redirect(url_for('orders'))
+    
+    # Check if user has already commented
+    existing_comment = OrderComment.query.filter_by(order_id=order.id, user_id=current_user.id).first()
+    if existing_comment:
+        flash(get_translation('already_rated_order'), 'error')
+        return redirect(url_for('orders'))
+    
+    if request.method == 'POST':
+        try:
+            # Create new comment
+            comment = OrderComment(
+                order_id=order.id,
+                user_id=current_user.id,
+                food_quality=request.form.get('food_quality', type=int),
+                delivery_service=request.form.get('delivery_service', type=int),
+                packaging=request.form.get('packaging', type=int),
+                value_for_money=request.form.get('value_for_money', type=int),
+                overall_experience=request.form.get('overall_experience', type=int),
+                comment=request.form.get('comment')
+            )
+            
+            db.session.add(comment)
+            db.session.commit()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'status': 'success'})
+            
+            flash(get_translation('rating_submitted_successfully'), 'success')
+            return redirect(url_for('orders'))
+            
+        except Exception as e:
+            db.session.rollback()
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'status': 'error', 'message': str(e)}), 400
+            
+            flash(get_translation('error_submitting_rating'), 'error')
+            return redirect(url_for('order_status', order_id=order.id))
+    
+    return redirect(url_for('order_status', order_id=order.id))
+
+@app.route('/admin/order-comments')
+@admin_required
+def admin_order_comments():
+    # Get date filter from query parameters
+    selected_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    
+    # Convert string date to datetime
+    filter_date = datetime.strptime(selected_date, '%Y-%m-%d')
+    
+    # Get comments for the selected date
+    comments = OrderComment.query.join(Order).filter(
+        Order.status == 'completed',
+        func.date(OrderComment.created_at) == filter_date.date()
+    ).order_by(OrderComment.created_at.desc()).all()
+    
+    return render_template('admin/order_comments.html', 
+                         comments=comments,
+                         selected_date=selected_date)
+
+@app.route('/api/order/<int:order_id>/status')
+@login_required
+def get_order_status(order_id):
+    order = Order.query.get_or_404(order_id)
+    
+    # Ensure user can only view their own orders
+    if order.user_id != current_user.id and not current_user.is_admin:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    return jsonify({
+        'status': order.status,
+        'preparation_start': order.preparation_start.strftime('%Y-%m-%d %H:%M') if order.preparation_start else None,
+        'estimated_completion': order.estimated_completion.strftime('%Y-%m-%d %H:%M') if order.estimated_completion else None,
+        'completed_at': order.completed_at.strftime('%Y-%m-%d %H:%M') if order.completed_at else None
+    })
 
 if __name__ == '__main__':
     with app.app_context():
