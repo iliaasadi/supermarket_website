@@ -12,6 +12,9 @@
                     <h5 class="card-title">{{ get_translation('wallet_balance') }}</h5>
                     <h2 class="display-4 mb-3">{{ "%.0f"|format(wallet.balance) }} تومان</h2>
                     <p class="text-muted">{{ get_translation('last_updated') }}: {{ wallet.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <button class="btn btn-primary w-100" onclick="showDepositModal()">
+                        <i class="fas fa-plus-circle me-2"></i>{{ get_translation('deposit_to_wallet') }}
+                    </button>
                 </div>
             </div>
 
@@ -76,6 +79,54 @@
     </div>
 </div>
 
+<!-- Deposit Modal -->
+<div class="modal fade" id="depositModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ get_translation('deposit_to_wallet') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="depositForm" action="{{ url_for('process_wallet_deposit') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="mb-3">
+                        <label for="deposit_amount" class="form-label">{{ get_translation('deposit_amount') }}</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="deposit_amount" name="amount" 
+                                   min="1000" step="1000" required>
+                            <span class="input-group-text">{{ get_translation('tooman') }}</span>
+                        </div>
+                        <div class="form-text">{{ get_translation('minimum_deposit_amount') }}</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ get_translation('cancel') }}</button>
+                <button type="submit" form="depositForm" class="btn btn-primary">{{ get_translation('proceed_to_payment') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deposit Success Modal -->
+<div class="modal fade" id="depositSuccessModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ get_translation('deposit_successful') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ get_translation('deposit_successful_message') }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">{{ get_translation('ok') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .card {
         border: none;
@@ -109,5 +160,30 @@
         color: var(--primary-red);
         font-weight: 600;
     }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 2px solid var(--light-gray);
+    }
 </style>
+
+<script>
+    function showDepositModal() {
+        var modal = new bootstrap.Modal(document.getElementById('depositModal'));
+        modal.show();
+    }
+
+    // Handle deposit form submission
+    document.getElementById('depositForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const amount = document.getElementById('deposit_amount').value;
+        
+        // Submit the form
+        this.submit();
+    });
+</script>
 {% endblock %} 

@@ -36,16 +36,22 @@
                             {% endif %}
                         </div>
                         <span class="badge {% if product.stock < 10 %}bg-danger{% else %}bg-success{% endif %}">
-                            {{ product.stock }} in stock
+                            {{ get_translation('in_stock') if product.stock > 0 else get_translation('out_of_stock') }}
                         </span>
                     </div>
                     {% if current_user.is_authenticated %}
                         <div class="mt-3">
-                            <a href="{{ url_for('add_to_cart', product_id=product.id) }}" 
-                               class="btn w-100" 
-                               style="background-color: var(--primary-red); color: white;">
-                                <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('add_to_cart') }}
-                            </a>
+                            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="d-flex gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <div class="input-group" style="max-width: 120px;">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(this, -1)">-</button>
+                                    <input type="number" class="form-control text-center" name="quantity" value="1" min="1" max="{{ product.stock }}">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(this, 1)">+</button>
+                                </div>
+                                <button type="submit" class="btn flex-grow-1" style="background-color: var(--primary-red); color: white;">
+                                    <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('add_to_cart') }}
+                                </button>
+                            </form>
                         </div>
                     {% else %}
                         <div class="mt-3">
@@ -60,13 +66,8 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="text-center py-5">
-        <i class="fas fa-box-open fa-3x mb-3" style="color: var(--primary-red);"></i>
-        <h3>No products found</h3>
-        <p class="text-muted">We don't have any products in this category yet.</p>
-        <a href="{{ url_for('index') }}" class="btn mt-3" style="background-color: var(--primary-red); color: white;">
-            <i class="fas fa-arrow-left me-2"></i>Back to Home
-        </a>
+    <div class="alert alert-info">
+        {{ get_translation('empty_category') }}
     </div>
     {% endif %}
 </div>
@@ -107,4 +108,14 @@
         color: white;
     }
 </style>
+
+<script>
+function updateQuantity(button, change) {
+    const input = button.parentElement.querySelector('input[name="quantity"]');
+    const newValue = parseInt(input.value) + change;
+    if (newValue >= 1 && newValue <= parseInt(input.max)) {
+        input.value = newValue;
+    }
+}
+</script>
 {% endblock %} 

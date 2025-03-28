@@ -438,15 +438,31 @@ def update_cart(item_id):
 @app.route('/add_to_cart/<int:product_id>', methods=['GET', 'POST'])
 @login_required
 def add_to_cart(product_id):
+    product = Product.query.get_or_404(product_id)
+    quantity = int(request.form.get('quantity', 1))
+    
+    # Validate quantity
+    if quantity < 1:
+        flash_translated('quantity_must_be_at_least_1', 'danger')
+        return redirect(request.referrer or url_for('index'))
+    
+    if quantity > product.stock:
+        flash_translated('only_x_items_available_in_stock', {'x': product.stock}, 'danger')
+        return redirect(request.referrer or url_for('index'))
+    
     cart_item = CartItem.query.filter_by(
         user_id=current_user.id,
         product_id=product_id
     ).first()
     
     if cart_item:
-        cart_item.quantity += 1
+        # Check if adding the new quantity would exceed stock
+        if cart_item.quantity + quantity > product.stock:
+            flash_translated('only_x_items_available_in_stock', {'x': product.stock}, 'danger')
+            return redirect(request.referrer or url_for('index'))
+        cart_item.quantity += quantity
     else:
-        cart_item = CartItem(user_id=current_user.id, product_id=product_id)
+        cart_item = CartItem(user_id=current_user.id, product_id=product_id, quantity=quantity)
         db.session.add(cart_item)
     
     db.session.commit()
@@ -660,6 +676,7 @@ def checkout():
                 flash_translated('please_select_store_location', 'error')
                 return redirect(url_for('cart'))
             store_location = StoreLocation.query.get_or_404(store_location_id)
+            delivery_fee = 0.0  # Ensure pickup orders have no delivery fee
         else:  # delivery
             address_id = request.form.get('delivery_address_id')
             if not address_id:
@@ -667,7 +684,7 @@ def checkout():
                 return redirect(url_for('cart'))
             address = Address.query.get_or_404(address_id)
             # Calculate delivery fee (5% of subtotal with 20000 Tooman minimum)
-            delivery_fee = max(20000, subtotal * 0.05)  # Changed from 2.00 to 20000 Tooman
+            delivery_fee = max(20000, subtotal * 0.05)
         
         # Calculate total with delivery fee
         total = subtotal + delivery_fee
@@ -677,9 +694,42 @@ def checkout():
         
         # If payment method is wallet, check balance
         if payment_method == 'wallet':
-            if not current_user.wallet or current_user.wallet.balance < total:
-                flash_translated('insufficient_wallet_balance', 'error')
-                return redirect(url_for('cart'))
+            if not current_user.wallet:
+                wallet = Wallet(user_id=current_user.id, balance=0.0)
+                db.session.add(wallet)
+            else:
+                wallet = current_user.wallet
+                if wallet.balance is None:
+                    wallet.balance = 0.0
+            
+            # Calculate remaining amount to be paid
+            remaining_amount = total - wallet.balance
+            
+            if remaining_amount > 0:
+                # Store order details in session for payment success
+                session['order_total'] = total
+                session['wallet_amount'] = wallet.balance
+                session['remaining_amount'] = remaining_amount
+                session['payment_method'] = payment_method
+                session['delivery_type'] = delivery_type
+                session['store_location_id'] = store_location_id if delivery_type == 'pickup' else None
+                session['address_id'] = address_id if delivery_type == 'delivery' else None
+                
+                # Redirect to payment temp page with the remaining amount
+                return redirect(url_for('payment_temp', amount=remaining_amount, type='order'))
+            
+            # If wallet balance is sufficient, proceed with order creation
+            # Create withdrawal transaction
+            transaction = WalletTransaction(
+                wallet_id=wallet.id,
+                amount=total,
+                type='withdrawal',
+                description=get_translation('order_payment')
+            )
+            db.session.add(transaction)
+            
+            # Update wallet balance to zero
+            wallet.balance = 0.0
         
         # Create order
         order = Order(
@@ -689,7 +739,7 @@ def checkout():
             status='pending_approval',
             delivery_type=delivery_type,
             payment_method=payment_method,
-            description=request.form.get('order_description', '')  # Add description field
+            description=request.form.get('order_description', '')
         )
         
         if delivery_type == 'pickup':
@@ -716,10 +766,10 @@ def checkout():
         db.session.commit()
         
         flash_translated('order_placed')
-        return redirect(url_for('profile', order_id=order.id))  # Redirect to profile with order_id
+        return redirect(url_for('order_status', order_id=order.id))
     
     # For GET request, calculate delivery fee for display
-    delivery_fee = max(20000, subtotal * 0.05)  # Changed from 2.00 to 20000 Tooman
+    delivery_fee = max(20000, subtotal * 0.05)  # Default to delivery fee
     total = subtotal + delivery_fee
     
     # Get user's addresses and store locations
@@ -1398,12 +1448,13 @@ def admin_identity_cards():
 def order_comment(order_id):
     order = Order.query.get_or_404(order_id)
     
-    # Check if order belongs to user and is completed
+    # Check if order belongs to user
     if order.user_id != current_user.id:
         flash(get_translation('unauthorized_access'), 'error')
         return redirect(url_for('orders'))
     
-    if order.status != 'completed':
+    # Allow commenting on completed or rejected orders
+    if order.status not in ['completed', 'rejected']:
         flash(get_translation('can_only_rate_completed_orders'), 'error')
         return redirect(url_for('orders'))
     
@@ -1415,15 +1466,15 @@ def order_comment(order_id):
     
     if request.method == 'POST':
         try:
-            # Create new comment
+            # Create new comment with correct field mapping
             comment = OrderComment(
                 order_id=order.id,
                 user_id=current_user.id,
-                food_quality=request.form.get('food_quality', type=int),
-                delivery_service=request.form.get('delivery_service', type=int),
-                packaging=request.form.get('packaging', type=int),
-                value_for_money=request.form.get('value_for_money', type=int),
                 overall_experience=request.form.get('overall_experience', type=int),
+                value_for_money=request.form.get('value_for_money', type=int),
+                packaging=request.form.get('packaging', type=int),
+                delivery_service=request.form.get('delivery_service', type=int),
+                food_quality=request.form.get('food_quality', type=int),
                 comment=request.form.get('comment')
             )
             
@@ -1455,47 +1506,50 @@ def admin_order_comments():
     # Convert string date to datetime
     filter_date = datetime.strptime(selected_date, '%Y-%m-%d')
     
-    # Get completed orders for the selected date
+    # Get completed and rejected orders for the selected date
     completed_orders = Order.query.filter(
-        Order.status == 'completed',
+        Order.status.in_(['completed', 'rejected']),
         func.date(Order.completed_at) == filter_date.date()
     ).order_by(Order.completed_at.desc()).all()
     
     # Get comments for the selected date
     comments = OrderComment.query.join(Order).filter(
-        Order.status == 'completed',
+        Order.status.in_(['completed', 'rejected']),
         func.date(OrderComment.created_at) == filter_date.date()
     ).order_by(OrderComment.created_at.desc()).all()
     
     # Create a set of order IDs that have comments
     commented_order_ids = {comment.order_id for comment in comments}
     
-    # Add "Waiting For User Comment" entries for completed orders without comments
-    waiting_comments = []
+    # Create entries list with both comments and waiting entries
+    entries = []
+    
+    # Add actual comments first
+    for comment in comments:
+        comment.is_waiting = False  # Explicitly set is_waiting to False for actual comments
+        entries.append(comment)
+    
+    # Add "Waiting For User Comment" entries for completed/rejected orders without comments
     for order in completed_orders:
         if order.id not in commented_order_ids:
             # Create a custom object for waiting comments
             waiting_comment = type('WaitingComment', (), {
                 'order': order,
-                'created_at': order.completed_at,
+                'created_at': order.completed_at or order.rejected_at,  # Use completed_at or rejected_at
                 'is_waiting': True,
                 'food_quality': '-',
                 'delivery_service': '-',
                 'packaging': '-',
                 'value_for_money': '-',
                 'overall_experience': '-',
-                'comment': '-'
+                'comment': None
             })
-            waiting_comments.append(waiting_comment)
+            entries.append(waiting_comment)
     
-    # Combine comments and waiting comments
-    all_entries = comments + waiting_comments
-    # Sort by created_at in descending order
-    all_entries.sort(key=lambda x: x.created_at, reverse=True)
+    # Sort entries by created_at in descending order
+    entries.sort(key=lambda x: x.created_at, reverse=True)
     
-    return render_template('admin/order_comments.html', 
-                         entries=all_entries,
-                         selected_date=selected_date)
+    return render_template('admin/order_comments.html', entries=entries, selected_date=selected_date)
 
 @app.route('/api/order/<int:order_id>/status')
 @login_required
@@ -1512,6 +1566,180 @@ def get_order_status(order_id):
         'estimated_completion': order.estimated_completion.strftime('%Y-%m-%d %H:%M') if order.estimated_completion else None,
         'completed_at': order.completed_at.strftime('%Y-%m-%d %H:%M') if order.completed_at else None
     })
+
+@app.route('/payment_temp')
+@login_required
+def payment_temp():
+    payment_type = request.args.get('type', 'order')
+    amount = request.args.get('amount', type=float)
+    
+    if not amount or amount < 1000:
+        flash_translated('invalid_amount', 'error')
+        return redirect(url_for('wallet' if payment_type == 'wallet' else 'cart'))
+    
+    # Store the amount in session for payment success
+    session['payment_amount'] = amount
+    session['payment_type'] = payment_type
+    
+    return render_template('payment_temp.html',
+                         payment_type=payment_type,
+                         amount=amount,
+                         success_url=url_for('payment_success', type=payment_type, amount=amount),
+                         failure_url=url_for('payment_failure', type=payment_type, amount=amount))
+
+@app.route('/payment_success')
+@login_required
+def payment_success():
+    try:
+        payment_type = request.args.get('type', 'order')
+        amount = request.args.get('amount', type=float)
+        
+        if payment_type == 'wallet':
+            # Get or create wallet
+            if not current_user.wallet:
+                wallet = Wallet(user_id=current_user.id, balance=0.0)
+                db.session.add(wallet)
+            else:
+                wallet = current_user.wallet
+                if wallet.balance is None:
+                    wallet.balance = 0.0
+            
+            # Create deposit transaction
+            transaction = WalletTransaction(
+                wallet_id=wallet.id,
+                amount=amount,
+                type='deposit',
+                description=get_translation('wallet_deposit')
+            )
+            db.session.add(transaction)
+            
+            # Update wallet balance
+            current_balance = float(wallet.balance or 0.0)
+            wallet.balance = current_balance + amount
+            db.session.commit()
+            
+            flash_translated('wallet_deposit_successful', 'success')
+            return redirect(url_for('wallet'))
+        else:
+            # Handle order payment
+            # Get order details from session
+            order_total = session.get('order_total')
+            wallet_amount = session.get('wallet_amount')
+            remaining_amount = session.get('remaining_amount')
+            payment_method = session.get('payment_method')
+            delivery_type = session.get('delivery_type')
+            store_location_id = session.get('store_location_id')
+            address_id = session.get('address_id')
+            
+            if not all([order_total, wallet_amount, remaining_amount, payment_method, delivery_type]):
+                flash_translated('order_details_not_found', 'error')
+                return redirect(url_for('cart'))
+            
+            # Get cart items
+            cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+            
+            if not cart_items:
+                flash_translated('cart_empty', 'error')
+                return redirect(url_for('cart'))
+            
+            # Create order
+            order = Order(
+                user_id=current_user.id,
+                total_amount=order_total,
+                delivery_fee=0.0 if delivery_type == 'pickup' else max(20000, order_total * 0.05),
+                status='pending_approval',
+                payment_method=payment_method,
+                delivery_type=delivery_type,
+                store_location_id=store_location_id,
+                address_id=address_id
+            )
+            db.session.add(order)
+            
+            # Create order items
+            for cart_item in cart_items:
+                order_item = OrderItem(
+                    order=order,
+                    product_id=cart_item.product_id,
+                    quantity=cart_item.quantity,
+                    price=cart_item.product.price * (1 - cart_item.product.discount/100)
+                )
+                db.session.add(order_item)
+            
+            # Handle wallet payment
+            if payment_method == 'wallet':
+                wallet = current_user.wallet
+                
+                # Create withdrawal transaction for the full order amount
+                transaction = WalletTransaction(
+                    wallet_id=wallet.id,
+                    amount=order_total,
+                    type='withdrawal',
+                    description=get_translation('order_payment')
+                )
+                db.session.add(transaction)
+                
+                # Update wallet balance to zero
+                wallet.balance = 0.0
+            
+            # Clear cart
+            for cart_item in cart_items:
+                db.session.delete(cart_item)
+            
+            # Clear session data
+            session.pop('order_total', None)
+            session.pop('wallet_amount', None)
+            session.pop('remaining_amount', None)
+            session.pop('payment_method', None)
+            session.pop('delivery_type', None)
+            session.pop('store_location_id', None)
+            session.pop('address_id', None)
+            
+            db.session.commit()
+            
+            flash_translated('order_payment_successful', 'success')
+            return redirect(url_for('order_status', order_id=order.id))
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error processing payment: {str(e)}")
+        flash_translated('error_processing_payment', 'error')
+        return redirect(url_for('wallet' if payment_type == 'wallet' else 'cart'))
+    
+    return redirect(url_for('index'))
+
+@app.route('/payment_failure')
+@login_required
+def payment_failure():
+    payment_type = request.args.get('type', 'order')
+    order_id = request.args.get('order_id', type=int)
+    amount = request.args.get('amount', type=float)
+    
+    if payment_type == 'wallet':
+        flash_translated('wallet_deposit_failed', 'error')
+        return redirect(url_for('wallet'))
+    else:
+        flash_translated('order_payment_failed', 'error')
+        return redirect(url_for('cart'))
+
+@app.route('/process_wallet_deposit', methods=['POST'])
+@login_required
+def process_wallet_deposit():
+    try:
+        amount = request.form.get('amount', type=float)
+        
+        if not amount or amount < 1000:
+            flash_translated('invalid_amount', 'error')
+            return redirect(url_for('wallet'))
+        
+        # Store the amount in session for payment success
+        session['payment_amount'] = amount
+        session['payment_type'] = 'wallet'
+        
+        # Redirect to payment temp page with the deposit amount
+        return redirect(url_for('payment_temp', amount=amount, type='wallet'))
+    except Exception as e:
+        print(f"Error processing wallet deposit: {str(e)}")
+        flash_translated('error_processing_wallet_deposit', 'error')
+        return redirect(url_for('wallet'))
 
 if __name__ == '__main__':
     with app.app_context():

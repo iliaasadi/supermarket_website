@@ -88,16 +88,16 @@
                     <h5 class="card-title">{{ get_translation('order_summary') }}</h5>
                     <div class="d-flex justify-content-between mb-2">
                         <span>{{ get_translation('subtotal') }}</span>
-                        <span>{{ "%.0f"|format(subtotal) }} {{ get_translation('tooman') }}</span>
+                        <span>{{ "{:,.0f}".format(subtotal) }} {{ get_translation('tooman') }}</span>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
+                    <div class="d-flex justify-content-between mb-2 delivery-fee-row" style="display: none;">
                         <span>{{ get_translation('delivery_fee') }}</span>
-                        <span class="delivery-fee">{{ "%.0f"|format(delivery_fee) }} {{ get_translation('tooman') }}</span>
+                        <span class="delivery-fee">{{ "{:,.0f}".format(delivery_fee) }} {{ get_translation('tooman') }}</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between mb-3">
                         <strong>{{ get_translation('total') }}</strong>
-                        <strong class="total-amount">{{ "%.0f"|format(total) }} {{ get_translation('tooman') }}</strong>
+                        <strong class="total-amount">{{ "{:,.0f}".format(subtotal) }} {{ get_translation('tooman') }}</strong>
                     </div>
                     
                     <!-- Delivery Options -->
@@ -168,15 +168,15 @@
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>{{ get_translation('order_total') }}:</span>
-                                <span class="text-primary">{{ "%.0f"|format(total) }} {{ get_translation('tooman') }}</span>
+                                <span class="text-primary">{{ "{:,.0f}".format(total) }} {{ get_translation('tooman') }}</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>{{ get_translation('wallet_withdrawal') }}:</span>
-                                <span class="text-danger wallet-withdrawal">{{ "%.0f"|format(current_user.wallet.balance) }} {{ get_translation('tooman') }}</span>
+                                <span class="text-danger wallet-withdrawal">{{ "{:,.0f}".format(total) }} {{ get_translation('tooman') }}</span>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <strong>{{ get_translation('remaining_balance') }}:</strong>
-                                <strong class="remaining-balance">{{ "%.0f"|format(total) }} {{ get_translation('tooman') }}</strong>
+                                <strong class="remaining-balance">{{ "{:,.0f}".format(current_user.wallet.balance - total) }} {{ get_translation('tooman') }}</strong>
                             </div>
                         </div>
                         {% endif %}
@@ -295,12 +295,27 @@
     // Update delivery fee and total when delivery type changes
     document.querySelectorAll('input[name="delivery_type"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            const deliveryFee = parseFloat('{{ delivery_fee }}');
             const subtotal = parseFloat('{{ subtotal }}');
+            const deliveryFee = this.value === 'delivery' ? parseFloat('{{ delivery_fee }}') : 0;
             const total = subtotal + deliveryFee;
             
-            document.querySelector('.delivery-fee').textContent = deliveryFee.toLocaleString() + ' {{ get_translation("tooman") }}';
-            document.querySelector('.total-amount').textContent = total.toLocaleString() + ' {{ get_translation("tooman") }}';
+            // Show/hide delivery fee row
+            const deliveryFeeRow = document.querySelector('.delivery-fee-row');
+            if (deliveryFeeRow) {
+                deliveryFeeRow.style.display = this.value === 'delivery' ? 'flex' : 'none';
+            }
+            
+            // Update delivery fee amount
+            const deliveryFeeElement = document.querySelector('.delivery-fee');
+            if (deliveryFeeElement) {
+                deliveryFeeElement.textContent = deliveryFee.toLocaleString() + ' {{ get_translation("tooman") }}';
+            }
+            
+            // Update total amount
+            const totalAmountElement = document.querySelector('.total-amount');
+            if (totalAmountElement) {
+                totalAmountElement.textContent = total.toLocaleString() + ' {{ get_translation("tooman") }}';
+            }
             
             // Update hidden input
             document.getElementById('delivery_type_input').value = this.value;
@@ -308,6 +323,20 @@
             // Show/hide address selection
             document.getElementById('store-location').style.display = this.value === 'pickup' ? 'block' : 'none';
             document.getElementById('delivery-address').style.display = this.value === 'delivery' ? 'block' : 'none';
+            
+            // Update wallet payment info if it exists
+            const walletInfo = document.getElementById('wallet-payment-info');
+            if (walletInfo) {
+                const walletWithdrawal = walletInfo.querySelector('.wallet-withdrawal');
+                const remainingBalance = walletInfo.querySelector('.remaining-balance');
+                if (walletWithdrawal) {
+                    walletWithdrawal.textContent = total.toLocaleString() + ' {{ get_translation("tooman") }}';
+                }
+                if (remainingBalance) {
+                    const walletBalance = parseFloat('{{ current_user.wallet.balance if current_user.wallet else 0 }}');
+                    remainingBalance.textContent = (walletBalance - total).toLocaleString() + ' {{ get_translation("tooman") }}';
+                }
+            }
         });
     });
 
@@ -317,6 +346,26 @@
             const walletInfo = document.getElementById('wallet-payment-info');
             if (walletInfo) {
                 walletInfo.style.display = this.value === 'wallet' ? 'block' : 'none';
+                
+                // Get the current total from the order summary
+                const totalAmountElement = document.querySelector('.total-amount');
+                const currentTotal = parseFloat(totalAmountElement.textContent.replace(/[^0-9]/g, ''));
+                
+                // Update wallet payment info with the current total
+                const walletWithdrawal = walletInfo.querySelector('.wallet-withdrawal');
+                const remainingBalance = walletInfo.querySelector('.remaining-balance');
+                const orderTotal = walletInfo.querySelector('.text-primary');
+                
+                if (walletWithdrawal) {
+                    walletWithdrawal.textContent = currentTotal.toLocaleString() + ' {{ get_translation("tooman") }}';
+                }
+                if (orderTotal) {
+                    orderTotal.textContent = currentTotal.toLocaleString() + ' {{ get_translation("tooman") }}';
+                }
+                if (remainingBalance) {
+                    const walletBalance = parseFloat('{{ current_user.wallet.balance if current_user.wallet else 0 }}');
+                    remainingBalance.textContent = (walletBalance - currentTotal).toLocaleString() + ' {{ get_translation("tooman") }}';
+                }
             }
             document.getElementById('payment_method_input').value = this.value;
         });

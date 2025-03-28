@@ -47,11 +47,11 @@
                 <tr>
                     <th>{{ get_translation('order_id') }}</th>
                     <th>{{ get_translation('user') }}</th>
-                    <th>{{ get_translation('food_quality') }}</th>
-                    <th>{{ get_translation('delivery_service') }}</th>
-                    <th>{{ get_translation('packaging') }}</th>
-                    <th>{{ get_translation('value_for_money') }}</th>
                     <th>{{ get_translation('overall_experience') }}</th>
+                    <th>{{ get_translation('value_for_money') }}</th>
+                    <th>{{ get_translation('packaging') }}</th>
+                    <th>{{ get_translation('delivery_service') }}</th>
+                    <th>{{ get_translation('food_quality') }}</th>
                     <th>{{ get_translation('comment') }}</th>
                     <th>{{ get_translation('date') }}</th>
                     <th>{{ get_translation('actions') }}</th>
@@ -77,11 +77,11 @@
                         <tr>
                             <td>{{ entry.order.id }}</td>
                             <td>{{ entry.order.user.username }}</td>
-                            <td>{{ entry.food_quality }}/5</td>
-                            <td>{{ entry.delivery_service }}/5</td>
-                            <td>{{ entry.packaging }}/5</td>
-                            <td>{{ entry.value_for_money }}/5</td>
                             <td>{{ entry.overall_experience }}/5</td>
+                            <td>{{ entry.value_for_money }}/5</td>
+                            <td>{{ entry.packaging }}/5</td>
+                            <td>{{ entry.delivery_service }}/5</td>
+                            <td>{{ entry.food_quality }}/5</td>
                             <td>{{ entry.comment }}</td>
                             <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                             <td>
@@ -107,7 +107,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="orderModalLabel{{ entry.order.id }}">{{ get_translation('order_details') }} #{{ entry.order.id }}</h5>
+                <h5 class="modal-title">{{ get_translation('order_details') }} #{{ entry.order.id }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -177,28 +177,13 @@
                     <h6>{{ get_translation('ratings') }}</h6>
                     <div class="row g-3">
                         <div class="col-6">
-                            <small class="text-muted d-block">{{ get_translation('food_quality') }}</small>
+                            <small class="text-muted d-block">{{ get_translation('overall_experience') }}</small>
                             <div class="rating-stars">
                                 {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < entry.food_quality %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    <i class="fas fa-star {% if i < entry.overall_experience %}text-warning{% else %}text-muted{% endif %}"></i>
                                 {% endfor %}
                             </div>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">{{ get_translation('delivery_service') }}</small>
-                            <div class="rating-stars">
-                                {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < entry.delivery_service %}text-warning{% else %}text-muted{% endif %}"></i>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">{{ get_translation('packaging') }}</small>
-                            <div class="rating-stars">
-                                {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < entry.packaging %}text-warning{% else %}text-muted{% endif %}"></i>
-                                {% endfor %}
-                            </div>
+                            <small class="text-muted">{{ entry.overall_experience }}/5</small>
                         </div>
                         <div class="col-6">
                             <small class="text-muted d-block">{{ get_translation('value_for_money') }}</small>
@@ -207,14 +192,34 @@
                                     <i class="fas fa-star {% if i < entry.value_for_money %}text-warning{% else %}text-muted{% endif %}"></i>
                                 {% endfor %}
                             </div>
+                            <small class="text-muted">{{ entry.value_for_money }}/5</small>
                         </div>
-                        <div class="col-12">
-                            <small class="text-muted d-block">{{ get_translation('overall_experience') }}</small>
+                        <div class="col-6">
+                            <small class="text-muted d-block">{{ get_translation('packaging') }}</small>
                             <div class="rating-stars">
                                 {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < entry.overall_experience %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    <i class="fas fa-star {% if i < entry.packaging %}text-warning{% else %}text-muted{% endif %}"></i>
                                 {% endfor %}
                             </div>
+                            <small class="text-muted">{{ entry.packaging }}/5</small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">{{ get_translation('delivery_service') }}</small>
+                            <div class="rating-stars">
+                                {% for i in range(5) %}
+                                    <i class="fas fa-star {% if i < entry.delivery_service %}text-warning{% else %}text-muted{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">{{ entry.delivery_service }}/5</small>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted d-block">{{ get_translation('food_quality') }}</small>
+                            <div class="rating-stars">
+                                {% for i in range(5) %}
+                                    <i class="fas fa-star {% if i < entry.food_quality %}text-warning{% else %}text-muted{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">{{ entry.food_quality }}/5</small>
                         </div>
                         {% if entry.comment %}
                         <div class="col-12">

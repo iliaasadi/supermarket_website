@@ -28,6 +28,12 @@
                     </div>
 
                     <!-- Order Items -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">{{ get_translation('order_items') }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
                     <div class="mb-4">
                         <h5 class="mb-3">{{ get_translation('order_items') }}</h5>
                         <div class="table-responsive">
@@ -54,23 +60,25 @@
                                             </div>
                                         </td>
                                         <td>{{ item.quantity }}</td>
-                                        <td>{{ "%.0f"|format(item.price) }} {{ get_translation('tooman') }}</td>
-                                        <td>{{ "%.0f"|format(item.price * item.quantity) }} {{ get_translation('tooman') }}</td>
+                                        <td>{{ "{:,.0f}".format(item.price) }} {{ get_translation('tooman') }}</td>
+                                        <td>{{ "{:,.0f}".format(item.price * item.quantity) }} {{ get_translation('tooman') }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="3" class="text-end"><strong>{{ get_translation('subtotal') }}</strong></td>
-                                        <td>{{ "%.0f"|format(order.total_amount - order.delivery_fee) }} {{ get_translation('tooman') }}</td>
+                                        <td colspan="3" class="text-end"><strong>{{ get_translation('subtotal') }}:</strong></td>
+                                        <td>{{ "{:,.0f}".format(order.total_amount - order.delivery_fee) }} {{ get_translation('tooman') }}</td>
                                     </tr>
+                                    {% if order.delivery_type == 'delivery' and order.delivery_fee > 0 %}
                                     <tr>
-                                        <td colspan="3" class="text-end"><strong>{{ get_translation('delivery_fee') }}</strong></td>
-                                        <td>{{ "%.0f"|format(order.delivery_fee) }} {{ get_translation('tooman') }}</td>
+                                        <td colspan="3" class="text-end"><strong>{{ get_translation('delivery_fee') }}:</strong></td>
+                                        <td>{{ "{:,.0f}".format(order.delivery_fee) }} {{ get_translation('tooman') }}</td>
                                     </tr>
+                                    {% endif %}
                                     <tr>
-                                        <td colspan="3" class="text-end"><strong>{{ get_translation('total') }}</strong></td>
-                                        <td><strong>{{ "%.0f"|format(order.total_amount) }} {{ get_translation('tooman') }}</strong></td>
+                                        <td colspan="3" class="text-end"><strong>{{ get_translation('total') }}:</strong></td>
+                                        <td><strong>{{ "{:,.0f}".format(order.total_amount) }} {{ get_translation('tooman') }}</strong></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -109,7 +117,7 @@
                                     {{ get_translation('order_placed') }}
                                 </div>
                             </div>
-                            {% if order.status != 'pending_approval' %}
+                            {% if order.status != 'pending_approval' and order.preparation_start %}
                             <div class="timeline-item">
                                 <div class="timeline-date">{{ order.preparation_start.strftime('%Y-%m-%d %H:%M') }}</div>
                                 <div class="timeline-content">
@@ -118,7 +126,7 @@
                                 </div>
                             </div>
                             {% endif %}
-                            {% if order.status == 'completed' %}
+                            {% if order.status == 'completed' and order.completed_at %}
                             <div class="timeline-item">
                                 <div class="timeline-date">{{ order.completed_at.strftime('%Y-%m-%d %H:%M') }}</div>
                                 <div class="timeline-content">
@@ -204,22 +212,22 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">{{ get_translation('food_quality') }}</label>
+                                    <label class="form-label">{{ get_translation('overall_experience') }}</label>
                                     <div class="rating-input">
-                                        {% for i in range(5) %}
-                                        <input type="radio" name="food_quality" value="{{ i + 1 }}" id="food_quality_{{ i + 1 }}" required>
-                                        <label for="food_quality_{{ i + 1 }}">
+                                        {% for i in range(5, 0, -1) %}
+                                        <input type="radio" name="overall_experience" value="{{ i }}" id="overall_experience_{{ i }}" required>
+                                        <label for="overall_experience_{{ i }}">
                                             <i class="fas fa-star"></i>
                                         </label>
                                         {% endfor %}
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">{{ get_translation('delivery_service') }}</label>
+                                    <label class="form-label">{{ get_translation('value_for_money') }}</label>
                                     <div class="rating-input">
-                                        {% for i in range(5) %}
-                                        <input type="radio" name="delivery_service" value="{{ i + 1 }}" id="delivery_service_{{ i + 1 }}" required>
-                                        <label for="delivery_service_{{ i + 1 }}">
+                                        {% for i in range(5, 0, -1) %}
+                                        <input type="radio" name="value_for_money" value="{{ i }}" id="value_for_money_{{ i }}" required>
+                                        <label for="value_for_money_{{ i }}">
                                             <i class="fas fa-star"></i>
                                         </label>
                                         {% endfor %}
@@ -228,9 +236,9 @@
                                 <div class="mb-3">
                                     <label class="form-label">{{ get_translation('packaging') }}</label>
                                     <div class="rating-input">
-                                        {% for i in range(5) %}
-                                        <input type="radio" name="packaging" value="{{ i + 1 }}" id="packaging_{{ i + 1 }}" required>
-                                        <label for="packaging_{{ i + 1 }}">
+                                        {% for i in range(5, 0, -1) %}
+                                        <input type="radio" name="packaging" value="{{ i }}" id="packaging_{{ i }}" required>
+                                        <label for="packaging_{{ i }}">
                                             <i class="fas fa-star"></i>
                                         </label>
                                         {% endfor %}
@@ -239,22 +247,22 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">{{ get_translation('value_for_money') }}</label>
+                                    <label class="form-label">{{ get_translation('delivery_service') }}</label>
                                     <div class="rating-input">
-                                        {% for i in range(5) %}
-                                        <input type="radio" name="value_for_money" value="{{ i + 1 }}" id="value_for_money_{{ i + 1 }}" required>
-                                        <label for="value_for_money_{{ i + 1 }}">
+                                        {% for i in range(5, 0, -1) %}
+                                        <input type="radio" name="delivery_service" value="{{ i }}" id="delivery_service_{{ i }}" required>
+                                        <label for="delivery_service_{{ i }}">
                                             <i class="fas fa-star"></i>
                                         </label>
                                         {% endfor %}
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">{{ get_translation('overall_experience') }}</label>
+                                    <label class="form-label">{{ get_translation('food_quality') }}</label>
                                     <div class="rating-input">
-                                        {% for i in range(5) %}
-                                        <input type="radio" name="overall_experience" value="{{ i + 1 }}" id="overall_experience_{{ i + 1 }}" required>
-                                        <label for="overall_experience_{{ i + 1 }}">
+                                        {% for i in range(5, 0, -1) %}
+                                        <input type="radio" name="food_quality" value="{{ i }}" id="food_quality_{{ i }}" required>
+                                        <label for="food_quality_{{ i }}">
                                             <i class="fas fa-star"></i>
                                         </label>
                                         {% endfor %}
@@ -264,7 +272,9 @@
                                     <label for="comment" class="form-label">{{ get_translation('comment') }}</label>
                                     <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary" id="submitRating">{{ get_translation('submit_rating') }}</button>
+                                <button type="submit" id="submitRating" class="btn btn-primary">
+                                    {{ get_translation('submit_rating') }}
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -433,8 +443,14 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Redirect to orders page
-                        window.location.href = "{{ url_for('orders') }}";
+                        // Show success message
+                        document.getElementById('successMessage').classList.remove('d-none');
+                        // Hide the form
+                        document.getElementById('ratingCard').classList.add('d-none');
+                        // Redirect after 2 seconds
+                        setTimeout(() => {
+                            window.location.href = "{{ url_for('orders') }}";
+                        }, 2000);
                     } else {
                         throw new Error(data.message || 'Submission failed');
                     }

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_translation('payment') }} - Fresh Market{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h2 class="card-title mb-4">{{ get_translation('payment') }}</h2>
+                    
+                    <div class="payment-info mb-4">
+                        <div class="amount-display">
+                            <h4>{{ get_translation('amount') }}: {{ "%.0f"|format(amount) }} تومان</h4>
+                        </div>
+                        <p class="text-muted">{{ get_translation('payment_type') }}: {{ get_translation(payment_type) }}</p>
+                    </div>
+
+                    <div class="payment-buttons d-grid gap-3">
+                        <a href="{{ success_url }}" class="btn btn-success btn-lg payment-btn success-btn">
+                            <i class="fas fa-check-circle me-2"></i>{{ get_translation('payment_successful') }}
+                        </a>
+                        <a href="{{ failure_url }}" class="btn btn-danger btn-lg payment-btn failure-btn">
+                            <i class="fas fa-times-circle me-2"></i>{{ get_translation('payment_failed') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        background: white;
+    }
+    
+    .card-title {
+        color: var(--dark-text);
+        font-weight: 600;
+    }
+    
+    .payment-info {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+    
+    .amount-display {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .amount-display h4 {
+        color: var(--primary-red);
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .payment-buttons {
+        margin-top: 2rem;
+    }
+    
+    .payment-btn {
+        border-radius: 12px;
+        padding: 1.2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .success-btn {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+    
+    .success-btn:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+    }
+    
+    .failure-btn {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+    }
+    
+    .failure-btn:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+    }
+    
+    .btn i {
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %} 

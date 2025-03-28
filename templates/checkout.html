@@ -93,16 +93,16 @@ document.addEventListener('DOMContentLoaded', function() {
             addressSection.style.display = 'none';
             locationSelect.required = true;
             addressSelect.required = false;
-            deliveryFee.textContent = '$0.00';
-            totalAmount.textContent = `$${subtotal.toFixed(2)}`;
+            deliveryFee.textContent = '0 تومان';
+            totalAmount.textContent = `${subtotal.toLocaleString()} تومان`;
         } else {
             locationSection.style.display = 'none';
             addressSection.style.display = 'block';
             locationSelect.required = false;
             addressSelect.required = true;
-            const fee = Math.max(2.00, subtotal * 0.05);
-            deliveryFee.textContent = `$${fee.toFixed(2)}`;
-            totalAmount.textContent = `$${(subtotal + fee).toFixed(2)}`;
+            const fee = Math.max(20000, subtotal * 0.05);
+            deliveryFee.textContent = `${fee.toLocaleString()} تومان`;
+            totalAmount.textContent = `${(subtotal + fee).toLocaleString()} تومان`;
         }
     }
 
