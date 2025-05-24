@@ -154,6 +154,12 @@
                                 {{ get_translation('cash_on_delivery') }}
                             </label>
                         </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="payment_method" id="online" value="online">
+                            <label class="form-check-label" for="online">
+                                <i class="fas fa-credit-card me-1"></i>{{ get_translation('pay_online') }}
+                            </label>
+                        </div>
                         {% if current_user.wallet and current_user.wallet.balance > 0 %}
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="radio" name="payment_method" id="wallet" value="wallet">
@@ -191,9 +197,12 @@
                         
                         <!-- Order Description -->
                         <div class="mb-3">
-                            <label for="order_description" class="form-label">{{ get_translation('order_description') }}</label>
+                            <label for="order_description" class="form-label">
+                                <i class="fas fa-sticky-note me-2"></i>{{ get_translation('order_description') }}
+                            </label>
                             <textarea class="form-control" id="order_description" name="order_description" rows="3" 
                                     placeholder="{{ get_translation('order_description_placeholder') }}"></textarea>
+                            <small class="text-muted">{{ get_translation('order_description_help') }}</small>
                         </div>
                         
                         <button type="submit" class="btn w-100" style="background-color: var(--primary-red); color: white;">

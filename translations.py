@@ -21,6 +21,7 @@ translations = {
         'orders_with_comments': 'Orders with Comments',
         'orders_waiting_for_comments': 'Orders Waiting for Comments',
         'click_categories_for_more': 'Click on each category to see more items',
+        'pay_online': 'Pay Online',
         
         # Forms and Buttons
         'submit': 'Submit',
@@ -144,7 +145,7 @@ translations = {
         'add_category': 'Add Category',
         'category_name': 'Category Name',
         'confirm_delete_category': 'Are you sure you want to delete this category?',
-        'category_and_products_deleted' : 'Category and Products are deleted' ,
+        'category_and_products_deleted' : 'Category and Products are deleted',
         
         # Messages
         'success': 'Success',
@@ -325,6 +326,9 @@ translations = {
         'email': 'Email',
         'phone': 'Phone',
         'delivery_address': 'Delivery Address',
+        'payment_type' : 'Payment Type',
+        'order_payment_failed' : 'Order Payment Failed',
+        'order_payment_successful' : 'Order Payment Successful',
         
         # New translations
         'users_pending_verification': 'Users Pending Verification',
@@ -455,13 +459,14 @@ translations = {
         'deniz_supermarket': 'Deniz Supermarket',
         'deniz_poem': 'Where quality meets convenience, like waves meeting the shore',
         'order_description': 'Order Notes',
-        'view_notes': 'View Notes',
+        'order_description_placeholder': 'Add any special instructions or notes for your order...',
+        'order_description_help': 'These notes will be visible to the store staff.',
         'order_notes': 'Order Notes',
-        'no_notes': 'No notes',
+        'view_notes': 'View Notes',
+        'no_notes': 'No Notes',
         'order_has_been_rejected': 'Order has been rejected',
         'please_select_store_location': 'Please select a store location',
         'order_note': 'Order Note',
-        'order_description_placeholder': 'Add any special instructions or notes for your order...',
         'order_status_pending_approval': 'Pending Approval',
         'rate_order': 'Rate Order',
         'rate_your_order': 'Rate your order',
@@ -510,6 +515,7 @@ translations = {
         'continue_shopping': 'Continue Shopping',
         'continue': 'Continue',
         'enter_phone_and_password': 'Enter your phone and password',
+        'order_placed_successfully' : 'Order Placed Successfully',
     },
     'fa': {
         # Navigation and Common
@@ -533,6 +539,7 @@ translations = {
         'orders_with_comments': 'سفارشات با نظر',
         'orders_waiting_for_comments': 'سفارشات در انتظار نظر',
         'click_categories_for_more': 'برای مشاهده محصولات بیشتر روی هر دسته کلیک کنید',
+        'pay_online': 'پرداخت آنلاین',
         
         # Forms and Buttons
         'submit': 'ارسال',
@@ -751,6 +758,10 @@ translations = {
         'cancelled': 'لغو شده',
         'delivered': 'تحویل داده شده',
         'ready_for_pickup': 'آماده برای دریافت',
+        'payment_type' : 'نحوه پرداخت',
+        'order_payment_failed' : 'پرداخت ناموفق بود',
+        'order_payment_successful' : 'پرداخت موفق بود',
+        'order_description_help' : 'این یادداشت‌ها برای کارکنان فروشگاه قابل مشاهده خواهد بود.',
         
         
         # Reset Password Page
@@ -900,7 +911,7 @@ translations = {
         'enter_street_address': 'آدرس خود را وارد کنید',
         'tag': 'برچسب',
         'enter_building_unit': 'واحد/واحد ساختمان را وارد کنید',
-        'address_description_placeholder': 'دستورالعمل‌های خاص یا توضیحات سفارش خود را اینجا بنویسید...',
+        'address_description_placeholder': 'دستورالعمل‌های خاص یا یادداشت‌های سفارش خود را اینجا وارد کنید...',
         'set_as_default': 'به عنوان آدرس پیش‌فرض تنظیم کنید',
         'save_address': 'ذخیره آدرس',
         'cancel': 'Cancel',
@@ -971,14 +982,15 @@ translations = {
         'back_to_dashboard': 'بازگشت به داشبورد',
         'deniz_supermarket': 'سوپرمارکت دنیز',
         'deniz_poem': 'جایی که کیفیت با راحتی همراه می‌شود، همچون امواجی که به ساحل می‌رسند',
-        'order_description': 'توضیحات سفارش',
-        'view_notes': 'مشاهده توضیحات',
-        'order_notes': 'توضیحات سفارش',
-        'no_notes': 'بدون توضیحات',
+        'order_description': 'یادداشت سفارش',
+        'order_description_placeholder': 'دستورالعمل‌های خاص یا یادداشت‌های سفارش خود را اینجا وارد کنید...',
+        'order_description_help': 'این یادداشت‌ها برای کارکنان فروشگاه قابل مشاهده خواهد بود.',
+        'order_notes': 'یادداشت‌های سفارش',
+        'view_notes': 'مشاهده یادداشت‌ها',
+        'no_notes': 'بدون یادداشت',
         'order_has_been_rejected': 'سفارش رد شده است',
         'please_select_store_location': 'لطفاً یک فروشگاه را انتخاب کنید',
         'order_note': 'یادداشت سفارش',
-        'order_description_placeholder': 'دستورالعمل‌های خاص یا توضیحات سفارش خود را اینجا بنویسید...',
         'order_status_pending_approval': 'در انتظار تایید',
         'rate_order': 'امتیازدهی سفارش',
         'rate_your_order': 'امتیاز خود را برای این سفارش بدهید',
@@ -1021,6 +1033,7 @@ translations = {
         'order_cancelled_refund': 'مسترد سفارش لغو شده',
         'quick_actions': 'دسترسی سریع',
         'back_to_profile': 'بازگشت به پروفایل',
-        'continue_shopping': 'ادامه خرید'
+        'continue_shopping': 'ادامه خرید',
+        'order_placed_successfully' : 'سفارش با موفقیت ثبت شد',
     }
 } 

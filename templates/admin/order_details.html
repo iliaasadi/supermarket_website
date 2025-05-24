@@ -59,13 +59,61 @@
             {% if order.description %}
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0">{{ get_translation('order_note') }}</h5>
+                    <h5 class="mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>{{ get_translation('order_note') }}
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="order-note">{{ order.description }}</div>
+                    <div class="order-note">
+                        <p class="mb-0">{{ order.description }}</p>
+                    </div>
                 </div>
             </div>
             {% endif %}
+
+            <!-- Payment Information -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <i class="fas fa-credit-card me-2"></i>{{ get_translation('payment_info') }}
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>{{ get_translation('payment_method') }}:</strong></p>
+                            {% if order.payment_method == 'wallet' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-wallet me-1"></i>
+                                    {{ get_translation('pay_with_wallet') }}
+                                </span>
+                            {% elif order.payment_method == 'online' %}
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-credit-card me-1"></i>
+                                    {{ get_translation('pay_online') }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-money-bill-wave me-1"></i>
+                                    {{ get_translation('cash_on_delivery') }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>{{ get_translation('payment_status') }}:</strong></p>
+                            {% if order.payment_method in ['wallet', 'online'] %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    {{ get_translation('paid') }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ get_translation('pending_payment') }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="col-md-4">

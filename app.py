@@ -710,6 +710,19 @@ def checkout():
         # Get payment method
         payment_method = request.form.get('payment_method', 'cash')
         
+        # If payment method is online, redirect to payment temp page
+        if payment_method == 'online':
+            # Store order details in session for payment success
+            session['order_total'] = total
+            session['payment_method'] = payment_method
+            session['delivery_type'] = delivery_type
+            session['store_location_id'] = store_location_id if delivery_type == 'pickup' else None
+            session['address_id'] = address_id if delivery_type == 'delivery' else None
+            session['order_description'] = request.form.get('order_description', '').strip()  # Store order description in session
+            
+            # Redirect to payment temp page
+            return redirect(url_for('payment_temp', amount=total, type='order'))
+        
         # If payment method is wallet, check balance
         if payment_method == 'wallet':
             if not current_user.wallet:
@@ -732,12 +745,43 @@ def checkout():
                 session['delivery_type'] = delivery_type
                 session['store_location_id'] = store_location_id if delivery_type == 'pickup' else None
                 session['address_id'] = address_id if delivery_type == 'delivery' else None
+                session['order_description'] = request.form.get('order_description', '').strip()  # Store order description directly from form
                 
                 # Redirect to payment temp page with the remaining amount
                 return redirect(url_for('payment_temp', amount=remaining_amount, type='order'))
             
-            # If wallet balance is sufficient, proceed with order creation
-            # Create withdrawal transaction
+            # If wallet balance is sufficient, create order directly
+            order = Order(
+                user_id=current_user.id,
+                total_amount=total,
+                delivery_fee=delivery_fee,
+                status='pending_approval',
+                payment_method=payment_method,
+                delivery_type=delivery_type,
+                store_location_id=store_location_id if delivery_type == 'pickup' else None,
+                address_id=address_id if delivery_type == 'delivery' else None,
+                description=request.form.get('order_description', '').strip()  # Get order description directly from form
+            )
+            db.session.add(order)
+            
+            # Create order items
+            for cart_item in cart_items:
+                order_item = OrderItem(
+                    order=order,
+                    product_id=cart_item.product_id,
+                    quantity=cart_item.quantity,
+                    price=cart_item.product.price * (1 - cart_item.product.discount/100)
+                )
+                db.session.add(order_item)
+            
+            # Clear cart
+            for cart_item in cart_items:
+                db.session.delete(cart_item)
+            
+            # Update wallet balance
+            wallet.balance -= total
+            
+            # Create wallet transaction
             transaction = WalletTransaction(
                 wallet_id=wallet.id,
                 amount=total,
@@ -746,25 +790,23 @@ def checkout():
             )
             db.session.add(transaction)
             
-            # Update wallet balance to zero
-            wallet.balance = 0.0
+            db.session.commit()
+            
+            flash_translated('order_placed_successfully', 'success')
+            return redirect(url_for('order_status', order_id=order.id))
         
-        # Create order
+        # For cash payment, create order directly
         order = Order(
             user_id=current_user.id,
             total_amount=total,
             delivery_fee=delivery_fee,
             status='pending_approval',
-            delivery_type=delivery_type,
             payment_method=payment_method,
-            description=request.form.get('order_description', '')
+            delivery_type=delivery_type,
+            store_location_id=store_location_id if delivery_type == 'pickup' else None,
+            address_id=address_id if delivery_type == 'delivery' else None,
+            description=request.form.get('order_description', '').strip()  # Get order description directly from form
         )
-        
-        if delivery_type == 'pickup':
-            order.store_location_id = store_location_id
-        else:
-            order.address_id = address_id
-        
         db.session.add(order)
         
         # Create order items
@@ -783,7 +825,7 @@ def checkout():
         
         db.session.commit()
         
-        flash_translated('order_placed')
+        flash_translated('order_placed_successfully', 'success')
         return redirect(url_for('order_status', order_id=order.id))
     
     # For GET request, calculate delivery fee for display
@@ -1642,14 +1684,12 @@ def payment_success():
             # Handle order payment
             # Get order details from session
             order_total = session.get('order_total')
-            wallet_amount = session.get('wallet_amount')
-            remaining_amount = session.get('remaining_amount')
             payment_method = session.get('payment_method')
             delivery_type = session.get('delivery_type')
             store_location_id = session.get('store_location_id')
             address_id = session.get('address_id')
             
-            if not all([order_total, wallet_amount, remaining_amount, payment_method, delivery_type]):
+            if not all([order_total, payment_method, delivery_type]):
                 flash_translated('order_details_not_found', 'error')
                 return redirect(url_for('cart'))
             
@@ -1668,8 +1708,9 @@ def payment_success():
                 status='pending_approval',
                 payment_method=payment_method,
                 delivery_type=delivery_type,
-                store_location_id=store_location_id,
-                address_id=address_id
+                store_location_id=store_location_id if delivery_type == 'pickup' else None,
+                address_id=address_id if delivery_type == 'delivery' else None,
+                description=session.get('order_description', '').strip()  # Get order description from session
             )
             db.session.add(order)
             
@@ -1683,39 +1724,22 @@ def payment_success():
                 )
                 db.session.add(order_item)
             
-            # Handle wallet payment
-            if payment_method == 'wallet':
-                wallet = current_user.wallet
-                
-                # Create withdrawal transaction for the full order amount
-                transaction = WalletTransaction(
-                    wallet_id=wallet.id,
-                    amount=order_total,
-                    type='withdrawal',
-                    description=get_translation('order_payment')
-                )
-                db.session.add(transaction)
-                
-                # Update wallet balance to zero
-                wallet.balance = 0.0
-            
             # Clear cart
             for cart_item in cart_items:
                 db.session.delete(cart_item)
             
             # Clear session data
             session.pop('order_total', None)
-            session.pop('wallet_amount', None)
-            session.pop('remaining_amount', None)
             session.pop('payment_method', None)
             session.pop('delivery_type', None)
             session.pop('store_location_id', None)
             session.pop('address_id', None)
+            session.pop('order_description', None)  # Clear order description from session
             
             db.session.commit()
             
             flash_translated('order_payment_successful', 'success')
-            return redirect(url_for('order_status', order_id=order.id))
+            return redirect(url_for('admin_orders'))  # Redirect to admin orders page
     except Exception as e:
         db.session.rollback()
         print(f"Error processing payment: {str(e)}")
