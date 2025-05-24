@@ -153,11 +153,11 @@ class OrderItem(db.Model):
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
+    description = db.Column(db.Text, nullable=True)
     price = db.Column(db.Float, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(50))
-    image_url = db.Column(db.String(200))
+    image_url = db.Column(db.String(200), nullable=True)
     discount = db.Column(db.Float, default=0)
     is_featured = db.Column(db.Boolean, default=False)
     is_verified_only = db.Column(db.Boolean, default=False)

@@ -9,9 +9,9 @@
             <h2>{{ get_translation('admin_dashboard') }}</h2>
         </div>
         <div class="col-auto">
-            <a href="{{ url_for('admin_identity_cards') }}" class="btn btn-outline-primary me-2">
+            <!-- <a href="{{ url_for('admin_identity_cards') }}" class="btn btn-outline-primary me-2">
                 <i class="fas fa-id-card me-2"></i>{{ get_translation('identity_cards') }}
-            </a>
+            </a> -->
             <a href="{{ url_for('admin_add_product') }}" class="btn" style="background-color: var(--primary-red); color: white;">
                 <i class="fas fa-plus me-2"></i>{{ get_translation('add_new_product') }}
             </a>
@@ -158,7 +158,7 @@
                             <th>{{ get_translation('stock') }}</th>
                             <th>{{ get_translation('discount') }}</th>
                             <th>{{ get_translation('featured') }}</th>
-                            <th>{{ get_translation('verified_only') }}</th>
+                            <!-- <th>{{ get_translation('verified_only') }}</th> -->
                             <th>{{ get_translation('actions') }}</th>
                         </tr>
                     </thead>
@@ -200,13 +200,13 @@
                                 <span class="badge bg-secondary">{{ get_translation('no') }}</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <!-- <td>
                                 {% if product.is_verified_only %}
                                 <span class="badge bg-warning">{{ get_translation('yes') }}</span>
                                 {% else %}
                                 <span class="badge bg-secondary">{{ get_translation('no') }}</span>
                                 {% endif %}
-                            </td>
+                            </td> -->
                             <td>
                                 <div class="btn-group">
                                     <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" 

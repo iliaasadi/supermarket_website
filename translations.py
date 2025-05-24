@@ -20,6 +20,7 @@ translations = {
         'total_orders': 'Total Orders',
         'orders_with_comments': 'Orders with Comments',
         'orders_waiting_for_comments': 'Orders Waiting for Comments',
+        'click_categories_for_more': 'Click on each category to see more items',
         
         # Forms and Buttons
         'submit': 'Submit',
@@ -143,6 +144,7 @@ translations = {
         'add_category': 'Add Category',
         'category_name': 'Category Name',
         'confirm_delete_category': 'Are you sure you want to delete this category?',
+        'category_and_products_deleted' : 'Category and Products are deleted' ,
         
         # Messages
         'success': 'Success',
@@ -182,7 +184,7 @@ translations = {
         'password': 'Password',
         'choose_password': 'Choose a password',
         'confirm_password': 'Confirm Password',
-        'address_information': 'Address Information',
+        'address_information_for_delivery_optional': 'Address Information for Delivery (Optional)',
         'street_address': 'Street Address',
         'enter_street_address': 'Enter your street address',
         'tag': 'Tag',
@@ -200,13 +202,14 @@ translations = {
         # Profile Page
         'profile': 'Profile',
         'profile_picture': 'Profile Picture',
-        'account_not_verified': 'Your account is not verified. Please upload your ID card for verification.',
         'account_verified': 'Your account is verified.',
         'edit_profile': 'Edit Profile',
         'upload_id_for_verification': 'Upload your ID card for verification',
         'change_password': 'Change Password',
         'update_profile': 'Update Profile',
         'recent_orders': 'Recent Orders',
+        'delivery_information': 'Delivery Information',
+        'customer_information': 'Customer Information',
         'order': 'Order',
         'items': 'items',
         'pickup_from': 'Pickup from',
@@ -461,6 +464,8 @@ translations = {
         'order_description_placeholder': 'Add any special instructions or notes for your order...',
         'order_status_pending_approval': 'Pending Approval',
         'rate_order': 'Rate Order',
+        'rate_your_order': 'Rate your order',
+        'order_timeline': 'Order Timeline',
         'food_quality': 'Food Quality',
         'delivery_service': 'Delivery Service',
         'packaging': 'Packaging',
@@ -481,6 +486,8 @@ translations = {
         'unauthorized_access': 'Unauthorized access.',
         'order_rating': 'Order Rating',
         'order_actions': 'Order Actions',
+        'thank_you_for_rating': 'Thank you for rating your order!',
+        'add_some_products' : 'Add some products to your cart to rate an order',
         'ratings': 'Ratings',
         'view_comments': 'View Comments',
         'view_order_comments_description': 'View and manage customer feedback and ratings',
@@ -500,7 +507,9 @@ translations = {
         'order_cancelled_refund': 'Order Cancelled Refund',
         'quick_actions': 'Quick Actions',
         'back_to_profile': 'Back to Profile',
-        'continue_shopping': 'Continue Shopping'
+        'continue_shopping': 'Continue Shopping',
+        'continue': 'Continue',
+        'enter_phone_and_password': 'Enter your phone and password',
     },
     'fa': {
         # Navigation and Common
@@ -523,6 +532,7 @@ translations = {
         'total_orders': 'کل سفارشات',
         'orders_with_comments': 'سفارشات با نظر',
         'orders_waiting_for_comments': 'سفارشات در انتظار نظر',
+        'click_categories_for_more': 'برای مشاهده محصولات بیشتر روی هر دسته کلیک کنید',
         
         # Forms and Buttons
         'submit': 'ارسال',
@@ -609,6 +619,8 @@ translations = {
         'order_cancelled': 'سفارش با موفقیت لغو شد',
         'order_cancelled_by_user': 'سفارش توسط کاربر لغو شد',
         'order_cancelled_by_admin': 'سفارش توسط ادمین لغو شد',
+        'order_completed': 'سفارش با موفقیت تکمیل شد',
+        'thank_you_for_rating': 'با تشکر از امتیاز دادن به سفارش شما',
         
         # Admin
         'admin_dashboard': 'داشبورد مدیریت',
@@ -646,6 +658,7 @@ translations = {
         'add_category': 'افزودن دسته‌بندی',
         'category_name': 'نام دسته‌بندی',
         'confirm_delete_category': 'آیا از حذف این دسته‌بندی اطمینان دارید؟',
+        'category_and_products_deleted' : 'دسته‌بندی‌ و محصولات حدف شدند',
         
         # Messages
         'success': 'موفقیت',
@@ -685,7 +698,7 @@ translations = {
         'password': 'رمز عبور',
         'choose_password': 'یک رمز عبور انتخاب کنید',
         'confirm_password': 'تکرار رمز عبور',
-        'address_information': 'اطلاعات آدرس',
+        'address_information_for_delivery_optional': 'اطلاعات آدرس برای تحویل (اختیاری)',
         'street_address': 'آدرس',
         'enter_street_address': 'آدرس خود را وارد کنید',
         'tag': 'برچسب',
@@ -703,7 +716,6 @@ translations = {
         # Profile Page
         'profile': 'پروفایل',
         'profile_picture': 'تصویر پروفایل',
-        'account_not_verified': 'حساب شما تایید نشده است. لطفا کارت شناسایی خود را برای تایید آپلود کنید.',
         'account_verified': 'حساب شما تایید شده است.',
         'edit_profile': 'ویرایش پروفایل',
         'upload_id_for_verification': 'آپلود کارت شناسایی برای تایید',
@@ -739,6 +751,7 @@ translations = {
         'cancelled': 'لغو شده',
         'delivered': 'تحویل داده شده',
         'ready_for_pickup': 'آماده برای دریافت',
+        
         
         # Reset Password Page
         'change_password': 'تغییر رمز عبور',
@@ -791,7 +804,7 @@ translations = {
         'date': 'تاریخ',
         'actions': 'عملیات',
         'pickup': 'دریافت حضوری',
-        'delivery': 'تحویل',
+        'delivery': 'تحویل خارج از فروشگاه',
         'confirm_approve_order': 'آیا از تایید این سفارش اطمینان دارید؟',
         'approve': 'تایید',
         'confirm_reject_order': 'آیا از رد این سفارش اطمینان دارید؟',
@@ -823,6 +836,7 @@ translations = {
         'rejected': 'رد شده',
         'approve_order': 'تایید سفارش',
         'reject_order': 'رد سفارش',
+        'add_some_products' : 'محصولی به سبد خرید اضافه کنید',
         
         # New translations
         'users_pending_verification': 'کاربران در انتظار تایید',
@@ -882,14 +896,16 @@ translations = {
         'discover_quality': 'محصولات با کیفیت را با بهترین قیمت‌ها کشف کنید',
         
         # Address Form
-        'add_new_address': 'Add New Address',
-        'enter_street_address': 'Enter street address',
-        'tag': 'Tag',
-        'enter_building_unit': 'Enter building/unit number',
+        'add_new_address': 'افزودن آدرس جدید',
+        'enter_street_address': 'آدرس خود را وارد کنید',
+        'tag': 'برچسب',
+        'enter_building_unit': 'واحد/واحد ساختمان را وارد کنید',
         'address_description_placeholder': 'دستورالعمل‌های خاص یا توضیحات سفارش خود را اینجا بنویسید...',
-        'set_as_default': 'Set as Default Address',
-        'save_address': 'Save Address',
+        'set_as_default': 'به عنوان آدرس پیش‌فرض تنظیم کنید',
+        'save_address': 'ذخیره آدرس',
         'cancel': 'Cancel',
+        'continue': 'ادامه',
+        'enter_phone_and_password': 'شماره تلفن و رمز عبور خود را وارد کنید',
         
         # Order Approval and Completion Messages
         'order_approved_and_moved_to_preparation': 'سفارش تایید و به مرحله آماده سازی منتقل شد',
@@ -965,6 +981,9 @@ translations = {
         'order_description_placeholder': 'دستورالعمل‌های خاص یا توضیحات سفارش خود را اینجا بنویسید...',
         'order_status_pending_approval': 'در انتظار تایید',
         'rate_order': 'امتیازدهی سفارش',
+        'rate_your_order': 'امتیاز خود را برای این سفارش بدهید',
+        'order_timeline': 'تاریخچه سفارش',
+        'delivery_information': 'اطلاعات تحویل',
         'food_quality': 'کیفیت غذا',
         'delivery_service': 'کیفیت سرویس دهی',
         'packaging': 'بسته بندی',

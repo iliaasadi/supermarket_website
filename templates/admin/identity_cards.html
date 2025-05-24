@@ -24,7 +24,7 @@
                            placeholder="{{ get_translation('search_by_username_or_email') }}"
                            value="{{ request.args.get('search', '') }}">
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <select class="form-select" name="verification_status" id="verificationFilter">
                         <option value="all" {% if request.args.get('verification_status') == 'all' %}selected{% endif %}>
                             {{ get_translation('all_users') }}
@@ -36,7 +36,7 @@
                             {{ get_translation('unverified_users') }}
                         </option>
                     </select>
-                </div>
+                </div> -->
                 <div class="col-md-3">
                     <select class="form-select" name="sort_by" id="sortBy">
                         <option value="newest" {% if request.args.get('sort_by') == 'newest' %}selected{% endif %}>
@@ -65,9 +65,9 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <h5 class="card-title mb-0">{{ user.username }}</h5>
-                            <span class="badge {% if user.is_verified %}bg-success{% else %}bg-warning{% endif %}">
+                            <!-- <span class="badge {% if user.is_verified %}bg-success{% else %}bg-warning{% endif %}">
                                 {{ get_translation('verified') if user.is_verified else get_translation('unverified') }}
-                            </span>
+                            </span> -->
                         </div>
                         <p class="card-text">
                             <small class="text-muted">
@@ -85,13 +85,13 @@
                             </div>
                         {% endif %}
                         
-                        {% if not user.is_verified %}
+                        <!-- {% if not user.is_verified %}
                             <a href="{{ url_for('verify_user', user_id=user.id) }}" 
                                class="btn btn-success btn-sm"
                                onclick="return confirm('{{ get_translation('confirm_verify_user') }}')">
                                 {{ get_translation('verify_user') }}
                             </a>
-                        {% endif %}
+                        {% endif %} -->
                     </div>
                 </div>
             </div>
@@ -153,11 +153,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filterForm');
     const searchInput = document.getElementById('searchInput');
-    const verificationFilter = document.getElementById('verificationFilter');
+    // const verificationFilter = document.getElementById('verificationFilter');
     const sortBy = document.getElementById('sortBy');
 
     // Auto-submit form when filters change
-    verificationFilter.addEventListener('change', () => filterForm.submit());
+    // verificationFilter.addEventListener('change', () => filterForm.submit());
     sortBy.addEventListener('change', () => filterForm.submit());
 
     // Debounce search input

@@ -306,13 +306,13 @@
                         <a href="{{ url_for('orders') }}" class="btn btn-outline-primary">
                             <i class="fas fa-arrow-left me-2"></i>{{ get_translation('back_to_orders') }}
                         </a>
-                        {% if order.status in ['pending_approval', 'preparing'] %}
+                        <!-- {% if order.status in ['pending_approval', 'preparing'] %}
                         <form method="POST" action="{{ url_for('cancel_order', order_id=order.id) }}" class="d-grid">
                             <button type="submit" class="btn btn-outline-danger">
                                 <i class="fas fa-times me-2"></i>{{ get_translation('cancel_order') }}
                             </button>
                         </form>
-                        {% endif %}
+                        {% endif %} -->
                     </div>
                 </div>
             </div>

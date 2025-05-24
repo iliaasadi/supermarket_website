@@ -1,63 +1,77 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('create_account') }} - Apple SuperMarket{% endblock %}
+{% block title %}{{ get_translation('add_address') }} - Apple SuperMarket{% endblock %}
 
 {% block content %}
 <div class="auth-container">
     <div class="auth-card">
         <div class="auth-header">
-            <i class="fas fa-user-plus"></i>
-            <h1>{{ get_translation('create_account') }}</h1>
-            <p>{{ get_translation('enter_phone_and_password') }}</p>
+            <i class="fas fa-map-marker-alt"></i>
+            <h1>{{ get_translation('add_address') }}</h1>
+            <p>{{ get_translation('address_information_for_delivery_optional') }}</p>
         </div>
-        <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+        <form method="POST" action="{{ url_for('register_address') }}" class="auth-form">
             {{ form.hidden_tag() }}
             <div class="form-group">
-                <label for="phone_number">
-                    <i class="fas fa-phone"></i>
-                    {{ get_translation('phone_number') }}
+                <label for="street">
+                    <i class="fas fa-road"></i>
+                    {{ get_translation('street_address') }}
                 </label>
-                {{ form.phone_number(class="form-control", placeholder=get_translation('enter_phone_number')) }}
-                {% if form.phone_number.errors %}
+                {{ form.street(class="form-control", placeholder=get_translation('enter_street_address')) }}
+                {% if form.street.errors %}
                 <div class="error-message">
-                    {% for error in form.phone_number.errors %}
+                    {% for error in form.street.errors %}
                     <span>{{ error }}</span>
                     {% endfor %}
                 </div>
                 {% endif %}
             </div>
             <div class="form-group">
-                <label for="password">
-                    <i class="fas fa-lock"></i>
-                    {{ get_translation('password') }}
+                <label for="tag">
+                    <i class="fas fa-tag"></i>
+                    {{ get_translation('tag') }}
                 </label>
-                {{ form.password(class="form-control", placeholder=get_translation('choose_password')) }}
-                {% if form.password.errors %}
+                {{ form.tag(class="form-control", placeholder=get_translation('enter_tag')) }}
+                {% if form.tag.errors %}
                 <div class="error-message">
-                    {% for error in form.password.errors %}
+                    {% for error in form.tag.errors %}
                     <span>{{ error }}</span>
                     {% endfor %}
                 </div>
                 {% endif %}
             </div>
             <div class="form-group">
-                <label for="confirm_password">
-                    <i class="fas fa-lock"></i>
-                    {{ get_translation('confirm_password') }}
+                <label for="building_unit_number">
+                    <i class="fas fa-building"></i>
+                    {{ get_translation('building_unit_number') }}
                 </label>
-                {{ form.confirm_password(class="form-control", placeholder=get_translation('confirm_password')) }}
-                {% if form.confirm_password.errors %}
+                {{ form.building_unit_number(class="form-control", placeholder=get_translation('enter_building_unit_number')) }}
+                {% if form.building_unit_number.errors %}
                 <div class="error-message">
-                    {% for error in form.confirm_password.errors %}
+                    {% for error in form.building_unit_number.errors %}
                     <span>{{ error }}</span>
                     {% endfor %}
                 </div>
                 {% endif %}
             </div>
-            {{ form.submit(class="btn btn-primary", value=get_translation('continue')) }}
+            <div class="form-group">
+                <label for="description">
+                    <i class="fas fa-info-circle"></i>
+                    {{ get_translation('description') }}
+                </label>
+                {{ form.description(class="form-control", placeholder=get_translation('enter_description'), style="height: 100px; resize: none;") }}
+                {% if form.description.errors %}
+                <div class="error-message">
+                    {% for error in form.description.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {{ form.submit(class="btn btn-primary", value=get_translation('save_address')) }}
         </form>
         <div class="auth-footer">
-            <p>{{ get_translation('already_have_account') }} <a href="{{ url_for('login') }}" class="link">{{ get_translation('login') }}</a></p>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">{{ get_translation('skip_now') }}</a>
         </div>
     </div>
 </div>
@@ -181,21 +195,28 @@
         transform: translateY(-2px);
     }
 
+    .btn-outline-secondary {
+        background: transparent;
+        color: var(--gray-text);
+        padding: 0.8rem 2rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #f5f5f7;
+        transform: translateY(-2px);
+    }
+
     .auth-footer {
         text-align: center;
         margin-top: 2rem;
-        color: var(--gray-text);
-    }
-
-    .link {
-        color: var(--primary-red);
-        text-decoration: none;
-        font-weight: 500;
-        transition: color 0.3s ease;
-    }
-
-    .link:hover {
-        color: var(--secondary-red);
     }
 </style>
 {% endblock %} 

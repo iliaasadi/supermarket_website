@@ -4,6 +4,13 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField, Selec
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange, Optional
 from models import User
 from flask_login import current_user
+from flask import session
+from translations import translations
+
+def get_translation(key):
+    """Get translation for the current language"""
+    language = session.get('language', 'fa')
+    return translations[language].get(key, translations['fa'].get(key, key))
 
 class LoginForm(FlaskForm):
     phone_number = StringField('شماره تلفن', validators=[DataRequired(), Length(min=10, max=20)])
@@ -15,23 +22,22 @@ class RegisterForm(FlaskForm):
     password = PasswordField('رمز عبور', validators=[DataRequired(), Length(min=6)])
     confirm_password = PasswordField('تکرار رمز عبور', validators=[DataRequired(), EqualTo('password')])
     phone_number = StringField('شماره تلفن', validators=[DataRequired(), Length(min=10, max=20)])
-    
-    # Address fields
-    street = StringField('آدرس', validators=[DataRequired(), Length(max=200)])
-    tag = StringField('برچسب (مثال: خانه، محل کار)', validators=[DataRequired(), Length(max=50)])
-    building_unit_number = StringField('شماره ساختمان/واحد', validators=[Optional(), Length(max=50)])
-    description = TextAreaField('توضیحات (اختیاری)', validators=[Optional(), Length(max=500)])
-    
-    submit = SubmitField('ثبت نام')
+    submit = SubmitField('ادامه')
 
     def validate_phone_number(self, phone_number):
         formatted_number = User.format_phone_number(phone_number.data)
         user = User.query.filter_by(phone_number=formatted_number).first()
         if user is not None:
             raise ValidationError('این شماره تلفن قبلاً ثبت شده است.')
-        phone_number.data = formatted_number  # Update the field with formatted number
-        # Set username as phone number
+        phone_number.data = formatted_number
         self.username = formatted_number
+
+class RegisterAddressForm(FlaskForm):
+    street = StringField('آدرس', validators=[DataRequired(), Length(max=200)])
+    tag = StringField('برچسب (مثال: خانه، محل کار)', validators=[DataRequired(), Length(max=50)])
+    building_unit_number = StringField('شماره ساختمان/واحد', validators=[Optional(), Length(max=50)])
+    description = TextAreaField('توضیحات (اختیاری)', validators=[Optional(), Length(max=500)])
+    submit = SubmitField('ذخیره آدرس')
 
 class ProfileForm(FlaskForm):
     username = StringField('نام کاربری', validators=[Optional(), Length(min=4, max=20)])
@@ -50,10 +56,10 @@ class ProfileForm(FlaskForm):
         user = User.query.filter_by(phone_number=formatted_number).first()
         if user is not None and user != current_user:
             raise ValidationError('این شماره تلفن قبلاً ثبت شده است.')
-        phone_number.data = formatted_number  # Update the field with formatted number
+        phone_number.data = formatted_number
 
     def validate_email(self, email):
-        if email.data and email.data.strip():  # Only validate if email is provided and not empty
+        if email.data and email.data.strip():
             user = User.query.filter_by(email=email.data).first()
             if user is not None and user != current_user:
                 raise ValidationError('لطفاً از یک آدرس ایمیل دیگر استفاده کنید.')

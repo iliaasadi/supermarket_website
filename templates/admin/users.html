@@ -18,7 +18,7 @@
                             <strong>{{ get_translation('registered') }}:</strong> {{ user.created_at.strftime('%Y-%m-%d') }}
                         </p>
                         
-                        {% if user.identity_card %}
+                        <!-- {% if user.identity_card %}
                             <div class="mb-3">
                                 <strong>{{ get_translation('identity_card') }}:</strong><br>
                                 <img src="{{ url_for('static', filename=user.identity_card) }}" 
@@ -27,19 +27,19 @@
                                      data-bs-toggle="modal"
                                      data-bs-target="#identityCardModal{{ user.id }}">
                             </div>
-                        {% endif %}
+                        {% endif %} -->
                         
-                        <a href="{{ url_for('verify_user', user_id=user.id) }}" 
+                        <!-- <a href="{{ url_for('verify_user', user_id=user.id) }}" 
                            class="btn btn-success"
                            onclick="return confirm('{{ get_translation('confirm_verify_user') }}')">
                             {{ get_translation('verify_user') }}
-                        </a>
+                        </a> -->
                     </div>
                 </div>
             </div>
 
             <!-- Identity Card Modal -->
-            {% if user.identity_card %}
+            <!-- {% if user.identity_card %}
             <div class="modal fade" id="identityCardModal{{ user.id }}" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-lg modal-dialog-centered">
                     <div class="modal-content">
@@ -55,7 +55,7 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
+            {% endif %} -->
         {% else %}
             <div class="col">
                 <p class="text-muted">{{ get_translation('no_users_pending_verification') }}</p>

@@ -24,7 +24,7 @@
                     <h4>{{ user.username }}</h4>
                     <p class="text-muted">{{ user.email or user.phone_number }}</p>
                     
-                    {% if not user.is_verified %}
+                    <!-- {% if not user.is_verified %}
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle"></i> {{ get_translation('account_not_verified') }}
                         </div>
@@ -32,7 +32,7 @@
                         <div class="alert alert-success">
                             <i class="fas fa-check-circle"></i> {{ get_translation('account_verified') }}
                         </div>
-                    {% endif %}
+                    {% endif %} -->
                 </div>
             </div>
 
@@ -57,7 +57,7 @@
                             {% endif %}
                         </div>
 
-                        <div class="mb-3">
+                        <!-- <div class="mb-3">
                             <label for="email" class="form-label">
                                 {{ get_translation('email') }} <span class="optional">({{ get_translation('optional') }})</span>
                             </label>
@@ -67,7 +67,7 @@
                                     <div class="text-danger">{{ error }}</div>
                                 {% endfor %}
                             {% endif %}
-                        </div>
+                        </div> -->
 
                         <div class="mb-3">
                             {{ form.phone_number.label(class="form-label") }}
@@ -79,7 +79,7 @@
                             {% endif %}
                         </div>
 
-                        <div class="mb-3">
+                        <!-- <div class="mb-3">
                             <label for="profile_picture" class="form-label">
                                 {{ get_translation('profile_picture') }} <span class="optional">({{ get_translation('optional') }})</span>
                             </label>
@@ -89,9 +89,9 @@
                                     <div class="text-danger">{{ error }}</div>
                                 {% endfor %}
                             {% endif %}
-                        </div>
+                        </div> -->
 
-                        <div class="mb-3">
+                        <!-- <div class="mb-3">
                             <label for="identity_card" class="form-label">
                                 {{ get_translation('identity_card') }} <span class="optional">({{ get_translation('optional') }})</span>
                             </label>
@@ -102,17 +102,17 @@
                                 {% endfor %}
                             {% endif %}
                             <small class="text-muted">{{ get_translation('upload_id_for_verification') }}</small>
-                        </div>
+                        </div> -->
 
                         <div class="profile-actions">
                             <div class="d-grid gap-3">
-                                <a href="{{ url_for('wallet') }}" class="btn btn-wallet">
+                                <!-- <a href="{{ url_for('wallet') }}" class="btn btn-wallet">
                                     <div class="btn-content">
                                         <i class="fas fa-wallet"></i>
                                         <span>{{ get_translation('wallet') }}</span>
                                     </div>
                                     <div class="btn-hover-effect"></div>
-                                </a>
+                                </a> -->
                                 <a href="{{ url_for('reset_password') }}" class="btn btn-password">
                                     <div class="btn-content">
                                         <i class="fas fa-key"></i>

@@ -44,7 +44,7 @@
 
                 <div class="mb-3">
                     <label for="description" class="form-label">{{ get_translation('description') }}</label>
-                    <textarea class="form-control" id="description" name="description" rows="3" required>{{ product.description }}</textarea>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{ product.description }}</textarea>
                 </div>
 
                 <div class="row">
@@ -70,7 +70,7 @@
 
                 <div class="mb-3">
                     <label for="image_url" class="form-label">{{ get_translation('image_url') }}</label>
-                    <input type="url" class="form-control" id="image_url" name="image_url" value="{{ product.image_url }}" required>
+                    <input type="url" class="form-control" id="image_url" name="image_url" value="{{ product.image_url }}">
                 </div>
 
                 <div class="mb-3">
@@ -80,13 +80,13 @@
                     </div>
                 </div>
 
-                <div class="mb-3">
+                <!-- <div class="mb-3">
                     <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="is_verified_only" name="is_verified_only" {% if product.is_verified_only %}checked{% endif %}>
                         <label class="form-check-label" for="is_verified_only">{{ get_translation('verified_customers_only') }}</label>
                         <small class="text-muted d-block">{{ get_translation('verified_customers_only_description') }}</small>
                     </div>
-                </div>
+                </div> -->
 
                 <div class="text-end">
                     <button type="submit" class="btn" style="background-color: var(--primary-green); color: white;">

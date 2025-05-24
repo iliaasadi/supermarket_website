@@ -55,7 +55,7 @@
 <section class="mb-4">
     <h2 class="section-title mb-3">{{ get_translation('featured_products') }}</h2>
     <div class="row row-cols-3 row-cols-md-4 row-cols-lg-6 g-2">
-        {% for product in featured_products %}
+        {% for product in featured_products[:3] %}
         <div class="col">
             <a href="{{ url_for('product_details', product_id=product.id) }}" class="text-decoration-none">
                 <div class="product-card h-100 position-relative">
@@ -75,7 +75,7 @@
 </section>
 
 <!-- Categories with Products -->
-{% for category in categories %}
+{% for category in categories[:3] %}
 <section class="mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="section-title mb-0">{{ category }}</h2>
@@ -85,7 +85,7 @@
     </div>
     
     <div class="row row-cols-3 row-cols-md-4 row-cols-lg-6 g-2">
-        {% for product in products_by_category[category] %}
+        {% for product in products_by_category[category][:3] %}
         <div class="col">
             <a href="{{ url_for('product_details', product_id=product.id) }}" class="text-decoration-none">
                 <div class="product-card h-100 position-relative">

@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, current_app, jsonify, session
 from flask_login import login_user, login_required, logout_user, current_user
-from forms import LoginForm, RegisterForm, ProfileForm, AddressForm, PasswordResetForm
+from forms import LoginForm, RegisterForm, RegisterAddressForm, ProfileForm, AddressForm, PasswordResetForm
 from models import User, Product, CartItem, Address, Order, OrderItem, StoreLocation, Wallet, WalletTransaction, OrderComment
 from extensions import db, login_manager, migrate
 import os
@@ -335,33 +335,51 @@ def login():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
+    
     form = RegisterForm()
     if form.validate_on_submit():
-        formatted_phone = User.format_phone_number(form.phone_number.data)
-        
         user = User(
-            username=formatted_phone,  # Use phone number as username
-            phone_number=formatted_phone
+            username=form.username,
+            phone_number=form.phone_number.data,
+            is_verified=False
         )
         user.set_password(form.password.data)
         db.session.add(user)
-        db.session.flush()  # Get the user ID without committing
+        db.session.commit()
         
-        # Create address for the new user
+        # Create wallet for the user
+        wallet = Wallet(user_id=user.id)
+        db.session.add(wallet)
+        db.session.commit()
+        
+        # Log in the user
+        login_user(user)
+        
+        # Redirect to address registration
+        return redirect(url_for('register_address'))
+    
+    return render_template('register.html', form=form)
+
+@app.route('/register/address', methods=['GET', 'POST'])
+@login_required
+def register_address():
+    form = RegisterAddressForm()
+    if form.validate_on_submit():
         address = Address(
-            user_id=user.id,
+            user_id=current_user.id,
             street=form.street.data,
             tag=form.tag.data,
             building_unit_number=form.building_unit_number.data,
             description=form.description.data,
-            is_default=True  # First address is always default
+            is_default=True  # Set as default address since it's the first one
         )
         db.session.add(address)
         db.session.commit()
         
-        flash_translated('success')
-        return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
+        flash_translated('address_added', 'success')
+        return redirect(url_for('index'))
+    
+    return render_template('register_address.html', form=form)
 
 @app.route('/logout')
 @login_required
@@ -1067,7 +1085,7 @@ def create_sample_products():
             "price": 55000,
             "stock": 50,
             "category": "لبنیات و تخم مرغ",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fresh_milk.jpg",
+            "image_url": "https://www.bing.com/ck/a?!&&p=9d2af53238cce7c3917b6031d2617513bc92b1ac3db52c27c4eba784da5a57edJmltdHM9MTc0MzQ2NTYwMA&ptn=3&ver=2&hsh=4&fclid=285537f9-21ba-633e-14d9-23a0202362c7&u=a1L2ltYWdlcy9zZWFyY2g_cT0lZDglYjQlZGIlOGMlZDglYjErJWQ5JTg0JWQ4JWE4JWQ5JTg2JWRiJThjJWQ4JWE3JWQ4JWFhJmlkPTNCQzEzNEVFM0Q3OUQ5REU4RkUyQkU4Qzk1RUI3OTEwNzcwMUFFRjgmRk9STT1JUUZSQkE&ntb=1",
             "discount": 0
         },
         {
