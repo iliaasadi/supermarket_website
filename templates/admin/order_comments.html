@@ -9,7 +9,8 @@
         <form method="GET" class="row g-3 align-items-center">
             <div class="col-auto">
                 <label for="date" class="form-label">{{ get_translation('select_date') }}</label>
-                <input type="date" class="form-control" id="date" name="date" value="{{ selected_date }}">
+                <input type="date" class="form-control" id="date" name="date" value="{{ selected_date }}" 
+                       min="1400-01-01" max="1500-12-29">
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-primary mt-4">{{ get_translation('filter') }}</button>
@@ -66,7 +67,7 @@
                             <td colspan="6" class="text-center">
                                 <span class="badge bg-warning">{{ get_translation('waiting_for_user_comment') }}</span>
                             </td>
-                            <td>{{ entry.order.completed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ to_tehran_time(entry.order.completed_at).strftime('%Y/%m/%d %H:%M') }}</td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#orderModal{{ entry.order.id }}">
                                     {{ get_translation('view_details') }}
@@ -83,7 +84,7 @@
                             <td>{{ entry.delivery_service }}/5</td>
                             <td>{{ entry.food_quality }}/5</td>
                             <td>{{ entry.comment }}</td>
-                            <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ to_tehran_time(entry.created_at).strftime('%Y/%m/%d %H:%M') }}</td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#orderModal{{ entry.order.id }}">
                                     {{ get_translation('view_details') }}
@@ -163,7 +164,7 @@
                 <!-- Order Details -->
                 <div class="mb-4">
                     <h6>{{ get_translation('order_details') }}</h6>
-                    <p><strong>{{ get_translation('order_date') }}:</strong> {{ entry.order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>{{ get_translation('order_date') }}:</strong> {{ to_tehran_time(entry.order.created_at).strftime('%Y/%m/%d %H:%M') }}</p>
                     <p><strong>{{ get_translation('payment_method') }}:</strong> {{ get_translation(entry.order.payment_method) }}</p>
                     <p><strong>{{ get_translation('payment_status') }}:</strong> {{ get_translation(entry.order.payment_status) }}</p>
                     {% if entry.order.description %}

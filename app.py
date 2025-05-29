@@ -11,6 +11,7 @@ from sqlalchemy import or_
 from flask_wtf.csrf import generate_csrf
 from translations import translations
 from sqlalchemy.sql import func
+import jdatetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -75,6 +76,19 @@ def inject_cart_count():
     else:
         cart_count = 0
     return dict(cart_count=cart_count)
+
+def to_tehran_time(dt):
+    if dt is None:
+        return None
+    # Convert to Tehran timezone
+    tehran_dt = dt + timedelta(hours=3, minutes=30)
+    # Convert to Shamsi date
+    jdate = jdatetime.datetime.fromgregorian(datetime=tehran_dt)
+    return jdate
+
+@app.context_processor
+def inject_tehran_time():
+    return dict(to_tehran_time=to_tehran_time)
 
 # Admin required decorator
 def admin_required(f):
@@ -462,6 +476,16 @@ def add_to_cart(product_id):
     # Validate quantity
     if quantity < 1:
         flash_translated('quantity_must_be_at_least_1', 'danger')
+        return redirect(request.referrer or url_for('index'))
+    
+    # Check if user has already ordered all available stock
+    existing_cart_item = CartItem.query.filter_by(
+        user_id=current_user.id,
+        product_id=product_id
+    ).first()
+    
+    if existing_cart_item and existing_cart_item.quantity >= product.stock:
+        flash_translated('all_stock_ordered', 'danger')
         return redirect(request.referrer or url_for('index'))
     
     if quantity > product.stock:
@@ -1561,21 +1585,31 @@ def order_comment(order_id):
 @admin_required
 def admin_order_comments():
     # Get date filter from query parameters
-    selected_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    selected_date = request.args.get('date')
     
-    # Convert string date to datetime
-    filter_date = datetime.strptime(selected_date, '%Y-%m-%d')
+    if selected_date:
+        # Convert Shamsi date to Gregorian
+        try:
+            year, month, day = map(int, selected_date.split('-'))
+            shamsi_date = jdatetime.date(year, month, day)
+            filter_date = shamsi_date.togregorian()
+        except ValueError:
+            # If date is invalid, use today's date
+            filter_date = datetime.now().date()
+    else:
+        # If no date provided, use today's date
+        filter_date = datetime.now().date()
     
     # Get completed and rejected orders for the selected date
     completed_orders = Order.query.filter(
         Order.status.in_(['completed', 'rejected']),
-        func.date(Order.completed_at) == filter_date.date()
+        func.date(Order.completed_at) == filter_date
     ).order_by(Order.completed_at.desc()).all()
     
     # Get comments for the selected date
     comments = OrderComment.query.join(Order).filter(
         Order.status.in_(['completed', 'rejected']),
-        func.date(OrderComment.created_at) == filter_date.date()
+        func.date(OrderComment.created_at) == filter_date
     ).order_by(OrderComment.created_at.desc()).all()
     
     # Create a set of order IDs that have comments
@@ -1608,6 +1642,10 @@ def admin_order_comments():
     
     # Sort entries by created_at in descending order
     entries.sort(key=lambda x: x.created_at, reverse=True)
+    
+    # Convert filter_date back to Shamsi for display
+    shamsi_display_date = jdatetime.date.fromgregorian(date=filter_date)
+    selected_date = shamsi_display_date.strftime('%Y-%m-%d')
     
     return render_template('admin/order_comments.html', entries=entries, selected_date=selected_date)
 
@@ -1786,4 +1824,4 @@ def process_wallet_deposit():
 if __name__ == '__main__':
     with app.app_context():
         init_db()  # Initialize the database with sample data
-    app.run(debug=True, port=8080) 
+    app.run(debug=True, port=8080, host='0.0.0.0') 

@@ -210,7 +210,6 @@ translations = {
         'update_profile': 'Update Profile',
         'recent_orders': 'Recent Orders',
         'delivery_information': 'Delivery Information',
-        'customer_information': 'Customer Information',
         'order': 'Order',
         'items': 'items',
         'pickup_from': 'Pickup from',
@@ -516,6 +515,8 @@ translations = {
         'continue': 'Continue',
         'enter_phone_and_password': 'Enter your phone and password',
         'order_placed_successfully' : 'Order Placed Successfully',
+        'not_enough_stock' : ' Not Enough Stock',
+        'all_stock_ordered': 'You have already ordered all available stock of this item',
     },
     'fa': {
         # Navigation and Common
@@ -762,6 +763,8 @@ translations = {
         'order_payment_failed' : 'پرداخت ناموفق بود',
         'order_payment_successful' : 'پرداخت موفق بود',
         'order_description_help' : 'این یادداشت‌ها برای کارکنان فروشگاه قابل مشاهده خواهد بود.',
+        'customer_information': 'مشخصات کاربر',
+
         
         
         # Reset Password Page
@@ -1035,5 +1038,7 @@ translations = {
         'back_to_profile': 'بازگشت به پروفایل',
         'continue_shopping': 'ادامه خرید',
         'order_placed_successfully' : 'سفارش با موفقیت ثبت شد',
+        'not_enough_stock' : 'موجودی انبار کافی نمیباشد',
+        'all_stock_ordered': 'شما قبلاً تمام موجودی این محصول را سفارش داده‌اید',
     }
 } 

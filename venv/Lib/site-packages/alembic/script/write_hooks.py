@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import shlex
 import subprocess
 import sys
@@ -10,13 +11,16 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Mapping
 from typing import Optional
+from typing import TYPE_CHECKING
 from typing import Union
 
 from .. import util
 from ..util import compat
+from ..util.pyfiles import _preserving_path_as_str
 
+if TYPE_CHECKING:
+    from ..config import PostWriteHookConfig
 
 REVISION_SCRIPT_TOKEN = "REVISION_SCRIPT_FILENAME"
 
@@ -43,16 +47,19 @@ def register(name: str) -> Callable:
 
 
 def _invoke(
-    name: str, revision: str, options: Mapping[str, Union[str, int]]
+    name: str,
+    revision_path: Union[str, os.PathLike[str]],
+    options: PostWriteHookConfig,
 ) -> Any:
     """Invokes the formatter registered for the given name.
 
     :param name: The name of a formatter in the registry
-    :param revision: A :class:`.MigrationRevision` instance
+    :param revision: string path to the revision file
     :param options: A dict containing kwargs passed to the
         specified formatter.
     :raises: :class:`alembic.util.CommandError`
     """
+    revision_path = _preserving_path_as_str(revision_path)
     try:
         hook = _registry[name]
     except KeyError as ke:
@@ -60,36 +67,28 @@ def _invoke(
             f"No formatter with name '{name}' registered"
         ) from ke
     else:
-        return hook(revision, options)
+        return hook(revision_path, options)
 
 
-def _run_hooks(path: str, hook_config: Mapping[str, str]) -> None:
+def _run_hooks(
+    path: Union[str, os.PathLike[str]], hooks: list[PostWriteHookConfig]
+) -> None:
     """Invoke hooks for a generated revision."""
 
-    from .base import _split_on_space_comma
-
-    names = _split_on_space_comma.split(hook_config.get("hooks", ""))
-
-    for name in names:
-        if not name:
-            continue
-        opts = {
-            key[len(name) + 1 :]: hook_config[key]
-            for key in hook_config
-            if key.startswith(name + ".")
-        }
-        opts["_hook_name"] = name
+    for hook in hooks:
+        name = hook["_hook_name"]
         try:
-            type_ = opts["type"]
+            type_ = hook["type"]
         except KeyError as ke:
             raise util.CommandError(
-                f"Key {name}.type is required for post write hook {name!r}"
+                f"Key '{name}.type' (or 'type' in toml) is required "
+                f"for post write hook {name!r}"
             ) from ke
         else:
             with util.status(
                 f"Running post write hook {name!r}", newline=True
             ):
-                _invoke(type_, path, opts)
+                _invoke(type_, path, hook)
 
 
 def _parse_cmdline_options(cmdline_options_str: str, path: str) -> List[str]:

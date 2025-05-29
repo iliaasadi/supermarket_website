@@ -23,7 +23,7 @@
                                              {% else %}bg-danger{% endif %} me-2">
                                 {{ get_translation(order.status) }}
                             </span>
-                            <small class="text-muted">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            <small class="text-muted">{{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</small>
                         </div>
                     </div>
 
@@ -111,7 +111,7 @@
                         <h5 class="mb-3">{{ get_translation('order_timeline') }}</h5>
                         <div class="timeline">
                             <div class="timeline-item">
-                                <div class="timeline-date">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                                <div class="timeline-date">{{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</div>
                                 <div class="timeline-content">
                                     <i class="fas fa-shopping-cart"></i>
                                     {{ get_translation('order_placed') }}
@@ -119,7 +119,7 @@
                             </div>
                             {% if order.status != 'pending_approval' and order.preparation_start %}
                             <div class="timeline-item">
-                                <div class="timeline-date">{{ order.preparation_start.strftime('%Y-%m-%d %H:%M') }}</div>
+                                <div class="timeline-date">{{ to_tehran_time(order.preparation_start).strftime('%Y/%m/%d %H:%M') }}</div>
                                 <div class="timeline-content">
                                     <i class="fas fa-check-circle"></i>
                                     {{ get_translation('order_approved') }}
@@ -128,7 +128,7 @@
                             {% endif %}
                             {% if order.status == 'completed' and order.completed_at %}
                             <div class="timeline-item">
-                                <div class="timeline-date">{{ order.completed_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                                <div class="timeline-date">{{ to_tehran_time(order.completed_at).strftime('%Y/%m/%d %H:%M') }}</div>
                                 <div class="timeline-content">
                                     <i class="fas fa-flag-checkered"></i>
                                     {{ get_translation('order_completed') }}

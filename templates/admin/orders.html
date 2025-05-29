@@ -101,7 +101,7 @@
                                             </span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</td>
                                     <td>
                                         <div class="btn-group">
                                             <form action="{{ url_for('approve_order', order_id=order.id) }}" method="POST" class="d-inline">
@@ -170,7 +170,7 @@
                                             {% endfor %}
                                         </ul>
                                     </td>
-                                    <td>{{ order.preparation_start.strftime('%H:%M') }}</td>
+                                    <td>{{ to_tehran_time(order.preparation_start).strftime('%H:%M') }}</td>
                                     <td>
                                         <span class="badge {% if order.payment_method == 'cash' %}bg-secondary{% elif order.payment_method == 'online' %}bg-primary{% else %}bg-success{% endif %}">
                                             {{ get_translation(order.payment_method) }}
@@ -361,7 +361,7 @@ updateCountdowns(); // Initial update
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>{{ get_translation('order_id') }}:</strong> #{{ order.id }}</p>
-                    <p><strong>{{ get_translation('order_date') }}:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>{{ get_translation('order_date') }}:</strong> {{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</p>
                     <p><strong>{{ get_translation('order_status') }}:</strong> 
                         <span class="badge bg-{{ order.status_color }}">{{ get_translation(order.status) }}</span>
                     </p>
