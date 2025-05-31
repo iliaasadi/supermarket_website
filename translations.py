@@ -528,7 +528,7 @@ translations = {
         'change_phone_number': 'Change Phone Number',
         'enter_phone_to_continue': 'Enter your phone number to continue',
         'error_creating_user': 'Error creating user account. Please try again.',
-        'phone_number_format': 'Enter a valid Iranian phone number (e.g., 09123456789 or +989123456789)',
+        'phone_number_format': 'Enter a valid Iranian phone number (e.g.,  +989123456789)',
         'verification_code_format': 'Enter the 6-digit verification code',
     },
     'fa': {
@@ -1065,7 +1065,7 @@ translations = {
         'change_phone_number': 'تغییر شماره تلفن',
         'enter_phone_to_continue': 'برای ادامه شماره تلفن خود را وارد کنید',
         'error_creating_user': 'خطا در ایجاد حساب کاربری. لطفاً دوباره تلاش کنید.',
-        'phone_number_format': 'شماره تلفن معتبر ایران را وارد کنید (مثال: 09123456789 یا +989123456789)',
+        'phone_number_format': 'شماره تلفن معتبر ایران را وارد کنید (مثال: +989123456789)',
         'verification_code_format': 'کد تایید 6 رقمی را وارد کنید',
     }
 } 

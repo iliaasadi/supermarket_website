@@ -2,6 +2,10 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db
 from datetime import datetime, timedelta
+from sms_ir import SmsIr
+import random
+import http.client
+import json
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -24,12 +28,76 @@ class User(UserMixin, db.Model):
     wallet = db.relationship('Wallet', backref='user', uselist=False)
 
     def generate_verification_code(self):
-        """Generate a 6-digit verification code and set its expiration time"""
+        """Generate a 6-digit verification code and send it via SMS"""
         import random
+        import http.client
+        import json
+        
+        # Generate a 6-digit code
         self.verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
         self.verification_code_expires = datetime.utcnow() + timedelta(minutes=2)
-        db.session.commit()
-        return self.verification_code
+        
+        try:
+            # Format phone number for SMS.ir (remove +98 if present and add 0)
+            phone = self.phone_number
+            if phone.startswith('+98'):
+                phone = '0' + phone[3:]
+            
+            print(f"Sending SMS to phone number: {phone}")
+            
+            # Prepare the API request
+            conn = http.client.HTTPSConnection("api.sms.ir")
+            
+            # Prepare payload
+            payload = json.dumps({
+                "mobile": phone,
+                "templateId": 347229,  # Replace with your actual template ID
+                "parameters": [
+                    {
+                        "name": "NAME",  # Note: lowercase 'name' and matches the template placeholder without #
+                        "value": phone  # The name value to insert
+                    },
+                    {
+                        "name": "CODE",  # Note: lowercase 'name' and matches the template placeholder without #
+                        "value": self.verification_code  # The verification code to insert
+                    }
+                ]
+            })
+            
+            print(f"Request payload: {payload}")
+            
+            # Set headers
+            headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'text/plain',
+                'x-api-key': 'tHP6OXR2KNEfHgyXICTizpBOI0nRYOpyzadMDI0ZRbhVliyO'
+            }
+            
+            # Send request
+            conn.request("POST", "/v1/send/verify", payload, headers)
+            response = conn.getresponse()
+            data = response.read()
+            
+            print(f"Response status: {response.status}")
+            print(f"Response data: {data.decode('utf-8')}")
+            
+            # Check response
+            if response.status == 200:
+                # Save changes to database
+                db.session.commit()
+                return True
+            else:
+                print(f"SMS.ir API Error: {data.decode('utf-8')}")
+                db.session.rollback()
+                return False
+            
+        except Exception as e:
+            print(f"Error sending SMS: {str(e)}")
+            print(f"Error type: {type(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
+            db.session.rollback()
+            return False
 
     def verify_code(self, code):
         """Verify if the provided code is valid and not expired"""

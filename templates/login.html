@@ -296,16 +296,33 @@ if (document.getElementById('timer')) {
 document.addEventListener('DOMContentLoaded', function() {
     const phoneInput = document.querySelector('input[name="phone_number"]');
     if (phoneInput) {
+        // Set initial value to +98
+        phoneInput.value = '+98';
+        
         phoneInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 0) {
-                if (value.length <= 10) {
-                    value = '0' + value;
-                } else if (value.length > 10) {
-                    value = '+98' + value.slice(-10);
-                }
+            let value = e.target.value;
+            
+            // Remove any non-digit characters except +
+            value = value.replace(/[^\d+]/g, '');
+            
+            // Ensure it starts with +98
+            if (!value.startsWith('+98')) {
+                value = '+98' + value.replace(/^\+98/, '');
             }
+            
+            // Limit to 13 characters (+98 + 10 digits)
+            if (value.length > 13) {
+                value = value.slice(0, 13);
+            }
+            
             e.target.value = value;
+        });
+
+        // Prevent backspace from deleting +98
+        phoneInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && this.value === '+98') {
+                e.preventDefault();
+            }
         });
     }
 });

@@ -379,14 +379,17 @@ def login():
                     db.session.rollback()
                     flash_translated('error_creating_user')
                     return redirect(url_for('login'))
-                
-            verification_code = user.generate_verification_code()
-            flash(f'Verification code: {verification_code}', 'info')
             
-            # Store phone and step in session
-            session['login_phone'] = formatted_phone
-            session['login_step'] = 2
-            return redirect(url_for('login'))
+            # Generate and send verification code
+            if user.generate_verification_code():
+                flash_translated('verification_code_sent')
+                # Store phone and step in session
+                session['login_phone'] = formatted_phone
+                session['login_step'] = 2
+                return redirect(url_for('login'))
+            else:
+                flash_translated('error_sending_sms')
+                return redirect(url_for('login'))
             
         else:
             # Step 2: Verification code check
@@ -397,7 +400,7 @@ def login():
                 
             user = User.query.filter_by(phone_number=formatted_phone).first()
             if user is None:
-                flash_translated('error')
+                flash_translated('phone_not_found')
                 session['login_step'] = 1
                 session.pop('login_phone', None)
                 return redirect(url_for('login'))
