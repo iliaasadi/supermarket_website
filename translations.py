@@ -530,6 +530,7 @@ translations = {
         'error_creating_user': 'Error creating user account. Please try again.',
         'phone_number_format': 'Enter a valid Iranian phone number (e.g.,  +989123456789)',
         'verification_code_format': 'Enter the 6-digit verification code',
+        'payment_cancelled':'Payment Cancelled',
     },
     'fa': {
         # Navigation and Common
@@ -980,6 +981,8 @@ translations = {
         'login_to_view_verified_product': 'لطفا با حساب کاربری تایید شده وارد شوید تا این محصول را مشاهده کنید',
         'verified_product': 'محصول تایید شده',
         'view_details': 'مشاهده جزئیات',
+        'payment_cancelled':'تراکنش ناموفق',
+
         
         # Identity Cards Section
         'identity_cards': 'کارت‌های شناسایی',

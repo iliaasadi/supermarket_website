@@ -79,5 +79,30 @@ def add_products():
             db.session.rollback()
             print(f"Error adding products: {str(e)}")
 
+def add_five_products():
+    products = [
+        {"name": "کیک وانیلی", "category": "شیرینی", "price": 25000, "stock": 40, "description": "کیک وانیلی تازه و خوشمزه", "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Pound_layer_cake.jpg"},
+        {"name": "آب معدنی", "category": "نوشیدنی", "price": 5000, "stock": 100, "description": "آب معدنی خنک و سالم", "image_url": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Bottled_Water.jpg"},
+        {"name": "پنیر پیتزا", "category": "لبنیات", "price": 60000, "stock": 30, "description": "پنیر پیتزا مخصوص", "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/White_cheese.jpg"},
+        {"name": "سیب سبز", "category": "میوه", "price": 30000, "stock": 60, "description": "سیب سبز تازه و آبدار", "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/15/Granny_smith_and_cross_section.jpg"},
+        {"name": "سس کچاپ", "category": "چاشنی", "price": 12000, "stock": 80, "description": "سس کچاپ خوش طعم", "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/09/Tomato_ketchup.jpg"},
+    ]
+    with app.app_context():
+        for p in products:
+            existing = Product.query.filter_by(name=p["name"], category=p["category"]).first()
+            if not existing:
+                product = Product(**p)
+                db.session.add(product)
+                print(f"Added: {p['name']} ({p['category']})")
+            else:
+                print(f"Already exists: {p['name']} ({p['category']})")
+        try:
+            db.session.commit()
+            print("5 products added successfully!")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error: {str(e)}")
+
 if __name__ == "__main__":
-    add_products() 
+    add_products()
+    add_five_products() 

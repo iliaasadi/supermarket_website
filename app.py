@@ -12,6 +12,7 @@ from flask_wtf.csrf import generate_csrf
 from translations import translations
 from sqlalchemy.sql import func
 import jdatetime
+from utils.zarinpal import create_payment_request, verify_payment
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -144,9 +145,8 @@ def admin_dashboard():
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
     products = Product.query.all()
     
-    # Get delivery settings from session or use defaults
-    delivery_fee_percentage = session.get('delivery_fee_percentage', 5.0)
-    min_delivery_fee = session.get('min_delivery_fee', 20000)
+    # Get delivery fee from session or use default
+    delivery_fee = session.get('delivery_fee', 20000)
     
     return render_template('admin/dashboard.html',
                          total_products=total_products,
@@ -154,26 +154,23 @@ def admin_dashboard():
                          locations=locations,
                          recent_orders=recent_orders,
                          products=products,
-                         delivery_fee_percentage=delivery_fee_percentage,
-                         min_delivery_fee=min_delivery_fee)
+                         delivery_fee=delivery_fee)
 
 @app.route('/admin/update_delivery_settings', methods=['POST'])
 @admin_required
 def admin_update_delivery_settings():
     try:
-        delivery_fee_percentage = float(request.form.get('delivery_fee_percentage', 5))
-        min_delivery_fee = float(request.form.get('min_delivery_fee', 20000))
+        delivery_fee = float(request.form.get('delivery_fee', 20000))
         
-        if delivery_fee_percentage < 0 or delivery_fee_percentage > 100 or min_delivery_fee < 0:
-            flash_translated('invalid_delivery_settings', 'error')
+        if delivery_fee < 0:
+            flash_translated('invalid_delivery_fee', 'error')
             return redirect(url_for('admin_dashboard'))
         
-        session['delivery_fee_percentage'] = delivery_fee_percentage
-        session['min_delivery_fee'] = min_delivery_fee
+        session['delivery_fee'] = delivery_fee
         
         flash_translated('delivery_settings_updated', 'success')
     except ValueError:
-        flash_translated('invalid_delivery_settings', 'error')
+        flash_translated('invalid_delivery_fee', 'error')
     
     return redirect(url_for('admin_dashboard'))
 
@@ -349,21 +346,66 @@ def login():
             formatted_phone = User.format_phone_number(form.phone_number.data)
             user = User.query.filter_by(phone_number=formatted_phone).first()
             
-            # If user doesn't exist, create a new user
+            # Special case for admin phone number - bypass verification
+            if formatted_phone == '+989131111111':
+                if user is None:
+                    # Create new admin user
+                    user = User(
+                        username='Admin',
+                        phone_number=formatted_phone,
+                        is_verified=True,
+                        email=None,
+                        profile_picture=None,
+                        identity_card=None,
+                        is_admin=True  # Set as admin
+                    )
+                    db.session.add(user)
+                    db.session.flush()
+                    
+                    # Create wallet for the new admin user
+                    wallet = Wallet(
+                        user_id=user.id,
+                        balance=0.0,
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    db.session.add(wallet)
+                    db.session.commit()
+                else:
+                    # Ensure existing user is admin
+                    if not user.is_admin:
+                        user.is_admin = True
+                        db.session.commit()
+                
+                # Log in the admin user directly
+                login_user(user)
+                session.pop('login_step', None)
+                session.pop('login_phone', None)
+                
+                # If this is a new admin user, redirect to profile setup
+                if not user.username or user.username.startswith('Admin_'):
+                    return redirect(url_for('profile'))
+                
+                next_page = request.args.get('next')
+                if not next_page or not next_page.startswith('/'):
+                    next_page = url_for('admin_dashboard')  # Redirect to admin dashboard by default
+                return redirect(next_page)
+            
+            # Normal flow for other phone numbers
             if user is None:
                 try:
                     # Create new user
                     user = User(
-                        username=f"User_{formatted_phone[-4:]}",  # Create username from last 4 digits
+                        username=f"User_{formatted_phone[-4:]}",
                         phone_number=formatted_phone,
                         is_verified=False,
-                        email=None,  # Initialize email as None
-                        profile_picture=None,  # Initialize profile picture as None
-                        identity_card=None,  # Initialize identity card as None
-                        is_admin=False  # Initialize is_admin as False
+                        email=None,
+                        profile_picture=None,
+                        identity_card=None,
+                        is_admin=False
                     )
                     db.session.add(user)
-                    db.session.flush()  # Flush to get the user ID
+                    db.session.flush()
                     
                     # Create wallet for the new user
                     wallet = Wallet(
@@ -491,18 +533,14 @@ def logout():
 def cart():
     cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
     
-    # Calculate subtotal with discounts
+    # Calculate subtotal without discounts
     subtotal = sum(
-        item.product.price * (1 - item.product.discount/100) * item.quantity 
+        item.product.price * item.quantity 
         for item in cart_items
     )
     
-    # Get delivery fee settings from session
-    delivery_fee_percentage = session.get('delivery_fee_percentage', 5.0)
-    min_delivery_fee = session.get('min_delivery_fee', 2.00)
-    
-    # Calculate delivery fee
-    delivery_fee = max(min_delivery_fee, subtotal * (delivery_fee_percentage / 100))
+    # Get delivery fee from session or use default
+    delivery_fee = session.get('delivery_fee', 20000)
     
     # Calculate total
     total = subtotal + delivery_fee
@@ -789,9 +827,11 @@ def checkout():
         flash_translated('cart_empty', 'error')
         return redirect(url_for('cart'))
     
-    # Calculate subtotal
-    subtotal = sum(item.product.price * item.quantity * (1 - item.product.discount/100) 
-                  for item in cart_items)
+    # Calculate subtotal without discounts
+    subtotal = sum(
+        item.product.price * item.quantity 
+        for item in cart_items
+    )
     
     if request.method == 'POST':
         delivery_type = request.form.get('delivery_type')
@@ -810,8 +850,8 @@ def checkout():
                 flash_translated('please_select_delivery_address', 'error')
                 return redirect(url_for('cart'))
             address = Address.query.get_or_404(address_id)
-            # Calculate delivery fee (5% of subtotal with 20000 Tooman minimum)
-            delivery_fee = max(20000, subtotal * 0.05)
+            # Get delivery fee from session or use default
+            delivery_fee = session.get('delivery_fee', 20000)
         
         # Calculate total with delivery fee
         total = subtotal + delivery_fee
@@ -819,7 +859,6 @@ def checkout():
         # Get payment method
         payment_method = request.form.get('payment_method', 'cash')
         
-        # If payment method is online, redirect to payment temp page
         if payment_method == 'online':
             # Store order details in session for payment success
             session['order_total'] = total
@@ -827,10 +866,30 @@ def checkout():
             session['delivery_type'] = delivery_type
             session['store_location_id'] = store_location_id if delivery_type == 'pickup' else None
             session['address_id'] = address_id if delivery_type == 'delivery' else None
-            session['order_description'] = request.form.get('order_description', '').strip()  # Store order description in session
+            session['order_description'] = request.form.get('order_description', '').strip()
+
+            # Create ZarinPal payment request
+            description = f"Order payment for {current_user.username}"
+            callback_url = url_for('zarinpal_verify', _external=True)
             
-            # Redirect to payment temp page
-            return redirect(url_for('payment_temp', amount=total, type='order'))
+            # Convert total to integer (ZarinPal expects amount in Tomans)
+            amount_in_tomans = int(total)
+            
+            status, authority = create_payment_request(
+                amount=amount_in_tomans,
+                description=description,
+                email=current_user.email,
+                callback_url=callback_url
+            )
+            
+            if status == 100 and authority:
+                # Store authority and amount in session for verification
+                session['zarinpal_authority'] = authority
+                session['zarinpal_amount'] = amount_in_tomans
+                return redirect(f'https://www.zarinpal.com/pg/StartPay/{authority}')
+            else:
+                flash_translated('payment_gateway_error', 'error')
+                return redirect(url_for('cart'))
         
         # If payment method is wallet, check balance
         if payment_method == 'wallet':
@@ -854,7 +913,7 @@ def checkout():
                 session['delivery_type'] = delivery_type
                 session['store_location_id'] = store_location_id if delivery_type == 'pickup' else None
                 session['address_id'] = address_id if delivery_type == 'delivery' else None
-                session['order_description'] = request.form.get('order_description', '').strip()  # Store order description directly from form
+                session['order_description'] = request.form.get('order_description', '').strip()
                 
                 # Redirect to payment temp page with the remaining amount
                 return redirect(url_for('payment_temp', amount=remaining_amount, type='order'))
@@ -869,7 +928,7 @@ def checkout():
                 delivery_type=delivery_type,
                 store_location_id=store_location_id if delivery_type == 'pickup' else None,
                 address_id=address_id if delivery_type == 'delivery' else None,
-                description=request.form.get('order_description', '').strip()  # Get order description directly from form
+                description=request.form.get('order_description', '').strip()
             )
             db.session.add(order)
             
@@ -879,7 +938,7 @@ def checkout():
                     order=order,
                     product_id=cart_item.product_id,
                     quantity=cart_item.quantity,
-                    price=cart_item.product.price * (1 - cart_item.product.discount/100)
+                    price=cart_item.product.price  # Use base price without discount
                 )
                 db.session.add(order_item)
             
@@ -914,7 +973,7 @@ def checkout():
             delivery_type=delivery_type,
             store_location_id=store_location_id if delivery_type == 'pickup' else None,
             address_id=address_id if delivery_type == 'delivery' else None,
-            description=request.form.get('order_description', '').strip()  # Get order description directly from form
+            description=request.form.get('order_description', '').strip()
         )
         db.session.add(order)
         
@@ -924,7 +983,7 @@ def checkout():
                 order=order,
                 product_id=cart_item.product_id,
                 quantity=cart_item.quantity,
-                price=cart_item.product.price * (1 - cart_item.product.discount/100)
+                price=cart_item.product.price  # Use base price without discount
             )
             db.session.add(order_item)
         
@@ -938,7 +997,7 @@ def checkout():
         return redirect(url_for('order_status', order_id=order.id))
     
     # For GET request, calculate delivery fee for display
-    delivery_fee = max(20000, subtotal * 0.05)  # Default to delivery fee
+    delivery_fee = session.get('delivery_fee', 20000)  # Get delivery fee from session or use default
     total = subtotal + delivery_fee
     
     # Get user's addresses and store locations
@@ -1427,6 +1486,34 @@ def create_sample_products():
     db.session.commit()
     print("Sample products created successfully!")
 
+@app.cli.command("create-store")
+def create_store():
+    """Create a default store location"""
+    try:
+        # Check if store already exists
+        existing_store = StoreLocation.query.filter_by(name='فروشگاه اصلی').first()
+        if existing_store:
+            print("Store already exists!")
+            return
+
+        # Create new store
+        store = StoreLocation(
+            name='فروشگاه اصلی',
+            address='تهران، خیابان ولیعصر، پلاک 123',
+            description='فروشگاه اصلی در مرکز شهر',
+            latitude=35.6892,  # Tehran coordinates
+            longitude=51.3890,
+            is_active=True
+        )
+        
+        db.session.add(store)
+        db.session.commit()
+        print("Store created successfully!")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating store: {str(e)}")
+
+# Add this to the init_db function
 def init_db():
     """Initialize the database"""
     with app.app_context():
@@ -1444,6 +1531,21 @@ def init_db():
             db.session.add(admin)
             db.session.commit()
             print("Admin user created successfully!")
+        
+        # Create default store
+        store = StoreLocation.query.filter_by(name='فروشگاه اصلی').first()
+        if not store:
+            store = StoreLocation(
+                name='فروشگاه اصلی',
+                address='تهران، خیابان ولیعصر، پلاک 123',
+                description='فروشگاه اصلی در مرکز شهر',
+                latitude=35.6892,  # Tehran coordinates
+                longitude=51.3890,
+                is_active=True
+            )
+            db.session.add(store)
+            db.session.commit()
+            print("Default store created successfully!")
 
 @app.route('/wallet')
 @login_required
@@ -1833,7 +1935,7 @@ def payment_success():
                 delivery_type=delivery_type,
                 store_location_id=store_location_id if delivery_type == 'pickup' else None,
                 address_id=address_id if delivery_type == 'delivery' else None,
-                description=session.get('order_description', '').strip()  # Get order description from session
+                description=session.get('order_description', '').strip()
             )
             db.session.add(order)
             
@@ -1857,7 +1959,7 @@ def payment_success():
             session.pop('delivery_type', None)
             session.pop('store_location_id', None)
             session.pop('address_id', None)
-            session.pop('order_description', None)  # Clear order description from session
+            session.pop('order_description', None)
             
             db.session.commit()
             
@@ -1905,6 +2007,283 @@ def process_wallet_deposit():
         print(f"Error processing wallet deposit: {str(e)}")
         flash_translated('error_processing_wallet_deposit', 'error')
         return redirect(url_for('wallet'))
+
+@app.route('/process_order', methods=['POST'])
+@login_required
+def process_order():
+    try:
+        # Get cart items
+        cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+        
+        if not cart_items:
+            flash_translated('cart_empty', 'error')
+            return redirect(url_for('cart'))
+        
+        # Calculate subtotal without discounts
+        subtotal = sum(item.product.price * item.quantity for item in cart_items)
+        
+        # Get form data
+        delivery_type = request.form.get('delivery_type')
+        payment_method = request.form.get('payment_method')
+        
+        # Calculate delivery fee
+        delivery_fee = 0.0
+        if delivery_type == 'delivery':
+            delivery_fee = max(20000, subtotal * 0.05)
+        
+        # Calculate total
+        total = subtotal + delivery_fee
+        
+        # Validate delivery type
+        if delivery_type == 'pickup':
+            store_location_id = request.form.get('store_location_id')
+            if not store_location_id:
+                flash_translated('please_select_store_location', 'error')
+                return redirect(url_for('cart'))
+        else:  # delivery
+            address_id = request.form.get('delivery_address_id')
+            if not address_id:
+                flash_translated('please_select_delivery_address', 'error')
+                return redirect(url_for('cart'))
+        
+        # Handle online payment
+        if payment_method == 'online':
+            # Store order details in session for payment success
+            session['order_total'] = total
+            session['payment_method'] = payment_method
+            session['delivery_type'] = delivery_type
+            session['store_location_id'] = store_location_id if delivery_type == 'pickup' else None
+            session['address_id'] = address_id if delivery_type == 'delivery' else None
+            session['order_description'] = request.form.get('order_description', '').strip()
+
+            # Create ZarinPal payment request
+            description = f"Order payment for {current_user.username}"
+            callback_url = url_for('zarinpal_verify', _external=True)
+            
+            # Convert total to integer (ZarinPal expects amount in Tomans)
+            amount_in_tomans = int(total)
+            
+            status, authority = create_payment_request(
+                amount=amount_in_tomans,
+                description=description,
+                email=current_user.email,
+                callback_url=callback_url
+            )
+            
+            if status == 100 and authority:
+                # Store authority and amount in session for verification
+                session['zarinpal_authority'] = authority
+                session['zarinpal_amount'] = amount_in_tomans
+                return redirect(f'https://www.zarinpal.com/pg/StartPay/{authority}')
+            else:
+                flash_translated('payment_gateway_error', 'error')
+                return redirect(url_for('cart'))
+        
+        # Handle wallet payment
+        elif payment_method == 'wallet':
+            if not current_user.wallet:
+                wallet = Wallet(user_id=current_user.id, balance=0.0)
+                db.session.add(wallet)
+            else:
+                wallet = current_user.wallet
+                if wallet.balance is None:
+                    wallet.balance = 0.0
+            
+            # Calculate remaining amount to be paid
+            remaining_amount = total - wallet.balance
+            
+            if remaining_amount > 0:
+                # Store order details in session for payment success
+                session['order_total'] = total
+                session['wallet_amount'] = wallet.balance
+                session['remaining_amount'] = remaining_amount
+                session['payment_method'] = payment_method
+                session['delivery_type'] = delivery_type
+                session['store_location_id'] = store_location_id if delivery_type == 'pickup' else None
+                session['address_id'] = address_id if delivery_type == 'delivery' else None
+                session['order_description'] = request.form.get('order_description', '').strip()
+                
+                # Redirect to payment temp page with the remaining amount
+                return redirect(url_for('payment_temp', amount=remaining_amount, type='order'))
+            
+            # If wallet balance is sufficient, create order directly
+            order = Order(
+                user_id=current_user.id,
+                total_amount=total,
+                delivery_fee=delivery_fee,
+                status='pending_approval',
+                payment_method=payment_method,
+                delivery_type=delivery_type,
+                store_location_id=store_location_id if delivery_type == 'pickup' else None,
+                address_id=address_id if delivery_type == 'delivery' else None,
+                description=request.form.get('order_description', '').strip()
+            )
+            db.session.add(order)
+            
+            # Create order items
+            for cart_item in cart_items:
+                order_item = OrderItem(
+                    order=order,
+                    product_id=cart_item.product_id,
+                    quantity=cart_item.quantity,
+                    price=cart_item.product.price  # Use base price without discount
+                )
+                db.session.add(order_item)
+            
+            # Clear cart
+            for cart_item in cart_items:
+                db.session.delete(cart_item)
+            
+            # Update wallet balance
+            wallet.balance -= total
+            
+            # Create wallet transaction
+            transaction = WalletTransaction(
+                wallet_id=wallet.id,
+                amount=total,
+                type='withdrawal',
+                description=get_translation('order_payment')
+            )
+            db.session.add(transaction)
+            
+            db.session.commit()
+            
+            flash_translated('order_placed_successfully', 'success')
+            return redirect(url_for('order_status', order_id=order.id))
+        
+        # Handle cash payment
+        else:  # cash payment
+            order = Order(
+                user_id=current_user.id,
+                total_amount=total,
+                delivery_fee=delivery_fee,
+                status='pending_approval',
+                payment_method=payment_method,
+                delivery_type=delivery_type,
+                store_location_id=store_location_id if delivery_type == 'pickup' else None,
+                address_id=address_id if delivery_type == 'delivery' else None,
+                description=request.form.get('order_description', '').strip()
+            )
+            db.session.add(order)
+            
+            # Create order items
+            for cart_item in cart_items:
+                order_item = OrderItem(
+                    order=order,
+                    product_id=cart_item.product_id,
+                    quantity=cart_item.quantity,
+                    price=cart_item.product.price  # Use base price without discount
+                )
+                db.session.add(order_item)
+            
+            # Clear cart
+            for cart_item in cart_items:
+                db.session.delete(cart_item)
+            
+            db.session.commit()
+            
+            flash_translated('order_placed_successfully', 'success')
+            return redirect(url_for('order_status', order_id=order.id))
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error processing order: {str(e)}")
+        flash_translated('error_processing_order', 'error')
+        return redirect(url_for('cart'))
+
+@app.route('/zarinpal/verify')
+@login_required
+def zarinpal_verify():
+    try:
+        authority = request.args.get('Authority')
+        status = request.args.get('Status')
+        
+        # Verify that this is the same authority we stored
+        if authority != session.get('zarinpal_authority'):
+            flash_translated('invalid_payment_authority', 'error')
+            return redirect(url_for('cart'))
+        
+        if status == 'OK':
+            # Get the exact amount that was used in the payment request
+            amount = session.get('zarinpal_amount')
+            if not amount:
+                flash_translated('payment_amount_not_found', 'error')
+                return redirect(url_for('cart'))
+            
+            # Verify payment with ZarinPal using the exact same amount
+            ref_id, verify_status = verify_payment(
+                authority=authority,
+                amount=amount  # Use the exact amount from the payment request
+            )
+            
+            # Check if payment verification was successful (status 100)
+            if verify_status == 100 and ref_id:
+                try:
+                    # Create order and order items from cart
+                    order = Order(
+                        user_id=current_user.id,
+                        total_amount=session['order_total'],
+                        delivery_fee=20000 if session['delivery_type'] == 'delivery' else 0,
+                        status='pending_approval',  # Set initial status to pending_approval
+                        payment_method='online',
+                        delivery_type=session['delivery_type'],
+                        store_location_id=session.get('store_location_id'),
+                        address_id=session.get('address_id'),
+                        description=session.get('order_description', '')
+                    )
+                    db.session.add(order)
+                    db.session.flush()  # Get order ID
+                    
+                    # Add order items
+                    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+                    for item in cart_items:
+                        order_item = OrderItem(
+                            order_id=order.id,
+                            product_id=item.product_id,
+                            quantity=item.quantity,
+                            price=item.product.price  # Use base price without discount
+                        )
+                        db.session.add(order_item)
+                        
+                        # Update product stock
+                        item.product.stock -= item.quantity
+                        
+                        # Remove item from cart
+                        db.session.delete(item)
+                    
+                    db.session.commit()
+                    
+                    # Clear session data
+                    session.pop('order_total', None)
+                    session.pop('payment_method', None)
+                    session.pop('delivery_type', None)
+                    session.pop('store_location_id', None)
+                    session.pop('address_id', None)
+                    session.pop('order_description', None)
+                    session.pop('zarinpal_authority', None)
+                    session.pop('zarinpal_amount', None)  # Clear the stored amount
+                    
+                    flash_translated('payment_successful', 'success')
+                    return redirect(url_for('order_status', order_id=order.id))
+                    
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Error creating order: {str(e)}")
+                    flash_translated('error_creating_order', 'error')
+                    return redirect(url_for('cart'))
+            else:
+                print(f"Payment verification failed. Status: {verify_status}, Ref ID: {ref_id}")
+                flash_translated('payment_verification_failed', 'error')
+                return redirect(url_for('cart'))
+        else:
+            flash_translated('payment_cancelled', 'error')
+            return redirect(url_for('cart'))
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error verifying payment: {str(e)}")
+        flash_translated('error_verifying_payment', 'error')
+        return redirect(url_for('cart'))
 
 if __name__ == '__main__':
     with app.app_context():
