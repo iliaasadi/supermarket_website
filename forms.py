@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField, IntegerField, TextAreaField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange, Optional
+from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange, Optional, Regexp
 from models import User
 from flask_login import current_user
 from flask import session
@@ -13,10 +13,36 @@ def get_translation(key):
     return translations[language].get(key, translations['fa'].get(key, key))
 
 class LoginForm(FlaskForm):
-    phone_number = StringField('شماره تلفن', validators=[DataRequired(), Length(min=10, max=20)])
-    password = PasswordField('رمز عبور', validators=[DataRequired()])
-    remember_me = BooleanField('مرا به خاطر بسپار')
-    submit = SubmitField('ورود')
+    phone_number = StringField('Phone Number', validators=[
+        DataRequired(),
+        Regexp(r'^(\+98|0)?9\d{9}$', message='Please enter a valid Iranian phone number starting with +98 or 0 followed by 9 and 9 digits')
+    ])
+    verification_code = StringField('Verification Code', validators=[
+        DataRequired(),
+        Regexp(r'^\d{6}$', message='Verification code must be exactly 6 digits')
+    ])
+    submit = SubmitField('Continue')
+    step = 1  # Default step
+
+    def __init__(self, *args, **kwargs):
+        super(LoginForm, self).__init__(*args, **kwargs)
+        self.step = session.get('login_step', 1)
+
+    def validate(self, extra_validators=None):
+        from flask import session
+        self.step = session.get('login_step', 1)
+        if self.step == 1:
+            # Only validate phone number
+            if not self.phone_number.data or len(self.phone_number.data) < 10:
+                self.phone_number.errors.append('شماره تلفن معتبر نیست.')
+                return False
+            return True
+        else:
+            # Only validate verification code
+            if not self.verification_code.data or len(self.verification_code.data) != 6:
+                self.verification_code.errors.append('کد تایید باید دقیقاً 6 رقم باشد.')
+                return False
+            return True
 
 class RegisterForm(FlaskForm):
     password = PasswordField('رمز عبور', validators=[DataRequired(), Length(min=6)])

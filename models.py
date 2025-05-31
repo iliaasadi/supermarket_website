@@ -5,9 +5,7 @@ from datetime import datetime, timedelta
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    username = db.Column(db.String(80), nullable=True)
+    username = db.Column(db.String(80), unique=True, nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=True)
     password_hash = db.Column(db.String(128))
     phone_number = db.Column(db.String(20), unique=True, nullable=False)
@@ -16,12 +14,36 @@ class User(UserMixin, db.Model):
     is_verified = db.Column(db.Boolean, default=False)
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    verification_code = db.Column(db.String(6), nullable=True)
+    verification_code_expires = db.Column(db.DateTime, nullable=True)
     
     # Relationships
     addresses = db.relationship('Address', backref='user', lazy=True)
     cart = db.relationship('CartItem', backref='user', lazy=True)
     orders = db.relationship('Order', backref='user', lazy=True)
     wallet = db.relationship('Wallet', backref='user', uselist=False)
+
+    def generate_verification_code(self):
+        """Generate a 6-digit verification code and set its expiration time"""
+        import random
+        self.verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        self.verification_code_expires = datetime.utcnow() + timedelta(minutes=2)
+        db.session.commit()
+        return self.verification_code
+
+    def verify_code(self, code):
+        """Verify if the provided code is valid and not expired"""
+        if not self.verification_code or not self.verification_code_expires:
+            return False
+        if datetime.utcnow() > self.verification_code_expires:
+            return False
+        return self.verification_code == code
+
+    def clear_verification_code(self):
+        """Clear the verification code after successful verification"""
+        self.verification_code = None
+        self.verification_code_expires = None
+        db.session.commit()
 
     @classmethod
     def generate_username(cls):

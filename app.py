@@ -330,19 +330,101 @@ def admin_delete_category(category):
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
+
     form = LoginForm()
+    
+    # Handle phone number change request
+    if request.method == 'POST' and 'change_phone' in request.form:
+        session.pop('login_step', None)
+        session.pop('login_phone', None)
+        return redirect(url_for('login'))
+    
+    # Get current step from session or default to 1
+    current_step = session.get('login_step', 1)
+    form.step = current_step
+
     if form.validate_on_submit():
-        # Format the phone number before checking
-        formatted_phone = User.format_phone_number(form.phone_number.data)
-        user = User.query.filter_by(phone_number=formatted_phone).first()
-        if user is None or not user.check_password(form.password.data):
-            flash_translated('error')
+        if current_step == 1:
+            # Step 1: Phone number verification
+            formatted_phone = User.format_phone_number(form.phone_number.data)
+            user = User.query.filter_by(phone_number=formatted_phone).first()
+            
+            # If user doesn't exist, create a new user
+            if user is None:
+                try:
+                    # Create new user
+                    user = User(
+                        username=f"User_{formatted_phone[-4:]}",  # Create username from last 4 digits
+                        phone_number=formatted_phone,
+                        is_verified=False,
+                        email=None,  # Initialize email as None
+                        profile_picture=None,  # Initialize profile picture as None
+                        identity_card=None,  # Initialize identity card as None
+                        is_admin=False  # Initialize is_admin as False
+                    )
+                    db.session.add(user)
+                    db.session.flush()  # Flush to get the user ID
+                    
+                    # Create wallet for the new user
+                    wallet = Wallet(
+                        user_id=user.id,
+                        balance=0.0,
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    db.session.add(wallet)
+                    db.session.commit()
+                    
+                except Exception as e:
+                    db.session.rollback()
+                    flash_translated('error_creating_user')
+                    return redirect(url_for('login'))
+                
+            verification_code = user.generate_verification_code()
+            flash(f'Verification code: {verification_code}', 'info')
+            
+            # Store phone and step in session
+            session['login_phone'] = formatted_phone
+            session['login_step'] = 2
             return redirect(url_for('login'))
-        login_user(user, remember=form.remember_me.data)
-        next_page = request.args.get('next')
-        if not next_page or not next_page.startswith('/'):
-            next_page = url_for('index')
-        return redirect(next_page)
+            
+        else:
+            # Step 2: Verification code check
+            formatted_phone = session.get('login_phone')
+            if not formatted_phone:
+                session['login_step'] = 1
+                return redirect(url_for('login'))
+                
+            user = User.query.filter_by(phone_number=formatted_phone).first()
+            if user is None:
+                flash_translated('error')
+                session['login_step'] = 1
+                session.pop('login_phone', None)
+                return redirect(url_for('login'))
+                
+            if user.verify_code(form.verification_code.data):
+                login_user(user)
+                user.clear_verification_code()
+                session.pop('login_step', None)
+                session.pop('login_phone', None)
+                
+                # If this is a new user, redirect to profile setup
+                if not user.username or user.username.startswith('User_'):
+                    return redirect(url_for('profile'))
+                
+                next_page = request.args.get('next')
+                if not next_page or not next_page.startswith('/'):
+                    next_page = url_for('index')
+                return redirect(next_page)
+            else:
+                flash_translated('invalid_verification_code')
+                session['login_step'] = 2
+                return redirect(url_for('login'))
+
+    # For GET requests, maintain the current step
+    if current_step == 2:
+        form.phone_number.data = session.get('login_phone', '')
+
     return render_template('login.html', title='Sign In', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])

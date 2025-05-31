@@ -8,16 +8,23 @@
         <div class="auth-header">
             <i class="fas fa-user-circle"></i>
             <h1>{{ get_translation('welcome_back') }}</h1>
-            <p>{{ get_translation('sign_in_to_continue') }}</p>
+            <p>{{ get_translation('enter_phone_to_continue') }}</p>
         </div>
-        <form method="POST" class="auth-form">
+        <form method="POST" action="{{ url_for('login') }}" class="auth-form">
             {{ form.hidden_tag() }}
+            
+            {% if form.step == 1 %}
             <div class="form-group">
                 <label for="phone_number">
                     <i class="fas fa-phone"></i>
                     {{ get_translation('phone_number') }}
                 </label>
-                {{ form.phone_number(class="form-control", placeholder=get_translation('enter_phone_number')) }}
+                {{ form.phone_number(
+                    class="form-control",
+                    placeholder=get_translation('enter_phone_number'),
+                    pattern="^(\+98|0)?9\d{9}$",
+                    title=get_translation('phone_number_format')
+                ) }}
                 {% if form.phone_number.errors %}
                 <div class="error-message">
                     {% for error in form.phone_number.errors %}
@@ -25,26 +32,47 @@
                     {% endfor %}
                 </div>
                 {% endif %}
+                <small class="form-text text-muted">{{ get_translation('phone_number_format') }}</small>
+            </div>
+            {% else %}
+            <div class="verification-info">
+                <p>{{ get_translation('verification_code_sent_to') }}: {{ form.phone_number.data }}</p>
+                <div class="countdown-timer">
+                    <span>{{ get_translation('code_expires_in') }}: </span>
+                    <span id="timer">2:00</span>
+                </div>
+                <button type="button" class="change-phone-btn" onclick="changePhoneNumber()">
+                    <i class="fas fa-edit"></i>
+                    {{ get_translation('change_phone_number') }}
+                </button>
             </div>
             <div class="form-group">
-                <label for="password">
-                    <i class="fas fa-lock"></i>
-                    {{ get_translation('password') }}
+                <label for="verification_code">
+                    <i class="fas fa-key"></i>
+                    {{ get_translation('verification_code') }}
                 </label>
-                {{ form.password(class="form-control", placeholder=get_translation('enter_password')) }}
-                {% if form.password.errors %}
+                {{ form.verification_code(
+                    class="form-control",
+                    placeholder=get_translation('enter_verification_code'),
+                    pattern="\d{6}",
+                    maxlength="6",
+                    minlength="6",
+                    required=true,
+                    title=get_translation('verification_code_format')
+                ) }}
+                {% if form.verification_code.errors %}
                 <div class="error-message">
-                    {% for error in form.password.errors %}
+                    {% for error in form.verification_code.errors %}
                     <span>{{ error }}</span>
                     {% endfor %}
                 </div>
                 {% endif %}
+                <small class="form-text text-muted">{{ get_translation('verification_code_format') }}</small>
             </div>
-            {{ form.submit(class="btn btn-primary", value=get_translation('login')) }}
+            {% endif %}
+            
+            {{ form.submit(class="btn btn-primary", value=get_translation('continue')) }}
         </form>
-        <div class="auth-footer">
-            <p>{{ get_translation('dont_have_account') }} <a href="{{ url_for('register') }}" class="link">{{ get_translation('sign_up') }}</a></p>
-        </div>
     </div>
 </div>
 
@@ -145,18 +173,52 @@
         margin-top: 0.3rem;
     }
 
-    .remember-me {
-        flex-direction: row;
-        align-items: center;
-        gap: 0.5rem;
+    .form-text {
+        font-size: 0.8rem;
+        color: var(--gray-text);
+        margin-top: 0.3rem;
     }
 
-    .form-check-input {
-        width: 1.2rem;
-        height: 1.2rem;
-        border-radius: 4px;
-        border: 1px solid #e0e0e0;
+    .verification-info {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .verification-info p {
+        color: var(--dark-text);
+        margin-bottom: 1rem;
+    }
+
+    .countdown-timer {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: var(--primary-red);
+        margin: 1rem 0;
+    }
+
+    .change-phone-btn {
+        background: none;
+        border: 1px solid var(--primary-red);
+        color: var(--primary-red);
+        padding: 0.8rem 1.5rem;
+        border-radius: 10px;
         cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 1rem auto 0;
+    }
+
+    .change-phone-btn:hover {
+        background-color: var(--primary-red);
+        color: white;
+        transform: translateY(-2px);
     }
 
     .btn-primary {
@@ -181,23 +243,6 @@
         transform: translateY(-2px);
     }
 
-    .auth-footer {
-        text-align: center;
-        margin-top: 2rem;
-        color: var(--gray-text);
-    }
-
-    .link {
-        color: var(--primary-red);
-        text-decoration: none;
-        font-weight: 500;
-        transition: color 0.3s ease;
-    }
-
-    .link:hover {
-        color: var(--secondary-red);
-    }
-
     @media (max-width: 480px) {
         .auth-card {
             padding: 2rem;
@@ -208,4 +253,61 @@
         }
     }
 </style>
+
+<script>
+function startCountdown() {
+    let timeLeft = 120; // 2 minutes in seconds
+    const timerElement = document.getElementById('timer');
+    
+    const countdown = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        
+        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            window.location.href = "{{ url_for('login') }}";
+        }
+        
+        timeLeft--;
+    }, 1000);
+}
+
+function changePhoneNumber() {
+    // Clear the session data and redirect to step 1
+    fetch("{{ url_for('login') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'change_phone=1'
+    }).then(() => {
+        window.location.href = "{{ url_for('login') }}";
+    });
+}
+
+// Start countdown if we're on step 2
+if (document.getElementById('timer')) {
+    document.addEventListener('DOMContentLoaded', startCountdown);
+}
+
+// Format phone number as user types
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.querySelector('input[name="phone_number"]');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                if (value.length <= 10) {
+                    value = '0' + value;
+                } else if (value.length > 10) {
+                    value = '+98' + value.slice(-10);
+                }
+            }
+            e.target.value = value;
+        });
+    }
+});
+</script>
 {% endblock %} 
