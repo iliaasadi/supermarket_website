@@ -47,7 +47,7 @@
             <thead>
                 <tr>
                     <th>{{ get_translation('order_id') }}</th>
-                    <th>{{ get_translation('user') }}</th>
+                    <th>{{ get_translation('phone') }}</th>
                     <th>{{ get_translation('overall_experience') }}</th>
                     <th>{{ get_translation('value_for_money') }}</th>
                     <th>{{ get_translation('packaging') }}</th>
@@ -62,8 +62,8 @@
                 {% for entry in entries %}
                     {% if entry.is_waiting %}
                         <tr class="table-warning">
-                            <td>{{ entry.order.id }}</td>
-                            <td>{{ entry.order.user.username }}</td>
+                            <td>#{{ entry.order.id }}</td>
+                            <td>{{ entry.order.user.phone_number }}</td>
                             <td colspan="6" class="text-center">
                                 <span class="badge bg-warning">{{ get_translation('waiting_for_user_comment') }}</span>
                             </td>
@@ -76,8 +76,8 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td>{{ entry.order.id }}</td>
-                            <td>{{ entry.order.user.username }}</td>
+                            <td>#{{ entry.order.id }}</td>
+                            <td>{{ entry.order.user.phone_number }}</td>
                             <td>{{ entry.overall_experience }}/5</td>
                             <td>{{ entry.value_for_money }}/5</td>
                             <td>{{ entry.packaging }}/5</td>

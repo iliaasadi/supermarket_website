@@ -175,9 +175,8 @@
                     <h5 class="mb-0">{{ get_translation('customer_information') }}</h5>
                 </div>
                 <div class="card-body">
-                    <p><strong>{{ get_translation('name') }}:</strong> {{ order.user.username }}</p>
-                    <p><strong>{{ get_translation('email') }}:</strong> {{ order.user.email }}</p>
                     <p><strong>{{ get_translation('phone') }}:</strong> {{ order.user.phone_number }}</p>
+                    <p><strong>{{ get_translation('email') }}:</strong> {{ order.user.email }}</p>
                     <hr>
                     <h6 class="mb-3">{{ get_translation('delivery_address') }}:</h6>
                     <p class="mb-0">{{ order.address.street }}</p>

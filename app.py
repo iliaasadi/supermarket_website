@@ -182,33 +182,55 @@ def admin_add_product():
         return redirect(url_for('index'))
     
     if request.method == 'POST':
-        name = request.form.get('name')
-        description = request.form.get('description')
-        price = float(request.form.get('price'))
-        stock = int(request.form.get('stock'))
-        category = request.form.get('category')
-        image_url = request.form.get('image_url')
-        discount = float(request.form.get('discount', 0))
-        is_featured = 'is_featured' in request.form
-        is_verified_only = 'is_verified_only' in request.form
-        
-        product = Product(
-            name=name,
-            description=description,
-            price=price,
-            stock=stock,
-            category=category,
-            image_url=image_url,
-            discount=discount,
-            is_featured=is_featured,
-            is_verified_only=is_verified_only
-        )
-        
-        db.session.add(product)
-        db.session.commit()
-        
-        flash_translated('item_added', 'success')
-        return redirect(url_for('admin_dashboard'))
+        try:
+            name = request.form.get('name')
+            description = request.form.get('description')
+            price = float(request.form.get('price'))
+            stock = int(request.form.get('stock'))
+            category = request.form.get('category')
+            discount = float(request.form.get('discount', 0))
+            is_featured = 'is_featured' in request.form
+            is_verified_only = 'is_verified_only' in request.form
+            
+            # Handle image upload
+            image_url = None
+            if 'image' in request.files:
+                image_file = request.files['image']
+                if image_file and image_file.filename:
+                    # Check if the file is an image
+                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+                    if '.' in image_file.filename and \
+                       image_file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
+                        image_url = save_file(image_file, 'products')
+                        if not image_url:
+                            flash_translated('error_uploading_image', 'error')
+                            return redirect(url_for('admin_add_product'))
+                    else:
+                        flash_translated('invalid_image_format', 'error')
+                        return redirect(url_for('admin_add_product'))
+            
+            product = Product(
+                name=name,
+                description=description,
+                price=price,
+                stock=stock,
+                category=category,
+                image_url=image_url,
+                discount=discount,
+                is_featured=is_featured,
+                is_verified_only=is_verified_only
+            )
+            
+            db.session.add(product)
+            db.session.commit()
+            
+            flash_translated('item_added', 'success')
+            return redirect(url_for('admin_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error adding product: {str(e)}")
+            flash_translated('error_adding_product', 'error')
+            return redirect(url_for('admin_add_product'))
     
     # Get all categories for the form
     categories = db.session.query(Product.category).distinct().all()
@@ -226,19 +248,49 @@ def admin_edit_product(product_id):
     product = Product.query.get_or_404(product_id)
     
     if request.method == 'POST':
-        product.name = request.form.get('name')
-        product.description = request.form.get('description')
-        product.price = float(request.form.get('price'))
-        product.stock = int(request.form.get('stock'))
-        product.category = request.form.get('category')
-        product.image_url = request.form.get('image_url')
-        product.discount = float(request.form.get('discount', 0))
-        product.is_featured = 'is_featured' in request.form
-        product.is_verified_only = 'is_verified_only' in request.form
-        
-        db.session.commit()
-        flash_translated('item_updated', 'success')
-        return redirect(url_for('admin_dashboard'))
+        try:
+            product.name = request.form.get('name')
+            product.description = request.form.get('description')
+            product.price = float(request.form.get('price'))
+            product.stock = int(request.form.get('stock'))
+            product.category = request.form.get('category')
+            product.discount = float(request.form.get('discount', 0))
+            product.is_featured = 'is_featured' in request.form
+            product.is_verified_only = 'is_verified_only' in request.form
+            
+            # Handle image upload
+            if 'image' in request.files:
+                image_file = request.files['image']
+                if image_file and image_file.filename:
+                    # Check if the file is an image
+                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+                    if '.' in image_file.filename and \
+                       image_file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
+                        # Delete old image if it exists
+                        if product.image_url:
+                            old_image_path = os.path.join(app.root_path, product.image_url.lstrip('/'))
+                            if os.path.exists(old_image_path):
+                                os.remove(old_image_path)
+                        
+                        # Save new image
+                        new_image_url = save_file(image_file, 'products')
+                        if new_image_url:
+                            product.image_url = new_image_url
+                        else:
+                            flash_translated('error_uploading_image', 'error')
+                            return redirect(url_for('admin_edit_product', product_id=product_id))
+                    else:
+                        flash_translated('invalid_image_format', 'error')
+                        return redirect(url_for('admin_edit_product', product_id=product_id))
+            
+            db.session.commit()
+            flash_translated('item_updated', 'success')
+            return redirect(url_for('admin_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating product: {str(e)}")
+            flash_translated('error_updating_product', 'error')
+            return redirect(url_for('admin_edit_product', product_id=product_id))
     
     # Get all categories for the form
     categories = db.session.query(Product.category).distinct().all()
@@ -1658,20 +1710,28 @@ def product_details(product_id):
 def save_file(file, folder):
     """Save an uploaded file securely"""
     if file and file.filename:
-        # Get file extension
-        filename = secure_filename(file.filename)
-        # Create unique filename
-        unique_filename = f"{uuid.uuid4()}_{filename}"
-        # Create folder path
-        folder_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], folder)
-        # Ensure folder exists
-        os.makedirs(folder_path, exist_ok=True)
-        # Full file path
-        file_path = os.path.join(folder_path, unique_filename)
-        # Save file
-        file.save(file_path)
-        # Return relative path for database
-        return os.path.join('uploads', folder, unique_filename)
+        try:
+            # Get file extension
+            filename = secure_filename(file.filename)
+            # Create unique filename with timestamp
+            unique_filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4()}_{filename}"
+            
+            # Create folder path
+            folder_path = os.path.join(app.root_path, 'static', 'uploads', folder)
+            # Ensure folder exists
+            os.makedirs(folder_path, exist_ok=True)
+            
+            # Full file path
+            file_path = os.path.join(folder_path, unique_filename)
+            
+            # Save file
+            file.save(file_path)
+            
+            # Return relative path for database (without 'static' prefix)
+            return f'/static/uploads/{folder}/{unique_filename}'
+        except Exception as e:
+            print(f"Error saving file: {str(e)}")
+            return None
     return None
 
 @app.route('/admin/identity-cards')
