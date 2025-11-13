@@ -160,32 +160,7 @@
                                 <i class="fas fa-credit-card me-1"></i>{{ get_translation('pay_online') }}
                             </label>
                         </div>
-                        {% if current_user.wallet and current_user.wallet.balance > 0 %}
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" name="payment_method" id="wallet" value="wallet">
-                            <label class="form-check-label" for="wallet">
-                                {{ get_translation('pay_with_wallet') }} ({{ "%.0f"|format(current_user.wallet.balance) }} {{ get_translation('tooman') }})
-                            </label>
-                        </div>
-                        <div id="wallet-payment-info" class="alert alert-info" style="display: none;">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>{{ get_translation('wallet_balance') }}:</span>
-                                <span class="text-success">{{ "%.0f"|format(current_user.wallet.balance) }} {{ get_translation('tooman') }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>{{ get_translation('order_total') }}:</span>
-                                <span class="text-primary">{{ "{:,.0f}".format(total) }} {{ get_translation('tooman') }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>{{ get_translation('wallet_withdrawal') }}:</span>
-                                <span class="text-danger wallet-withdrawal">{{ "{:,.0f}".format(total) }} {{ get_translation('tooman') }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <strong>{{ get_translation('remaining_balance') }}:</strong>
-                                <strong class="remaining-balance">{{ "{:,.0f}".format(current_user.wallet.balance - total) }} {{ get_translation('tooman') }}</strong>
-                            </div>
-                        </div>
-                        {% endif %}
+                        {# Wallet feature removed #}
                     </div>
 
                     <form action="{{ url_for('checkout') }}" method="POST">
@@ -333,49 +308,13 @@
             document.getElementById('store-location').style.display = this.value === 'pickup' ? 'block' : 'none';
             document.getElementById('delivery-address').style.display = this.value === 'delivery' ? 'block' : 'none';
             
-            // Update wallet payment info if it exists
-            const walletInfo = document.getElementById('wallet-payment-info');
-            if (walletInfo) {
-                const walletWithdrawal = walletInfo.querySelector('.wallet-withdrawal');
-                const remainingBalance = walletInfo.querySelector('.remaining-balance');
-                if (walletWithdrawal) {
-                    walletWithdrawal.textContent = total.toLocaleString() + ' {{ get_translation("tooman") }}';
-                }
-                if (remainingBalance) {
-                    const walletBalance = parseFloat('{{ current_user.wallet.balance if current_user.wallet else 0 }}');
-                    remainingBalance.textContent = (walletBalance - total).toLocaleString() + ' {{ get_translation("tooman") }}';
-                }
-            }
+            // Wallet feature removed
         });
     });
 
-    // Update wallet payment info when payment method changes
+    // Update payment method input only
     document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            const walletInfo = document.getElementById('wallet-payment-info');
-            if (walletInfo) {
-                walletInfo.style.display = this.value === 'wallet' ? 'block' : 'none';
-                
-                // Get the current total from the order summary
-                const totalAmountElement = document.querySelector('.total-amount');
-                const currentTotal = parseFloat(totalAmountElement.textContent.replace(/[^0-9]/g, ''));
-                
-                // Update wallet payment info with the current total
-                const walletWithdrawal = walletInfo.querySelector('.wallet-withdrawal');
-                const remainingBalance = walletInfo.querySelector('.remaining-balance');
-                const orderTotal = walletInfo.querySelector('.text-primary');
-                
-                if (walletWithdrawal) {
-                    walletWithdrawal.textContent = currentTotal.toLocaleString() + ' {{ get_translation("tooman") }}';
-                }
-                if (orderTotal) {
-                    orderTotal.textContent = currentTotal.toLocaleString() + ' {{ get_translation("tooman") }}';
-                }
-                if (remainingBalance) {
-                    const walletBalance = parseFloat('{{ current_user.wallet.balance if current_user.wallet else 0 }}');
-                    remainingBalance.textContent = (walletBalance - currentTotal).toLocaleString() + ' {{ get_translation("tooman") }}';
-                }
-            }
             document.getElementById('payment_method_input').value = this.value;
         });
     });

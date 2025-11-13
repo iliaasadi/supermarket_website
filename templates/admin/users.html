@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container py-4">
-    <h2>{{ get_translation('users_pending_verification') }}</h2>
+    <h2>{{ get_translation('users') }}</h2>
     
     <div class="row">
         {% for user in users %}
@@ -29,11 +29,7 @@
                             </div>
                         {% endif %} -->
                         
-                        <!-- <a href="{{ url_for('verify_user', user_id=user.id) }}" 
-                           class="btn btn-success"
-                           onclick="return confirm('{{ get_translation('confirm_verify_user') }}')">
-                            {{ get_translation('verify_user') }}
-                        </a> -->
+                        {# Verification action removed #}
                     </div>
                 </div>
             </div>
@@ -58,7 +54,7 @@
             {% endif %} -->
         {% else %}
             <div class="col">
-                <p class="text-muted">{{ get_translation('no_users_pending_verification') }}</p>
+                <p class="text-muted">{{ get_translation('no_users') }}</p>
             </div>
         {% endfor %}
     </div>

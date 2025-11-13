@@ -121,27 +121,19 @@
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <p class="mb-1"><strong>{{ get_translation('payment_method') }}:</strong></p>
-                                                    {% if order.payment_method == 'wallet' %}
-                                                        <span class="badge bg-success">
-                                                            <i class="fas fa-wallet me-1"></i>
-                                                            {{ get_translation('pay_with_wallet') }}
-                                                        </span>
-                                                        <p class="mt-2 mb-1"><strong>{{ get_translation('wallet_withdrawal') }}:</strong> {{ "%.0f"|format(order.total) }} {{ get_translation('tooman') }}</p>
-                                                    {% else %}
-                                                        <span class="badge bg-warning text-dark">
-                                                            <i class="fas fa-money-bill-wave me-1"></i>
-                                                            {{ get_translation('cash_on_delivery') }}
-                                                        </span>
-                                                    {% endif %}
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-money-bill-wave me-1"></i>
+                                                        {{ get_translation('cash_on_delivery') }}
+                                                    </span>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <p class="mb-1"><strong>{{ get_translation('payment_status') }}:</strong></p>
-                                                    {% if order.payment_method == 'wallet' and order.status == 'completed' %}
+                                                    {% if order.status == 'completed' %}
                                                         <span class="badge bg-success">
                                                             <i class="fas fa-check-circle me-1"></i>
                                                             {{ get_translation('paid') }}
                                                         </span>
-                                                    {% elif order.payment_method == 'cash' %}
+                                                    {% else %}
                                                         <span class="badge bg-warning text-dark">
                                                             <i class="fas fa-clock me-1"></i>
                                                             {{ get_translation('pending_payment') }}

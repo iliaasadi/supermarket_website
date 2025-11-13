@@ -20,8 +20,7 @@ def reset_admin():
         admin = User(
             username='Admin',
             phone_number='+989145519029',  # Format the phone number
-            is_admin=True,
-            is_verified=True
+            is_admin=True
         )
         admin.set_password('09145519029')
         db.session.add(admin)

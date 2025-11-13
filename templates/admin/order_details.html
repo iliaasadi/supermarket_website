@@ -80,12 +80,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <p class="mb-1"><strong>{{ get_translation('payment_method') }}:</strong></p>
-                            {% if order.payment_method == 'wallet' %}
-                                <span class="badge bg-success">
-                                    <i class="fas fa-wallet me-1"></i>
-                                    {{ get_translation('pay_with_wallet') }}
-                                </span>
-                            {% elif order.payment_method == 'online' %}
+                            {% if order.payment_method == 'online' %}
                                 <span class="badge bg-primary">
                                     <i class="fas fa-credit-card me-1"></i>
                                     {{ get_translation('pay_online') }}
@@ -99,7 +94,7 @@
                         </div>
                         <div class="col-md-6">
                             <p class="mb-1"><strong>{{ get_translation('payment_status') }}:</strong></p>
-                            {% if order.payment_method in ['wallet', 'online'] %}
+                            {% if order.payment_method == 'online' %}
                                 <span class="badge bg-success">
                                     <i class="fas fa-check-circle me-1"></i>
                                     {{ get_translation('paid') }}

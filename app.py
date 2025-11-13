@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, current_app, jsonify, session
 from flask_login import login_user, login_required, logout_user, current_user
 from forms import LoginForm, RegisterForm, RegisterAddressForm, ProfileForm, AddressForm, PasswordResetForm
-from models import User, Product, CartItem, Address, Order, OrderItem, StoreLocation, Wallet, WalletTransaction, OrderComment
+from models import User, Product, CartItem, Address, Order, OrderItem, StoreLocation, OrderComment
 from extensions import db, login_manager, migrate
 import os
 from datetime import datetime, timedelta
@@ -108,19 +108,14 @@ def index():
     # Get categories from database
     categories = list(set([p.category for p in Product.query.all()]))
     
-    # Get featured products (only show verified-only products to verified users)
-    featured_products = Product.query.filter_by(is_featured=True)
-    if not current_user.is_authenticated or not current_user.is_verified:
-        featured_products = featured_products.filter_by(is_verified_only=False)
-    featured_products = featured_products.all()
+    # Get featured products
+    featured_products = Product.query.filter_by(is_featured=True).all()
     
     # Get products by category
     products_by_category = {}
     for category in categories:
-        products = Product.query.filter_by(category=category)
-        if not current_user.is_authenticated or not current_user.is_verified:
-            products = products.filter_by(is_verified_only=False)
-        products_by_category[category] = products.all()
+        products = Product.query.filter_by(category=category).all()
+        products_by_category[category] = products
     
     return render_template('index.html', 
                          categories=categories,
@@ -129,10 +124,7 @@ def index():
 
 @app.route('/category/<category>')
 def category(category):
-    products = Product.query.filter_by(category=category)
-    if not current_user.is_authenticated or not current_user.is_verified:
-        products = products.filter_by(is_verified_only=False)
-    products = products.all()
+    products = Product.query.filter_by(category=category).all()
     return render_template('category.html', products=products, category=category)
 
 @app.route('/admin/dashboard')
@@ -190,7 +182,6 @@ def admin_add_product():
             category = request.form.get('category')
             discount = float(request.form.get('discount', 0))
             is_featured = 'is_featured' in request.form
-            is_verified_only = 'is_verified_only' in request.form
             
             # Handle image upload
             image_url = None
@@ -217,8 +208,7 @@ def admin_add_product():
                 category=category,
                 image_url=image_url,
                 discount=discount,
-                is_featured=is_featured,
-                is_verified_only=is_verified_only
+                is_featured=is_featured
             )
             
             db.session.add(product)
@@ -256,7 +246,6 @@ def admin_edit_product(product_id):
             product.category = request.form.get('category')
             product.discount = float(request.form.get('discount', 0))
             product.is_featured = 'is_featured' in request.form
-            product.is_verified_only = 'is_verified_only' in request.form
             
             # Handle image upload
             if 'image' in request.files:
@@ -405,7 +394,6 @@ def login():
                     user = User(
                         username='Admin',
                         phone_number=formatted_phone,
-                        is_verified=True,
                         email=None,
                         profile_picture=None,
                         identity_card=None,
@@ -414,15 +402,7 @@ def login():
                     db.session.add(user)
                     db.session.flush()
                     
-                    # Create wallet for the new admin user
-                    wallet = Wallet(
-                        user_id=user.id,
-                        balance=0.0,
-                        created_at=datetime.utcnow(),
-                        updated_at=datetime.utcnow()
-                    )
-                    db.session.add(wallet)
-                    db.session.commit()
+                    # Wallet feature removed
                 else:
                     # Ensure existing user is admin
                     if not user.is_admin:
@@ -450,7 +430,7 @@ def login():
                     user = User(
                         username=f"User_{formatted_phone[-4:]}",
                         phone_number=formatted_phone,
-                        is_verified=False,
+                        
                         email=None,
                         profile_picture=None,
                         identity_card=None,
@@ -459,15 +439,7 @@ def login():
                     db.session.add(user)
                     db.session.flush()
                     
-                    # Create wallet for the new user
-                    wallet = Wallet(
-                        user_id=user.id,
-                        balance=0.0,
-                        created_at=datetime.utcnow(),
-                        updated_at=datetime.utcnow()
-                    )
-                    db.session.add(wallet)
-                    db.session.commit()
+                    # Wallet feature removed
                     
                 except Exception as e:
                     db.session.rollback()
@@ -534,16 +506,12 @@ def register():
         user = User(
             username=form.username,
             phone_number=form.phone_number.data,
-            is_verified=False
+            
         )
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        
-        # Create wallet for the user
-        wallet = Wallet(user_id=user.id)
-        db.session.add(wallet)
-        db.session.commit()
+        # Wallet feature removed
         
         # Log in the user
         login_user(user)
@@ -601,11 +569,7 @@ def cart():
     addresses = Address.query.filter_by(user_id=current_user.id).all()
     locations = StoreLocation.query.filter_by(is_active=True).all()
     
-    # Ensure user has a wallet
-    if not current_user.wallet:
-        wallet = Wallet(user_id=current_user.id)
-        db.session.add(wallet)
-        db.session.commit()
+    # Wallet feature removed
     
     return render_template('cart.html',
                          cart_items=cart_items,
@@ -726,7 +690,6 @@ def profile():
             identity_card_path = save_file(form.identity_card.data, 'identity_cards')
             if identity_card_path:
                 current_user.identity_card = identity_card_path
-                current_user.is_verified = False  # Reset verification when new ID is uploaded
 
         current_user.username = form.username.data
         current_user.phone_number = form.phone_number.data
@@ -839,20 +802,12 @@ def delete_address(address_id):
     flash_translated('address_deleted')
     return redirect(url_for('profile'))
 
-@app.route('/admin/verify_user/<int:user_id>')
-@admin_required
-def verify_user(user_id):
-    user = User.query.get_or_404(user_id)
-    user.is_verified = True
-    db.session.commit()
-    flash_translated('user_verified', {'username': user.username})
-    return redirect(url_for('admin_dashboard'))
+# Verification feature removed
 
 @app.route('/admin/users')
 @admin_required
 def admin_users():
-    users = User.query.filter(User.identity_card.isnot(None), 
-                            User.is_verified.is_(False)).all()
+    users = User.query.filter(User.identity_card.isnot(None)).all()
     return render_template('admin/users.html', users=users)
 
 @app.route('/search')
@@ -1283,7 +1238,7 @@ def create_admin():
             username='Admin',
             phone_number='+989137597568',
             is_admin=True,
-            is_verified=True
+            
         )
         admin.set_password('admin123')
         db.session.add(admin)
@@ -1577,7 +1532,7 @@ def init_db():
                 username='Admin',
                 phone_number='+989137597568',
                 is_admin=True,
-                is_verified=True
+                
             )
             admin.set_password('admin123')
             db.session.add(admin)
@@ -1599,21 +1554,7 @@ def init_db():
             db.session.commit()
             print("Default store created successfully!")
 
-@app.route('/wallet')
-@login_required
-def wallet():
-    # Get or create wallet for user
-    if not current_user.wallet:
-        wallet = Wallet(user_id=current_user.id)
-        db.session.add(wallet)
-        db.session.commit()
-    else:
-        wallet = current_user.wallet
-    
-    # Get transaction history
-    transactions = WalletTransaction.query.filter_by(wallet_id=wallet.id).order_by(WalletTransaction.created_at.desc()).all()
-    
-    return render_template('wallet.html', wallet=wallet, transactions=transactions)
+# Wallet feature removed
 
 @app.route('/order/<int:order_id>/cancel', methods=['POST'])
 @login_required
@@ -1635,25 +1576,7 @@ def cancel_order(order_id):
     order.cancelled_by = 'user'
     order.cancelled_at = datetime.utcnow()
     
-    # Add refund to wallet
-    if not current_user.wallet:
-        wallet = Wallet(user_id=current_user.id)
-        db.session.add(wallet)
-    else:
-        wallet = current_user.wallet
-    
-    # Create refund transaction
-    transaction = WalletTransaction(
-        wallet_id=wallet.id,
-        amount=order.total_amount,
-        type='deposit',
-        description=get_translation('order_cancelled_refund')
-    )
-    db.session.add(transaction)
-    
-    # Update wallet balance
-    wallet.balance += order.total_amount
-    
+    # Wallet feature removed (no wallet refunds)
     db.session.commit()
     flash(get_translation('order_cancelled'), 'success')
     return redirect(url_for('order_status', order_id=order_id))
@@ -1673,25 +1596,7 @@ def admin_cancel_order(order_id):
     order.cancelled_by = 'admin'
     order.cancelled_at = datetime.utcnow()
     
-    # Add refund to user's wallet
-    if not order.user.wallet:
-        wallet = Wallet(user_id=order.user_id)
-        db.session.add(wallet)
-    else:
-        wallet = order.user.wallet
-    
-    # Create refund transaction
-    transaction = WalletTransaction(
-        wallet_id=wallet.id,
-        amount=order.total_amount,
-        type='deposit',
-        description=get_translation('order_cancelled_refund')
-    )
-    db.session.add(transaction)
-    
-    # Update wallet balance
-    wallet.balance += order.total_amount
-    
+    # Wallet feature removed (no wallet refunds)
     db.session.commit()
     flash(get_translation('order_cancelled'), 'success')
     return redirect(url_for('admin_order_details', order_id=order_id))
@@ -1699,11 +1604,6 @@ def admin_cancel_order(order_id):
 @app.route('/product/<int:product_id>')
 def product_details(product_id):
     product = Product.query.get_or_404(product_id)
-    
-    # Check if user can access verified-only product
-    if product.is_verified_only and (not current_user.is_authenticated or not current_user.is_verified):
-        flash(get_translation('login_to_view_verified_product'), 'warning')
-        return redirect(url_for('login'))
     
     return render_template('product_details.html', product=product)
 
@@ -1746,11 +1646,7 @@ def admin_identity_cards():
     # Base query for users with identity cards
     query = User.query.filter(User.identity_card.isnot(None))
 
-    # Apply verification filter
-    if verification_status == 'verified':
-        query = query.filter(User.is_verified == True)
-    elif verification_status == 'unverified':
-        query = query.filter(User.is_verified == False)
+    # Verification filter removed
 
     # Apply search filter
     if search:
@@ -2036,37 +1932,11 @@ def payment_success():
 @app.route('/payment_failure')
 @login_required
 def payment_failure():
-    payment_type = request.args.get('type', 'order')
-    order_id = request.args.get('order_id', type=int)
-    amount = request.args.get('amount', type=float)
-    
-    if payment_type == 'wallet':
-        flash_translated('wallet_deposit_failed', 'error')
-        return redirect(url_for('wallet'))
-    else:
-        flash_translated('order_payment_failed', 'error')
-        return redirect(url_for('cart'))
+    # Wallet feature removed
+    flash_translated('order_payment_failed', 'error')
+    return redirect(url_for('cart'))
 
-@app.route('/process_wallet_deposit', methods=['POST'])
-@login_required
-def process_wallet_deposit():
-    try:
-        amount = request.form.get('amount', type=float)
-        
-        if not amount or amount < 1000:
-            flash_translated('invalid_amount', 'error')
-            return redirect(url_for('wallet'))
-        
-        # Store the amount in session for payment success
-        session['payment_amount'] = amount
-        session['payment_type'] = 'wallet'
-        
-        # Redirect to payment temp page with the deposit amount
-        return redirect(url_for('payment_temp', amount=amount, type='wallet'))
-    except Exception as e:
-        print(f"Error processing wallet deposit: {str(e)}")
-        flash_translated('error_processing_wallet_deposit', 'error')
-        return redirect(url_for('wallet'))
+# Wallet feature removed
 
 @app.route('/process_order', methods=['POST'])
 @login_required
@@ -2139,77 +2009,7 @@ def process_order():
                 flash_translated('payment_gateway_error', 'error')
                 return redirect(url_for('cart'))
         
-        # Handle wallet payment
-        elif payment_method == 'wallet':
-            if not current_user.wallet:
-                wallet = Wallet(user_id=current_user.id, balance=0.0)
-                db.session.add(wallet)
-            else:
-                wallet = current_user.wallet
-                if wallet.balance is None:
-                    wallet.balance = 0.0
-            
-            # Calculate remaining amount to be paid
-            remaining_amount = total - wallet.balance
-            
-            if remaining_amount > 0:
-                # Store order details in session for payment success
-                session['order_total'] = total
-                session['wallet_amount'] = wallet.balance
-                session['remaining_amount'] = remaining_amount
-                session['payment_method'] = payment_method
-                session['delivery_type'] = delivery_type
-                session['store_location_id'] = store_location_id if delivery_type == 'pickup' else None
-                session['address_id'] = address_id if delivery_type == 'delivery' else None
-                session['order_description'] = request.form.get('order_description', '').strip()
-                
-                # Redirect to payment temp page with the remaining amount
-                return redirect(url_for('payment_temp', amount=remaining_amount, type='order'))
-            
-            # If wallet balance is sufficient, create order directly
-            order = Order(
-                user_id=current_user.id,
-                total_amount=total,
-                delivery_fee=delivery_fee,
-                status='pending_approval',
-                payment_method=payment_method,
-                delivery_type=delivery_type,
-                store_location_id=store_location_id if delivery_type == 'pickup' else None,
-                address_id=address_id if delivery_type == 'delivery' else None,
-                description=request.form.get('order_description', '').strip()
-            )
-            db.session.add(order)
-            
-            # Create order items
-            for cart_item in cart_items:
-                order_item = OrderItem(
-                    order=order,
-                    product_id=cart_item.product_id,
-                    quantity=cart_item.quantity,
-                    price=cart_item.product.price  # Use base price without discount
-                )
-                db.session.add(order_item)
-            
-            # Clear cart
-            for cart_item in cart_items:
-                db.session.delete(cart_item)
-            
-            # Update wallet balance
-            wallet.balance -= total
-            
-            # Create wallet transaction
-            transaction = WalletTransaction(
-                wallet_id=wallet.id,
-                amount=total,
-                type='withdrawal',
-                description=get_translation('order_payment')
-            )
-            db.session.add(transaction)
-            
-            db.session.commit()
-            
-            flash_translated('order_placed_successfully', 'success')
-            return redirect(url_for('order_status', order_id=order.id))
+        # Wallet feature removed
         
         # Handle cash payment
         else:  # cash payment

@@ -79,7 +79,7 @@ translations = {
         'empty_cart': 'Your cart is empty',
         'product_added_to_cart': 'Product added to cart successfully!',
         'add_to_cart': 'Add to Cart',
-        'proceed_to_checkout': 'Proceed to Checkout',
+        'proceed_to_checkout': 'Complete Checkout',
         'continue_shopping': 'Continue Shopping',
         'pickup_from_store': 'Pickup from Store (No Delivery Fee)',
         'delivery_to_address': 'Delivery to Address (Delivery Fee: {} Tooman)',
@@ -88,6 +88,7 @@ translations = {
         'no_delivery_addresses': 'No delivery addresses found. Add an address',
         'choose_location': 'Choose a location',
         'choose_address': 'Choose an address',
+        'cart_updated' : 'Cart updated successfully',
         
         # Orders
         'order_status': 'Order Status',
@@ -108,6 +109,16 @@ translations = {
         'order_cancelled': 'Order cancelled successfully',
         'order_cancelled_by_user': 'Order cancelled by user',
         'order_cancelled_by_admin': 'Order cancelled by admin',
+        'item_removed_from_cart': 'Item removed from cart successfully',
+        'item_added_to_cart': 'Item added to cart successfully',
+        'item_updated_in_cart': 'Item updated in cart successfully',
+        'item_deleted_from_cart': 'Item deleted from cart successfully',
+        'item_quantity_updated': 'Item quantity updated successfully',
+        'item_quantity_decreased': 'Item quantity decreased successfully',
+        'item_quantity_increased': 'Item quantity increased successfully',
+        'item_quantity_set': 'Item quantity set successfully',
+        'item_quantity_reset': 'Item quantity reset successfully',
+        'item_quantity_cleared': 'Item quantity cleared successfully',
         
         # Admin
         'admin_dashboard': 'Admin Dashboard',
@@ -134,7 +145,7 @@ translations = {
         'stock': 'Stock',
         'discount': 'Discount',
         'featured': 'Featured',
-        'verified_only': 'Verified Only',
+        # Verification feature removed
         'yes': 'Yes',
         'no': 'No',
         'edit': 'Edit',
@@ -166,7 +177,7 @@ translations = {
         'address_added': 'Address added successfully!',
         'address_updated': 'Address updated successfully!',
         'address_deleted': 'Address deleted successfully!',
-        'user_verified': 'User verified successfully!',
+        # Verification feature removed
         'settings_updated': 'Settings updated successfully!',
         
         # Login Page
@@ -203,9 +214,9 @@ translations = {
         # Profile Page
         'profile': 'Profile',
         'profile_picture': 'Profile Picture',
-        'account_verified': 'Your account is verified.',
+        # Verification feature removed
         'edit_profile': 'Edit Profile',
-        'upload_id_for_verification': 'Upload your ID card for verification',
+        # Verification feature removed
         'change_password': 'Change Password',
         'update_profile': 'Update Profile',
         'recent_orders': 'Recent Orders',
@@ -259,8 +270,7 @@ translations = {
         'select_category': 'Select a category',
         'image_url': 'Image URL',
         'featured_product': 'Featured Product',
-        'verified_customers_only': 'Verified Customers Only',
-        'verified_customers_only_description': 'Only verified customers will be able to purchase this product.',
+        # Verification feature removed
         'save_product': 'Save Product',
         
         # Admin Edit Product
@@ -370,7 +380,7 @@ translations = {
         'in_stock': 'In Stock',
         'out_of_stock': 'Out of Stock',
         'empty_category': 'No products in this category',
-        'verified_only': 'Verified Only',
+        # Verification feature removed
         'show_verified': 'Show Verified Products Only',
         'product_details': 'Product Details',
         'description': 'Description',
@@ -379,7 +389,7 @@ translations = {
         'add_to_cart_success': 'Product added to cart successfully!',
         'add_to_cart_error': 'Error adding product to cart',
         'stock_error': 'Not enough stock available',
-        'verified_required': 'This product is only available for verified users',
+        # Verification feature removed
         'login_required': 'Please login to add products to cart',
         
         # Hero Section
@@ -437,14 +447,14 @@ translations = {
         'deposit_amount': 'Deposit Amount',
         'to_add_to_cart': 'to add to cart',
         'login_to_view_verified_product': 'Please login with a verified account to view this product',
-        'verified_product': 'Verified Product',
+        # Verification feature removed
         'view_details': 'View Details',
         
         # Identity Cards Section
         'identity_cards': 'Identity Cards',
         'search_by_username_or_email': 'Search by username or email',
         'all_users': 'All Users',
-        'verified_users': 'Verified Users',
+        # Verification feature removed
         'unverified_users': 'Unverified Users',
         'newest_first': 'Newest First',
         'oldest_first': 'Oldest First',
@@ -612,7 +622,7 @@ translations = {
         'empty_cart': 'سبد خرید شما خالی است',
         'product_added_to_cart': 'محصول با موفقیت به سبد خرید اضافه شد!',
         'add_to_cart': 'افزودن به سبد خرید',
-        'proceed_to_checkout': 'ادامه خرید',
+        'proceed_to_checkout': 'نهایی کردن خرید',
         'continue_shopping': 'ادامه خرید',
         'pickup_from_store': 'دریافت از فروشگاه (بدون هزینه ارسال)',
         'delivery_to_address': 'تحویل در آدرس (هزینه ارسال: {} تومان)',
@@ -621,7 +631,7 @@ translations = {
         'no_delivery_addresses': 'آدرس تحویلی یافت نشد. افزودن آدرس',
         'choose_location': 'انتخاب فروشگاه',
         'choose_address': 'انتخاب آدرس',
-        
+        'cart_updated': 'سبد خرید با موفقیت بروزرسانی شد',
         # Orders
         'order_status': 'وضعیت سفارش',
         'order_id': 'شماره سفارش',
@@ -669,7 +679,7 @@ translations = {
         'stock': 'موجودی',
         'discount': 'تخفیف',
         'featured': 'ویژه',
-        'verified_only': 'فقط تایید شده',
+        # Verification feature removed
         'yes': 'بله',
         'no': 'خیر',
         'edit': 'ویرایش',
@@ -778,7 +788,16 @@ translations = {
         'order_payment_successful' : 'پرداخت موفق بود',
         'order_description_help' : 'این یادداشت‌ها برای کارکنان فروشگاه قابل مشاهده خواهد بود.',
         'customer_information': 'مشخصات کاربر',
-
+        'item_removed_from_cart': 'مورد با موفقیت از سبد خرید حذف شد',
+        'item_added_to_cart': 'مورد با موفقیت به سبد خرید اضافه شد',
+        'item_updated_in_cart': 'مورد با موفقیت در سبد خرید بروزرسانی شد',
+        'item_deleted_from_cart': 'مورد با موفقیت از سبد خرید حذف شد',
+        'item_quantity_updated': 'مورد با موفقیت در سبد خرید بروزرسانی شد',
+        'item_quantity_decreased': 'مورد با موفقیت در سبد خرید کاهش یافت',
+        'item_quantity_increased': 'مورد با موفقیت در سبد خرید افزایش یافت',
+        'item_quantity_set': 'مورد با موفقیت در سبد خرید تنظیم شد',
+        'item_quantity_reset': 'مورد با موفقیت در سبد خرید ریست شد',
+        'item_quantity_cleared': 'مورد با موفقیت در سبد خرید پاک شد',
         
         
         # Reset Password Page
@@ -799,8 +818,7 @@ translations = {
         'select_category': 'انتخاب دسته‌بندی',
         'image_url': 'آدرس تصویر',
         'featured_product': 'محصول ویژه',
-        'verified_customers_only': 'فقط مشتریان تایید شده',
-        'verified_customers_only_description': 'فقط مشتریان تایید شده می‌توانند این محصول را خریداری کنند.',
+        # Verification feature removed
         'save_product': 'ذخیره محصول',
         
         # Admin Edit Product
@@ -907,7 +925,7 @@ translations = {
         'in_stock': 'موجود',
         'out_of_stock': 'ناموجود',
         'empty_category': 'محصولی در این دسته‌بندی موجود نیست',
-        'verified_only': 'فقط تایید شده',
+        # Verification feature removed
         'show_verified': 'نمایش فقط محصولات تایید شده',
         'product_details': 'جزئیات محصول',
         'description': 'توضیحات',
@@ -916,7 +934,7 @@ translations = {
         'add_to_cart_success': 'محصول با موفقیت به سبد خرید اضافه شد!',
         'add_to_cart_error': 'خطا در افزودن محصول به سبد خرید',
         'stock_error': 'موجودی کافی موجود نیست',
-        'verified_required': 'این محصول فقط برای کاربران تایید شده در دسترس است',
+        # Verification feature removed
         'login_required': 'لطفاً برای افزودن محصول به سبد خرید وارد شوید',
         
         # Hero Section
@@ -979,7 +997,7 @@ translations = {
         'deposit_amount': 'مبلغ شارژ',
         'to_add_to_cart': 'برای افزودن به سبد خرید',
         'login_to_view_verified_product': 'لطفا با حساب کاربری تایید شده وارد شوید تا این محصول را مشاهده کنید',
-        'verified_product': 'محصول تایید شده',
+        # Verification feature removed
         'view_details': 'مشاهده جزئیات',
         'payment_cancelled':'تراکنش ناموفق',
 
@@ -988,7 +1006,7 @@ translations = {
         'identity_cards': 'کارت‌های شناسایی',
         'search_by_username_or_email': 'جستجو بر اساس نام کاربری یا ایمیل',
         'all_users': 'همه کاربران',
-        'verified_users': 'کاربران تایید شده',
+        # Verification feature removed
         'unverified_users': 'کاربران تایید نشده',
         'newest_first': 'جدیدترین اول',
         'oldest_first': 'قدیمی‌ترین اول',

@@ -14,7 +14,6 @@ class User(UserMixin, db.Model):
     phone_number = db.Column(db.String(20), unique=True, nullable=False)
     profile_picture = db.Column(db.String(200))  # Path to profile picture
     identity_card = db.Column(db.String(200))    # Path to identity card
-    is_verified = db.Column(db.Boolean, default=False)
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     verification_code = db.Column(db.String(6), nullable=True)
@@ -163,8 +162,7 @@ class User(UserMixin, db.Model):
             admin = cls(
                 username='Admin',
                 phone_number='+989137597568',
-                is_admin=True,
-                is_verified=True
+                is_admin=True
             )
             admin.set_password('admin123')
             db.session.add(admin)
@@ -249,7 +247,6 @@ class Product(db.Model):
     image_url = db.Column(db.String(200), nullable=True)
     discount = db.Column(db.Float, default=0)
     is_featured = db.Column(db.Boolean, default=False)
-    is_verified_only = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
