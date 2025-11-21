@@ -1,16 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, current_app, jsonify, session
 from flask_login import login_user, login_required, logout_user, current_user
-from forms import LoginForm, RegisterForm, RegisterAddressForm, ProfileForm, AddressForm, PasswordResetForm
-from models import User, Product, CartItem, Address, Order, OrderItem, StoreLocation, OrderComment
+from forms import LoginForm, RegisterForm, RegisterAddressForm, ProfileForm, AddressForm
+from models import User, Product, CartItem, Address, Order, OrderItem, StoreLocation, OrderComment, Brand, Category
 from extensions import db, login_manager, migrate
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from werkzeug.utils import secure_filename
 import uuid
 from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
+from PIL import Image
+import io
 from flask_wtf.csrf import generate_csrf
 from translations import translations
-from sqlalchemy.sql import func
 import jdatetime
 from utils.zarinpal import create_payment_request, verify_payment
 
@@ -23,12 +26,15 @@ app.config['MAX_ADDRESSES'] = 10
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=31)
 app.config['SESSION_TYPE'] = 'filesystem'
 
-# Language configuration
-app.config['LANGUAGES'] = ['en', 'fa']
+# Language configuration - Farsi only
+# app.config['LANGUAGES'] = ['en', 'fa']  # English language removed
+app.config['LANGUAGES'] = ['fa']  # Only Farsi language
 app.config['DEFAULT_LANGUAGE'] = 'fa'
 
 # Ensure upload directory exists
 os.makedirs(os.path.join(app.root_path, app.config['UPLOAD_FOLDER']), exist_ok=True)
+
+DEFAULT_IMAGE_URL = '/static/images/logo.jpeg'
 
 # Initialize extensions
 db.init_app(app)
@@ -41,23 +47,40 @@ def load_user(id):
     return User.query.get(int(id))
 
 def get_language():
-    return session.get('language', 'fa')
+    # Force Farsi language only
+    return 'fa'  # Always return Farsi, no language switching
 
 def get_translation(key):
-    """Get translation for the current language"""
-    language = session.get('language', 'fa')
-    return translations[language].get(key, translations['fa'].get(key, key))
+    """Get translation for the current language - Farsi only"""
+    # Always use Farsi translations
+    return translations['fa'].get(key, key)
 
 def flash_translated(message_key, category='message'):
     """Flash a translated message"""
     message = get_translation(message_key)
     flash(message, category)
 
-@app.route('/set_language/<language>')
-def set_language(language):
-    if language in app.config['LANGUAGES']:
-        session['language'] = language
-    return redirect(request.referrer or url_for('index'))
+login_manager.login_message = 'login_required_message'
+
+def localize_login_message(message):
+    if message == 'login_required_message':
+        return get_translation('login_required_message')
+    return message
+
+login_manager.localize_callback = localize_login_message
+
+def get_image_or_default(image_path):
+    """Return the provided image path or the default logo."""
+    if image_path and isinstance(image_path, str) and image_path.strip():
+        return image_path
+    return DEFAULT_IMAGE_URL
+
+# Language switching removed - Farsi only
+# @app.route('/set_language/<language>')
+# def set_language(language):
+#     if language in app.config['LANGUAGES']:
+#         session['language'] = language
+#     return redirect(request.referrer or url_for('index'))
 
 @app.context_processor
 def inject_csrf_token():
@@ -71,12 +94,59 @@ def inject_translations():
     )
 
 @app.context_processor
+def inject_timestamp():
+    """Inject timestamp for cache busting"""
+    import time
+    import os
+    # Use file modification time for logo to ensure it refreshes when logo is updated
+    logo_path = os.path.join(app.root_path, 'static', 'images', 'logo.jpeg')
+    if os.path.exists(logo_path):
+        logo_mtime = int(os.path.getmtime(logo_path))
+    else:
+        logo_mtime = int(time.time())
+    return dict(timestamp=logo_mtime)
+
+def cleanup_old_cart_items():
+    """Remove cart items older than 3 days for all users"""
+    from datetime import timedelta, timezone
+    try:
+        # Check if created_at column exists and has data
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=3)
+        # Filter out NULL values and items older than 3 days
+        old_items = CartItem.query.filter(
+            CartItem.created_at.isnot(None),
+            CartItem.created_at < cutoff_date
+        ).all()
+        count = len(old_items)
+        if old_items:
+            for item in old_items:
+                db.session.delete(item)
+            db.session.commit()
+        return count
+    except Exception as e:
+        # If column doesn't exist or other error, just return 0
+        # The database will need to be migrated or recreated
+        print(f"Warning: Could not cleanup old cart items: {e}")
+        return 0
+
+@app.context_processor
 def inject_cart_count():
     if current_user.is_authenticated:
+        # Clean up old cart items periodically (only once per request to avoid overhead)
+        if not hasattr(current_app, '_cart_cleanup_done'):
+            cleanup_old_cart_items()
+            current_app._cart_cleanup_done = True
         cart_count = CartItem.query.filter_by(user_id=current_user.id).count()
     else:
         cart_count = 0
     return dict(cart_count=cart_count)
+
+@app.context_processor
+def inject_image_defaults():
+    return dict(
+        default_image_url=DEFAULT_IMAGE_URL,
+        get_image_or_default=get_image_or_default
+    )
 
 def to_tehran_time(dt):
     if dt is None:
@@ -105,48 +175,145 @@ def admin_required(f):
 # Routes
 @app.route('/')
 def index():
-    # Get categories from database
-    categories = list(set([p.category for p in Product.query.all()]))
+    # Get categories from Category model, fallback to product categories
+    category_objects = Category.query.all()
+    product_categories = list(set([p.category for p in Product.query.all() if p.category]))
+    # Merge both sources
+    all_category_names = set([cat.name for cat in category_objects] + product_categories)
+    categories = sorted(list(all_category_names))
     
-    # Get featured products
-    featured_products = Product.query.filter_by(is_featured=True).all()
+    # Create a dict to map category names to category objects
+    category_dict = {cat.name: cat for cat in category_objects}
     
-    # Get products by category
+    # Get all brands with products
+    brands = Brand.query.all()
+    
+    # Get products by brand
+    products_by_brand = {}
+    for brand in brands:
+        products = Product.query.options(joinedload(Product.brand)).filter_by(brand_id=brand.id).all()
+        if products:  # Only include brands that have products
+            products_by_brand[brand] = products
+    
+    # Convert to list for template (limit to first 3 brands)
+    brands_with_products = list(products_by_brand.items())[:3]
+    
+    # Get featured products with brand
+    featured_products = Product.query.options(joinedload(Product.brand)).filter_by(is_featured=True).all()
+    
+    # Get products by category with brand
     products_by_category = {}
     for category in categories:
-        products = Product.query.filter_by(category=category).all()
+        products = Product.query.options(joinedload(Product.brand)).filter_by(category=category).all()
         products_by_category[category] = products
     
     return render_template('index.html', 
                          categories=categories,
+                         category_dict=category_dict,
+                         brands=brands,
+                         products_by_brand=products_by_brand,
+                         brands_with_products=brands_with_products,
                          featured_products=featured_products,
                          products_by_category=products_by_category)
 
 @app.route('/category/<category>')
 def category(category):
-    products = Product.query.filter_by(category=category).all()
+    products = Product.query.options(joinedload(Product.brand)).filter_by(category=category).all()
     return render_template('category.html', products=products, category=category)
+
+@app.route('/support')
+def support():
+    """Support page with contact information"""
+    return render_template('support.html')
+
+@app.route('/brand/<int:brand_id>')
+def brand(brand_id):
+    brand = Brand.query.get_or_404(brand_id)
+    products = Product.query.options(joinedload(Product.brand)).filter_by(brand_id=brand_id).all()
+    return render_template('brand.html', products=products, brand=brand)
 
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
     # Get statistics
     total_products = Product.query.count()
-    categories = list(set([p.category for p in Product.query.all()]))
+    total_users = User.query.count()
+    total_orders = Order.query.count()
+    # Get categories from Category model, fallback to product categories for backward compatibility
+    category_objects = Category.query.all()
+    product_categories = list(set([p.category for p in Product.query.all() if p.category]))
+    # Merge both sources
+    all_category_names = set([cat.name for cat in category_objects] + product_categories)
+    categories = sorted(list(all_category_names))
     locations = StoreLocation.query.all()
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
     products = Product.query.all()
+    brands = Brand.query.all()
+    
+    search_query = request.args.get('search', '').strip()
+    search_scope = request.args.get('scope', 'all')
+    allowed_scopes = {'all', 'products', 'brands', 'categories'}
+    if search_scope not in allowed_scopes:
+        search_scope = 'all'
+    
+    filtered_products = products
+    filtered_brands = brands
+    filtered_categories = categories
+    search_summary = []
+    
+    if search_query:
+        term = search_query.lower()
+        
+        if search_scope in ('all', 'products'):
+            filtered_products = [
+                product for product in products
+                if term in (product.name or '').lower()
+                or term in (product.category or '').lower()
+                or (product.brand and term in (product.brand.name or '').lower())
+            ]
+            search_summary.append({'key': 'products', 'count': len(filtered_products)})
+        
+        if search_scope in ('all', 'brands'):
+            filtered_brands = [
+                brand for brand in brands
+                if term in (brand.name or '').lower()
+            ]
+            search_summary.append({'key': 'brands', 'count': len(filtered_brands)})
+        
+        if search_scope in ('all', 'categories'):
+            filtered_categories = [
+                category for category in categories
+                if category and term in category.lower()
+            ]
+            search_summary.append({'key': 'categories', 'count': len(filtered_categories)})
+        else:
+            # Ensure categories remain unchanged if not part of the search scope
+            filtered_categories = categories
+    else:
+        filtered_products = products
+        filtered_brands = brands
+        filtered_categories = categories
     
     # Get delivery fee from session or use default
     delivery_fee = session.get('delivery_fee', 20000)
     
     return render_template('admin/dashboard.html',
                          total_products=total_products,
+                         total_users=total_users,
+                         total_orders=total_orders,
                          categories=categories,
+                         category_objects=category_objects,
                          locations=locations,
                          recent_orders=recent_orders,
                          products=products,
-                         delivery_fee=delivery_fee)
+                         brands=brands,
+                         delivery_fee=delivery_fee,
+                         filtered_products=filtered_products,
+                         filtered_brands=filtered_brands,
+                         filtered_categories=filtered_categories,
+                         search_query=search_query,
+                         search_scope=search_scope,
+                         search_summary=search_summary)
 
 @app.route('/admin/update_delivery_settings', methods=['POST'])
 @admin_required
@@ -180,25 +347,17 @@ def admin_add_product():
             price = float(request.form.get('price'))
             stock = int(request.form.get('stock'))
             category = request.form.get('category')
+            brand_id = request.form.get('brand_id')
+            brand_id = int(brand_id) if brand_id and brand_id != '' else None
             discount = float(request.form.get('discount', 0))
             is_featured = 'is_featured' in request.form
             
-            # Handle image upload
-            image_url = None
-            if 'image' in request.files:
-                image_file = request.files['image']
-                if image_file and image_file.filename:
-                    # Check if the file is an image
-                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
-                    if '.' in image_file.filename and \
-                       image_file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
-                        image_url = save_file(image_file, 'products')
-                        if not image_url:
-                            flash_translated('error_uploading_image', 'error')
-                            return redirect(url_for('admin_add_product'))
-                    else:
-                        flash_translated('invalid_image_format', 'error')
-                        return redirect(url_for('admin_add_product'))
+            # Handle image - either file upload or URL
+            image_url = handle_image_input(
+                image_file=request.files.get('image') if 'image' in request.files else None,
+                image_url=request.form.get('image_url'),
+                folder='products'
+            )
             
             product = Product(
                 name=name,
@@ -206,7 +365,8 @@ def admin_add_product():
                 price=price,
                 stock=stock,
                 category=category,
-                image_url=image_url,
+                brand_id=brand_id,
+                image_url=get_image_or_default(image_url),
                 discount=discount,
                 is_featured=is_featured
             )
@@ -226,7 +386,10 @@ def admin_add_product():
     categories = db.session.query(Product.category).distinct().all()
     categories = [cat[0] for cat in categories if cat[0]]
     
-    return render_template('admin/add_product.html', categories=categories)
+    # Get all brands for the form
+    brands = Brand.query.all()
+    
+    return render_template('admin/add_product.html', categories=categories, brands=brands)
 
 @app.route('/admin/product/edit/<int:product_id>', methods=['GET', 'POST'])
 @login_required
@@ -244,34 +407,31 @@ def admin_edit_product(product_id):
             product.price = float(request.form.get('price'))
             product.stock = int(request.form.get('stock'))
             product.category = request.form.get('category')
+            brand_id = request.form.get('brand_id')
+            product.brand_id = int(brand_id) if brand_id and brand_id != '' else None
             product.discount = float(request.form.get('discount', 0))
             product.is_featured = 'is_featured' in request.form
             
-            # Handle image upload
-            if 'image' in request.files:
-                image_file = request.files['image']
-                if image_file and image_file.filename:
-                    # Check if the file is an image
-                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
-                    if '.' in image_file.filename and \
-                       image_file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
-                        # Delete old image if it exists
-                        if product.image_url:
-                            old_image_path = os.path.join(app.root_path, product.image_url.lstrip('/'))
-                            if os.path.exists(old_image_path):
-                                os.remove(old_image_path)
-                        
-                        # Save new image
-                        new_image_url = save_file(image_file, 'products')
-                        if new_image_url:
-                            product.image_url = new_image_url
-                        else:
-                            flash_translated('error_uploading_image', 'error')
-                            return redirect(url_for('admin_edit_product', product_id=product_id))
-                    else:
-                        flash_translated('invalid_image_format', 'error')
-                        return redirect(url_for('admin_edit_product', product_id=product_id))
+            # Handle image - either file upload or URL
+            new_image_url = handle_image_input(
+                image_file=request.files.get('image') if 'image' in request.files else None,
+                image_url=request.form.get('image_url'),
+                folder='products'
+            )
             
+            if new_image_url:
+                # Delete old image if it exists and is a local file
+                if product.image_url and product.image_url.startswith('/static/uploads/'):
+                    old_image_path = os.path.join(app.root_path, product.image_url.lstrip('/'))
+                    if os.path.exists(old_image_path):
+                        try:
+                            os.remove(old_image_path)
+                        except:
+                            pass  # Ignore errors deleting old file
+                product.image_url = new_image_url
+            
+            product.image_url = get_image_or_default(product.image_url)
+
             db.session.commit()
             flash_translated('item_updated', 'success')
             return redirect(url_for('admin_dashboard'))
@@ -285,7 +445,10 @@ def admin_edit_product(product_id):
     categories = db.session.query(Product.category).distinct().all()
     categories = [cat[0] for cat in categories if cat[0]]
     
-    return render_template('admin/edit_product.html', product=product, categories=categories)
+    # Get all brands for the form
+    brands = Brand.query.all()
+    
+    return render_template('admin/edit_product.html', product=product, categories=categories, brands=brands)
 
 @app.route('/admin/product/delete/<int:product_id>')
 @login_required
@@ -312,56 +475,241 @@ def admin_add_category():
     category_name = request.form.get('category_name')
     if category_name:
         # Check if category already exists
-        existing_category = db.session.query(Product.category).filter_by(category=category_name).first()
+        existing_category = Category.query.filter_by(name=category_name).first()
         if not existing_category:
-            # Create a placeholder product to establish the category
-            product = Product(
-                name=f'Sample {category_name}',
-                description=f'Sample product for {category_name} category',
-                price=0.0,
-                category=category_name,
-                stock=0,
-                image_url='https://via.placeholder.com/500'
+            # Handle image - either file upload or URL
+            image_url = handle_image_input(
+                image_file=request.files.get('image') if 'image' in request.files else None,
+                image_url=request.form.get('image_url'),
+                folder='categories'
             )
-            db.session.add(product)
+            
+            # Create category
+            category = Category(name=category_name, image_url=get_image_or_default(image_url))
+            db.session.add(category)
             db.session.commit()
-            flash_translated('category_added')
+            flash_translated('category_added', 'success')
         else:
-            flash_translated('category_exists')
+            flash_translated('category_exists', 'error')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/category/edit/<category>', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_category(category):
-    if request.method == 'POST':
-        new_name = request.form.get('category_name')
-        if new_name and new_name != category:
-            # Update all products in this category
-            Product.query.filter_by(category=category).update({'category': new_name})
-            db.session.commit()
-            flash_translated('category_updated')
-        return redirect(url_for('admin_dashboard'))
+    # Try to find category by name (for backward compatibility) or by ID
+    category_obj = Category.query.filter_by(name=category).first()
+    if not category_obj:
+        # If category doesn't exist in Category model, create it
+        category_obj = Category(name=category, image_url=DEFAULT_IMAGE_URL)
+        db.session.add(category_obj)
+        db.session.commit()
     
-    return render_template('admin/edit_category.html', category=category)
+    if request.method == 'POST':
+        try:
+            new_name = request.form.get('category_name')
+            if new_name and new_name != category_obj.name:
+                # Check if new name already exists
+                existing = Category.query.filter_by(name=new_name).first()
+                if existing and existing.id != category_obj.id:
+                    flash_translated('category_exists', 'error')
+                    return redirect(url_for('admin_edit_category', category=category))
+                
+                # Update category name
+                old_name = category_obj.name
+                category_obj.name = new_name
+                
+                # Update all products in this category (for backward compatibility)
+                Product.query.filter_by(category=old_name).update({'category': new_name})
+            
+            # Handle image - either file upload or URL
+            new_image_url = handle_image_input(
+                image_file=request.files.get('image') if 'image' in request.files else None,
+                image_url=request.form.get('image_url'),
+                folder='categories'
+            )
+            
+            if new_image_url:
+                # Delete old image if it exists and is a local file
+                if category_obj.image_url and category_obj.image_url.startswith('/static/uploads/'):
+                    old_image_path = os.path.join(app.root_path, category_obj.image_url.lstrip('/'))
+                    if os.path.exists(old_image_path):
+                        try:
+                            os.remove(old_image_path)
+                        except:
+                            pass  # Ignore errors deleting old file
+                category_obj.image_url = new_image_url
+            
+            category_obj.image_url = get_image_or_default(category_obj.image_url)
+
+            db.session.commit()
+            flash_translated('category_updated', 'success')
+            return redirect(url_for('admin_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating category: {str(e)}")
+            flash_translated('error_updating_category', 'error')
+            return redirect(url_for('admin_edit_category', category=category))
+    
+    return render_template('admin/edit_category.html', category=category_obj)
 
 @app.route('/admin/category/delete/<category>')
 @admin_required
 def admin_delete_category(category):
-    # Check if category has any products
-    products = Product.query.filter_by(category=category).all()
-    if products:
-        # Delete all products in this category
-        for product in products:
-            # Delete related cart items
-            CartItem.query.filter_by(product_id=product.id).delete()
-            # Delete related order items
-            OrderItem.query.filter_by(product_id=product.id).delete()
-        # Delete the products
-        Product.query.filter_by(category=category).delete()
+    try:
+        # Find category object
+        category_obj = Category.query.filter_by(name=category).first()
+        
+        # Check if category has any products
+        products = Product.query.filter_by(category=category).all()
+        if products:
+            # Delete all products in this category
+            for product in products:
+                # Delete related cart items
+                CartItem.query.filter_by(product_id=product.id).delete()
+                # Delete related order items
+                OrderItem.query.filter_by(product_id=product.id).delete()
+            # Delete the products
+            Product.query.filter_by(category=category).delete()
+        
+        # Delete category image if it exists and is a local file
+        if category_obj:
+            if category_obj.image_url and category_obj.image_url.startswith('/static/uploads/'):
+                old_image_path = os.path.join(app.root_path, category_obj.image_url.lstrip('/'))
+                if os.path.exists(old_image_path):
+                    try:
+                        os.remove(old_image_path)
+                    except:
+                        pass
+            # Delete category object
+            db.session.delete(category_obj)
+        
         db.session.commit()
-        flash_translated('category_and_products_deleted')
-    else:
-        flash_translated('category_not_found_or_already_deleted')
+        flash_translated('category_and_products_deleted', 'success')
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting category: {str(e)}")
+        flash_translated('error_deleting_category', 'error')
+    
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/brand/add', methods=['GET', 'POST'])
+@admin_required
+def admin_add_brand():
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name')
+            if not name:
+                flash_translated('brand_name_required', 'error')
+                return redirect(url_for('admin_add_brand'))
+            
+            # Check if brand already exists
+            existing_brand = Brand.query.filter_by(name=name).first()
+            if existing_brand:
+                flash_translated('brand_exists', 'error')
+                return redirect(url_for('admin_add_brand'))
+            
+            # Handle image - either file upload or URL
+            image_url = handle_image_input(
+                image_file=request.files.get('image') if 'image' in request.files else None,
+                image_url=request.form.get('image_url'),
+                folder='brands'
+            )
+            
+            brand = Brand(name=name, image_url=get_image_or_default(image_url))
+            db.session.add(brand)
+            db.session.commit()
+            
+            flash_translated('brand_added', 'success')
+            return redirect(url_for('admin_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error adding brand: {str(e)}")
+            flash_translated('error_adding_brand', 'error')
+            return redirect(url_for('admin_add_brand'))
+    
+    return render_template('admin/add_brand.html')
+
+@app.route('/admin/brand/edit/<int:brand_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit_brand(brand_id):
+    brand = Brand.query.get_or_404(brand_id)
+    
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name')
+            if not name:
+                flash_translated('brand_name_required', 'error')
+                return redirect(url_for('admin_edit_brand', brand_id=brand_id))
+            
+            # Check if another brand with the same name exists
+            existing_brand = Brand.query.filter(Brand.name == name, Brand.id != brand_id).first()
+            if existing_brand:
+                flash_translated('brand_exists', 'error')
+                return redirect(url_for('admin_edit_brand', brand_id=brand_id))
+            
+            brand.name = name
+            
+            # Handle image - either file upload or URL
+            new_image_url = handle_image_input(
+                image_file=request.files.get('image') if 'image' in request.files else None,
+                image_url=request.form.get('image_url'),
+                folder='brands'
+            )
+            
+            if new_image_url:
+                # Delete old image if it exists and is a local file
+                if brand.image_url and brand.image_url.startswith('/static/uploads/'):
+                    old_image_path = os.path.join(app.root_path, brand.image_url.lstrip('/'))
+                    if os.path.exists(old_image_path):
+                        try:
+                            os.remove(old_image_path)
+                        except:
+                            pass  # Ignore errors deleting old file
+                brand.image_url = new_image_url
+            
+            brand.image_url = get_image_or_default(brand.image_url)
+
+            db.session.commit()
+            flash_translated('brand_updated', 'success')
+            return redirect(url_for('admin_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating brand: {str(e)}")
+            flash_translated('error_updating_brand', 'error')
+            return redirect(url_for('admin_edit_brand', brand_id=brand_id))
+    
+    return render_template('admin/edit_brand.html', brand=brand)
+
+@app.route('/admin/brand/delete/<int:brand_id>', methods=['POST'])
+@admin_required
+def admin_delete_brand(brand_id):
+    try:
+        brand = Brand.query.get_or_404(brand_id)
+        
+        # Check if brand has any products
+        products_with_brand = Product.query.filter_by(brand_id=brand_id).all()
+        if products_with_brand:
+            # Remove brand from products (set brand_id to None)
+            for product in products_with_brand:
+                product.brand_id = None
+            db.session.commit()
+        
+        # Delete brand image if it exists
+        if brand.image_url and brand.image_url.startswith('/static/uploads/'):
+            old_image_path = os.path.join(app.root_path, brand.image_url.lstrip('/'))
+            if os.path.exists(old_image_path):
+                os.remove(old_image_path)
+        
+        # Delete the brand
+        db.session.delete(brand)
+        db.session.commit()
+        
+        flash_translated('brand_deleted', 'success')
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting brand: {str(e)}")
+        flash_translated('error_deleting_brand', 'error')
+    
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -394,9 +742,6 @@ def login():
                     user = User(
                         username='Admin',
                         phone_number=formatted_phone,
-                        email=None,
-                        profile_picture=None,
-                        identity_card=None,
                         is_admin=True  # Set as admin
                     )
                     db.session.add(user)
@@ -430,10 +775,6 @@ def login():
                     user = User(
                         username=f"User_{formatted_phone[-4:]}",
                         phone_number=formatted_phone,
-                        
-                        email=None,
-                        profile_picture=None,
-                        identity_card=None,
                         is_admin=False
                     )
                     db.session.add(user)
@@ -505,10 +846,8 @@ def register():
     if form.validate_on_submit():
         user = User(
             username=form.username,
-            phone_number=form.phone_number.data,
-            
+            phone_number=form.phone_number.data
         )
-        user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
         # Wallet feature removed
@@ -551,6 +890,9 @@ def logout():
 @app.route('/cart')
 @login_required
 def cart():
+    # Clean up old cart items (older than 3 days) for all users
+    cleanup_old_cart_items()
+    
     cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
     
     # Calculate subtotal without discounts
@@ -567,7 +909,10 @@ def cart():
     
     # Get user's addresses and store locations
     addresses = Address.query.filter_by(user_id=current_user.id).all()
-    locations = StoreLocation.query.filter_by(is_active=True).all()
+    locations = StoreLocation.query.filter_by(is_active=True).order_by(StoreLocation.id).all()
+    
+    # Get first active location as default
+    default_location = locations[0] if locations else None
     
     # Wallet feature removed
     
@@ -577,7 +922,8 @@ def cart():
                          delivery_fee=delivery_fee,
                          total=total,
                          addresses=addresses,
-                         locations=locations)
+                         locations=locations,
+                         default_location=default_location)
 
 @app.route('/cart/update/<int:item_id>', methods=['POST'])
 @login_required
@@ -609,6 +955,9 @@ def update_cart(item_id):
 @app.route('/add_to_cart/<int:product_id>', methods=['GET', 'POST'])
 @login_required
 def add_to_cart(product_id):
+    # Clean up old cart items before adding new ones
+    cleanup_old_cart_items()
+    
     product = Product.query.get_or_404(product_id)
     quantity = int(request.form.get('quantity', 1))
     
@@ -681,24 +1030,8 @@ def profile():
     
     form = ProfileForm()
     if form.validate_on_submit():
-        if form.profile_picture.data:
-            profile_picture_path = save_file(form.profile_picture.data, 'profile_pictures')
-            if profile_picture_path:
-                current_user.profile_picture = profile_picture_path
-
-        if form.identity_card.data:
-            identity_card_path = save_file(form.identity_card.data, 'identity_cards')
-            if identity_card_path:
-                current_user.identity_card = identity_card_path
-
         current_user.username = form.username.data
         current_user.phone_number = form.phone_number.data
-        
-        # Only update email if it's provided and not empty
-        if form.email.data and form.email.data.strip():
-            current_user.email = form.email.data
-        else:
-            current_user.email = None
         
         db.session.commit()
         flash_translated('profile_updated')
@@ -707,7 +1040,6 @@ def profile():
     # Pre-fill form with current user data
     if request.method == 'GET':
         form.username.data = current_user.username
-        form.email.data = current_user.email
         form.phone_number.data = current_user.phone_number
 
     # Get recent orders and addresses
@@ -807,23 +1139,213 @@ def delete_address(address_id):
 @app.route('/admin/users')
 @admin_required
 def admin_users():
-    users = User.query.filter(User.identity_card.isnot(None)).all()
-    return render_template('admin/users.html', users=users)
+    # Get search query
+    search_query = request.args.get('search', '').strip()
+    
+    # Base query with orders loaded
+    query = User.query.options(joinedload(User.orders))
+    
+    # Apply search filter
+    if search_query:
+        search_term = f'%{search_query}%'
+        query = query.filter(
+            or_(
+                User.username.ilike(search_term),
+                User.phone_number.ilike(search_term)
+            )
+        )
+    
+    # Order by creation date (newest first)
+    users = query.order_by(User.created_at.desc()).all()
+    
+    # Get order counts for each user
+    for user in users:
+        user.order_count = len(user.orders)
+        user.total_spent = sum(order.total_amount for order in user.orders)
+    
+    return render_template('admin/users.html', users=users, search_query=search_query)
+
+@app.route('/api/search/autocomplete')
+def search_autocomplete():
+    """API endpoint for search autocomplete suggestions"""
+    query = request.args.get('q', '').strip()
+    if not query or len(query) < 2:
+        return jsonify([])
+    
+    # Search products
+    products = Product.query.options(joinedload(Product.brand)).filter(
+        or_(
+            Product.name.ilike(f'%{query}%'),
+            Product.description.ilike(f'%{query}%'),
+            Product.category.ilike(f'%{query}%')
+        )
+    ).limit(10).all()
+    
+    suggestions = []
+    for product in products:
+        suggestions.append({
+            'id': product.id,
+            'name': product.name,
+            'category': product.category,
+            'brand': product.brand.name if product.brand else None,
+            'image': product.image_url,
+            'type': 'product'
+        })
+    
+    # Search categories
+    categories = Category.query.filter(Category.name.ilike(f'%{query}%')).limit(5).all()
+    for category in categories:
+        suggestions.append({
+            'id': category.id,
+            'name': category.name,
+            'type': 'category'
+        })
+    
+    # Search brands
+    brands = Brand.query.filter(Brand.name.ilike(f'%{query}%')).limit(5).all()
+    for brand in brands:
+        suggestions.append({
+            'id': brand.id,
+            'name': brand.name,
+            'image': brand.image_url,
+            'type': 'brand'
+        })
+    
+    return jsonify(suggestions)
+
+@app.route('/api/admin/search/autocomplete')
+@admin_required
+def admin_search_autocomplete():
+    """API endpoint for admin dashboard search autocomplete"""
+    query = request.args.get('q', '').strip()
+    scope = request.args.get('scope', 'all')
+    
+    if not query or len(query) < 2:
+        return jsonify([])
+    
+    suggestions = []
+    term = query.lower()
+    
+    if scope in ('all', 'products'):
+        products = Product.query.options(joinedload(Product.brand)).filter(
+            or_(
+                Product.name.ilike(f'%{query}%'),
+                Product.category.ilike(f'%{query}%')
+            )
+        ).limit(10).all()
+        for product in products:
+            suggestions.append({
+                'id': product.id,
+                'name': product.name,
+                'category': product.category,
+                'brand': product.brand.name if product.brand else None,
+                'type': 'product'
+            })
+    
+    if scope in ('all', 'brands'):
+        brands = Brand.query.filter(Brand.name.ilike(f'%{query}%')).limit(5).all()
+        for brand in brands:
+            suggestions.append({
+                'id': brand.id,
+                'name': brand.name,
+                'type': 'brand'
+            })
+    
+    if scope in ('all', 'categories'):
+        categories = Category.query.filter(Category.name.ilike(f'%{query}%')).limit(5).all()
+        for category in categories:
+            suggestions.append({
+                'id': category.id,
+                'name': category.name,
+                'type': 'category'
+            })
+    
+    return jsonify(suggestions)
 
 @app.route('/search')
 def search():
-    query = request.args.get('q', '')
+    query = request.args.get('q', '').strip()
+    
+    # Filter parameters
+    sort_by = request.args.get('sort', 'relevance')  # relevance, price_low, price_high, newest, oldest, most_ordered
+    brand_filter = request.args.get('brand', '')
+    category_filter = request.args.get('category', '')
+    min_price = request.args.get('min_price', '')
+    max_price = request.args.get('max_price', '')
+    featured_only = request.args.get('featured', '') == 'on'
+    
+    # Base query
     if query:
-        products = Product.query.filter(
+        products_query = Product.query.options(joinedload(Product.brand)).filter(
             or_(
                 Product.name.ilike(f'%{query}%'),
                 Product.description.ilike(f'%{query}%'),
                 Product.category.ilike(f'%{query}%')
             )
-        ).all()
+        )
     else:
-        products = []
-    return render_template('search_results.html', products=products, query=query)
+        products_query = Product.query.options(joinedload(Product.brand))
+    
+    # Apply filters
+    if brand_filter:
+        try:
+            products_query = products_query.filter(Product.brand_id == int(brand_filter))
+        except (ValueError, TypeError):
+            pass
+    
+    if category_filter:
+        products_query = products_query.filter(Product.category == category_filter)
+    
+    if featured_only:
+        products_query = products_query.filter(Product.is_featured == True)
+    
+    if min_price:
+        try:
+            min_val = float(min_price)
+            products_query = products_query.filter(Product.price >= min_val)
+        except ValueError:
+            pass
+    
+    if max_price:
+        try:
+            max_val = float(max_price)
+            products_query = products_query.filter(Product.price <= max_val)
+        except ValueError:
+            pass
+    
+    # Apply sorting
+    if sort_by == 'price_low':
+        products_query = products_query.order_by(Product.price.asc())
+    elif sort_by == 'price_high':
+        products_query = products_query.order_by(Product.price.desc())
+    elif sort_by == 'newest':
+        products_query = products_query.order_by(Product.created_at.desc())
+    elif sort_by == 'oldest':
+        products_query = products_query.order_by(Product.created_at.asc())
+    elif sort_by == 'most_ordered':
+        # Order by order count (calculated dynamically)
+        products_query = products_query.outerjoin(OrderItem).group_by(Product.id).order_by(func.coalesce(func.sum(OrderItem.quantity), 0).desc())
+    else:  # relevance (default)
+        if not query:
+            products_query = products_query.order_by(Product.created_at.desc())
+    
+    products = products_query.all()
+    
+    # Get available brands and categories for filters
+    all_brands = Brand.query.all()
+    all_categories = list(set([p.category for p in Product.query.all() if p.category]))
+    
+    return render_template('search_results.html', 
+                         products=products, 
+                         query=query,
+                         sort_by=sort_by,
+                         brand_filter=brand_filter,
+                         category_filter=category_filter,
+                         min_price=min_price,
+                         max_price=max_price,
+                         featured_only=featured_only,
+                         all_brands=all_brands,
+                         all_categories=all_categories)
 
 @app.route('/checkout', methods=['GET', 'POST'])
 @login_required
@@ -863,8 +1385,8 @@ def checkout():
         # Calculate total with delivery fee
         total = subtotal + delivery_fee
         
-        # Get payment method
-        payment_method = request.form.get('payment_method', 'cash')
+        # Payment method is always online
+        payment_method = 'online'
         
         if payment_method == 'online':
             # Store order details in session for payment success
@@ -885,7 +1407,7 @@ def checkout():
             status, authority = create_payment_request(
                 amount=amount_in_tomans,
                 description=description,
-                email=current_user.email,
+            email=None,
                 callback_url=callback_url
             )
             
@@ -897,111 +1419,6 @@ def checkout():
             else:
                 flash_translated('payment_gateway_error', 'error')
                 return redirect(url_for('cart'))
-        
-        # If payment method is wallet, check balance
-        if payment_method == 'wallet':
-            if not current_user.wallet:
-                wallet = Wallet(user_id=current_user.id, balance=0.0)
-                db.session.add(wallet)
-            else:
-                wallet = current_user.wallet
-                if wallet.balance is None:
-                    wallet.balance = 0.0
-            
-            # Calculate remaining amount to be paid
-            remaining_amount = total - wallet.balance
-            
-            if remaining_amount > 0:
-                # Store order details in session for payment success
-                session['order_total'] = total
-                session['wallet_amount'] = wallet.balance
-                session['remaining_amount'] = remaining_amount
-                session['payment_method'] = payment_method
-                session['delivery_type'] = delivery_type
-                session['store_location_id'] = store_location_id if delivery_type == 'pickup' else None
-                session['address_id'] = address_id if delivery_type == 'delivery' else None
-                session['order_description'] = request.form.get('order_description', '').strip()
-                
-                # Redirect to payment temp page with the remaining amount
-                return redirect(url_for('payment_temp', amount=remaining_amount, type='order'))
-            
-            # If wallet balance is sufficient, create order directly
-            order = Order(
-                user_id=current_user.id,
-                total_amount=total,
-                delivery_fee=delivery_fee,
-                status='pending_approval',
-                payment_method=payment_method,
-                delivery_type=delivery_type,
-                store_location_id=store_location_id if delivery_type == 'pickup' else None,
-                address_id=address_id if delivery_type == 'delivery' else None,
-                description=request.form.get('order_description', '').strip()
-            )
-            db.session.add(order)
-            
-            # Create order items
-            for cart_item in cart_items:
-                order_item = OrderItem(
-                    order=order,
-                    product_id=cart_item.product_id,
-                    quantity=cart_item.quantity,
-                    price=cart_item.product.price  # Use base price without discount
-                )
-                db.session.add(order_item)
-            
-            # Clear cart
-            for cart_item in cart_items:
-                db.session.delete(cart_item)
-            
-            # Update wallet balance
-            wallet.balance -= total
-            
-            # Create wallet transaction
-            transaction = WalletTransaction(
-                wallet_id=wallet.id,
-                amount=total,
-                type='withdrawal',
-                description=get_translation('order_payment')
-            )
-            db.session.add(transaction)
-            
-            db.session.commit()
-            
-            flash_translated('order_placed_successfully', 'success')
-            return redirect(url_for('order_status', order_id=order.id))
-        
-        # For cash payment, create order directly
-        order = Order(
-            user_id=current_user.id,
-            total_amount=total,
-            delivery_fee=delivery_fee,
-            status='pending_approval',
-            payment_method=payment_method,
-            delivery_type=delivery_type,
-            store_location_id=store_location_id if delivery_type == 'pickup' else None,
-            address_id=address_id if delivery_type == 'delivery' else None,
-            description=request.form.get('order_description', '').strip()
-        )
-        db.session.add(order)
-        
-        # Create order items
-        for cart_item in cart_items:
-            order_item = OrderItem(
-                order=order,
-                product_id=cart_item.product_id,
-                quantity=cart_item.quantity,
-                price=cart_item.product.price  # Use base price without discount
-            )
-            db.session.add(order_item)
-        
-        # Clear cart
-        for cart_item in cart_items:
-            db.session.delete(cart_item)
-        
-        db.session.commit()
-        
-        flash_translated('order_placed_successfully', 'success')
-        return redirect(url_for('order_status', order_id=order.id))
     
     # For GET request, calculate delivery fee for display
     delivery_fee = session.get('delivery_fee', 20000)  # Get delivery fee from session or use default
@@ -1009,7 +1426,10 @@ def checkout():
     
     # Get user's addresses and store locations
     addresses = Address.query.filter_by(user_id=current_user.id).all()
-    locations = StoreLocation.query.filter_by(is_active=True).all()
+    locations = StoreLocation.query.filter_by(is_active=True).order_by(StoreLocation.id).all()
+    
+    # Get first active location as default
+    default_location = locations[0] if locations else None
     
     return render_template('cart.html',
                          cart_items=cart_items,
@@ -1017,7 +1437,8 @@ def checkout():
                          delivery_fee=delivery_fee,
                          total=total,
                          addresses=addresses,
-                         locations=locations)
+                         locations=locations,
+                         default_location=default_location)
 
 @app.route('/orders')
 @login_required
@@ -1060,25 +1481,6 @@ def approve_order(order_id):
         
         # Reduce stock
         item.product.stock -= item.quantity
-    
-    # Handle wallet payment if the order was paid with wallet
-    if order.payment_method == 'wallet':
-        user_wallet = order.user.wallet
-        if not user_wallet or user_wallet.balance < order.total_amount:
-            flash_translated('insufficient_wallet_balance', 'error')
-            return redirect(url_for('admin_orders'))
-        
-        # Create withdrawal transaction
-        transaction = WalletTransaction(
-            wallet_id=user_wallet.id,
-            amount=order.total_amount,
-            type='withdrawal',
-            description=get_translation('order_payment')
-        )
-        db.session.add(transaction)
-        
-        # Update wallet balance
-        user_wallet.balance -= order.total_amount
     
     order.status = 'preparing'
     order.preparation_start = datetime.utcnow()
@@ -1140,17 +1542,14 @@ def admin_add_location():
     if request.method == 'POST':
         name = request.form.get('name')
         address = request.form.get('address')
-        description = request.form.get('description')
-        latitude = request.form.get('latitude')
-        longitude = request.form.get('longitude')
         is_active = 'is_active' in request.form
         
         location = StoreLocation(
             name=name,
             address=address,
-            description=description,
-            latitude=float(latitude) if latitude else None,
-            longitude=float(longitude) if longitude else None,
+            description=None,
+            latitude=None,
+            longitude=None,
             is_active=is_active
         )
         
@@ -1218,17 +1617,6 @@ def admin_order_details(order_id):
     order = Order.query.get_or_404(order_id)
     return render_template('admin/order_details.html', order=order)
 
-@app.route('/reset_password', methods=['GET', 'POST'])
-@login_required
-def reset_password():
-    form = PasswordResetForm()
-    if form.validate_on_submit():
-        current_user.set_password(form.new_password.data)
-        db.session.commit()
-        flash_translated('password_updated')
-        return redirect(url_for('profile'))
-    return render_template('reset_password.html', form=form)
-
 @app.cli.command("create-admin")
 def create_admin():
     """Create the admin user if it doesn't exist"""
@@ -1237,261 +1625,13 @@ def create_admin():
         admin = User(
             username='Admin',
             phone_number='+989137597568',
-            is_admin=True,
-            
+            is_admin=True
         )
-        admin.set_password('admin123')
         db.session.add(admin)
         db.session.commit()
         print("Admin user created successfully!")
     else:
         print("Admin user already exists!")
-
-@app.cli.command("reset-admin-password")
-def reset_admin_password():
-    """Reset the admin user's password"""
-    admin = User.query.filter_by(phone_number='+989137597568').first()
-    if admin:
-        admin.set_password('admin123')
-        db.session.commit()
-        print("Admin password reset successfully!")
-    else:
-        print("Admin user not found!")
-
-@app.cli.command("create-sample-products")
-def create_sample_products():
-    """Delete existing products and create new sample products in Farsi"""
-    # Delete all existing products
-    Product.query.delete()
-    
-    # Sample products in Farsi with prices in Tooman
-    products = [
-        # میوه‌ها و سبزیجات
-        {
-            "name": "سیب قرمز",
-            "description": "سیب قرمز تازه و آبدار",
-            "price": 45000,
-            "stock": 100,
-            "category": "میوه‌ها و سبزیجات",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/a6/Pink_lady_and_cross_section.jpg",
-            "discount": 0
-        },
-        {
-            "name": "موز",
-            "description": "موز تازه و رسیده",
-            "price": 35000,
-            "stock": 150,
-            "category": "میوه‌ها و سبزیجات",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg",
-            "discount": 5
-        },
-        {
-            "name": "گوجه فرنگی",
-            "description": "گوجه فرنگی تازه و محلی",
-            "price": 25000,
-            "stock": 200,
-            "category": "میوه‌ها و سبزیجات",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/89/Tomato_je.jpg",
-            "discount": 0
-        },
-        
-        # لبنیات و تخم مرغ
-        {
-            "name": "شیر تازه",
-            "description": "شیر تازه محلی",
-            "price": 55000,
-            "stock": 50,
-            "category": "لبنیات و تخم مرغ",
-            "image_url": "https://www.bing.com/ck/a?!&&p=9d2af53238cce7c3917b6031d2617513bc92b1ac3db52c27c4eba784da5a57edJmltdHM9MTc0MzQ2NTYwMA&ptn=3&ver=2&hsh=4&fclid=285537f9-21ba-633e-14d9-23a0202362c7&u=a1L2ltYWdlcy9zZWFyY2g_cT0lZDglYjQlZGIlOGMlZDglYjErJWQ5JTg0JWQ4JWE4JWQ5JTg2JWRiJThjJWQ4JWE3JWQ4JWFhJmlkPTNCQzEzNEVFM0Q3OUQ5REU4RkUyQkU4Qzk1RUI3OTEwNzcwMUFFRjgmRk9STT1JUUZSQkE&ntb=1",
-            "discount": 0
-        },
-        {
-            "name": "پنیر محلی",
-            "description": "پنیر محلی تازه",
-            "price": 85000,
-            "stock": 30,
-            "category": "لبنیات و تخم مرغ",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/White_cheese.jpg",
-            "discount": 10
-        },
-        {
-            "name": "تخم مرغ محلی",
-            "description": "تخم مرغ تازه محلی",
-            "price": 45000,
-            "stock": 100,
-            "category": "لبنیات و تخم مرغ",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/5f/White_eggs.jpg",
-            "discount": 0
-        },
-        
-        # نان و شیرینی
-        {
-            "name": "نان تازه",
-            "description": "نان تازه محلی",
-            "price": 15000,
-            "stock": 200,
-            "category": "نان و شیرینی",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/33/Fresh_made_whole_meal_bread_loaves.jpg",
-            "discount": 0
-        },
-        {
-            "name": "کیک شکلاتی",
-            "description": "کیک شکلاتی تازه",
-            "price": 95000,
-            "stock": 20,
-            "category": "نان و شیرینی",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Pound_layer_cake.jpg",
-            "discount": 15
-        },
-        
-        # گوشت و مرغ
-        {
-            "name": "گوشت گوسفندی",
-            "description": "گوشت تازه گوسفندی",
-            "price": 450000,
-            "stock": 30,
-            "category": "گوشت و مرغ",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Lamb_cuts.svg",
-            "discount": 0
-        },
-        {
-            "name": "مرغ تازه",
-            "description": "مرغ تازه محلی",
-            "price": 150000,
-            "stock": 40,
-            "category": "گوشت و مرغ",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Chicken_meat.jpg",
-            "discount": 5
-        },
-        
-        # برنج و حبوبات
-        {
-            "name": "برنج ایرانی",
-            "description": "برنج ایرانی با کیفیت عالی",
-            "price": 250000,
-            "stock": 50,
-            "category": "برنج و حبوبات",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/7b/White-rice-cooked.jpg",
-            "discount": 0
-        },
-        {
-            "name": "عدس",
-            "description": "عدس تازه و تمیز",
-            "price": 85000,
-            "stock": 100,
-            "category": "برنج و حبوبات",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/70/Red_Lentil.JPG",
-            "discount": 10
-        },
-        
-        # روغن و چاشنی
-        {
-            "name": "روغن زیتون",
-            "description": "روغن زیتون اصل",
-            "price": 350000,
-            "stock": 40,
-            "category": "روغن و چاشنی",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Olive_oil.jpg",
-            "discount": 0
-        },
-        {
-            "name": "زعفران",
-            "description": "زعفران اصل قائنات",
-            "price": 950000,
-            "stock": 20,
-            "category": "روغن و چاشنی",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Saffron_threads.jpg",
-            "discount": 0
-        },
-        
-        # نوشیدنی‌ها
-        {
-            "name": "دوغ محلی",
-            "description": "دوغ محلی تازه",
-            "price": 25000,
-            "stock": 100,
-            "category": "نوشیدنی‌ها",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Doogh.jpg",
-            "discount": 0
-        },
-        {
-            "name": "شربت زعفران",
-            "description": "شربت زعفران خانگی",
-            "price": 45000,
-            "stock": 50,
-            "category": "نوشیدنی‌ها",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Saffron_syrup.jpg",
-            "discount": 5
-        },
-        
-        # تنقلات
-        {
-            "name": "پسته",
-            "description": "پسته تازه رفسنجان",
-            "price": 450000,
-            "stock": 30,
-            "category": "تنقلات",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Pistachios.jpg",
-            "discount": 0
-        },
-        {
-            "name": "بادام",
-            "description": "بادام تازه محلی",
-            "price": 350000,
-            "stock": 40,
-            "category": "تنقلات",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Almonds.jpg",
-            "discount": 10
-        },
-        
-        # مواد شوینده
-        {
-            "name": "مایع ظرفشویی",
-            "description": "مایع ظرفشویی با کیفیت",
-            "price": 45000,
-            "stock": 100,
-            "category": "مواد شوینده",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Dishwashing_liquid.jpg",
-            "discount": 0
-        },
-        {
-            "name": "پودر لباسشویی",
-            "description": "پودر لباسشویی با کیفیت",
-            "price": 85000,
-            "stock": 50,
-            "category": "مواد شوینده",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Laundry_detergent.jpg",
-            "discount": 5
-        },
-        
-        # لوازم بهداشتی
-        {
-            "name": "صابون گلیسیرینه",
-            "description": "صابون گلیسیرینه مراقبت پوست",
-            "price": 35000,
-            "stock": 100,
-            "category": "لوازم بهداشتی",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Glycerin_soap.jpg",
-            "discount": 0
-        },
-        {
-            "name": "خمیر دندان",
-            "description": "خمیر دندان با کیفیت",
-            "price": 45000,
-            "stock": 80,
-            "category": "لوازم بهداشتی",
-            "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Toothpaste.jpg",
-            "discount": 0
-        }
-    ]
-    
-    # Add products to database
-    for product_data in products:
-        product = Product(**product_data)
-        db.session.add(product)
-    
-    db.session.commit()
-    print("Sample products created successfully!")
 
 @app.cli.command("create-store")
 def create_store():
@@ -1525,16 +1665,22 @@ def init_db():
     """Initialize the database"""
     with app.app_context():
         db.create_all()
+        # Clean up old cart items on startup (only if column exists)
+        # If the column doesn't exist yet, it will be created by db.create_all()
+        # and cleanup will work on next startup
+        try:
+            cleanup_old_cart_items()
+        except Exception:
+            # Column might not exist yet, that's okay - it will be created
+            pass
         # Create admin user
         admin = User.query.filter_by(phone_number='+989137597568').first()
         if not admin:
             admin = User(
                 username='Admin',
                 phone_number='+989137597568',
-                is_admin=True,
-                
+                is_admin=True
             )
-            admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
             print("Admin user created successfully!")
@@ -1603,72 +1749,167 @@ def admin_cancel_order(order_id):
 
 @app.route('/product/<int:product_id>')
 def product_details(product_id):
-    product = Product.query.get_or_404(product_id)
+    product = Product.query.options(joinedload(Product.brand)).get_or_404(product_id)
     
     return render_template('product_details.html', product=product)
 
+def optimize_image(image, max_size_kb=100, max_dimension=2000):
+    """
+    Optimize image to PNG or JPG format with maximum file size
+    Returns optimized image bytes and format
+    """
+    try:
+        # Read image data
+        image_data = image.read()
+        image.seek(0)  # Reset for potential fallback
+        
+        # Open image
+        img = Image.open(io.BytesIO(image_data))
+        
+        # Convert RGBA to RGB if necessary (for JPG compatibility)
+        if img.mode in ('RGBA', 'LA', 'P'):
+            # Create white background
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            if img.mode == 'RGBA':
+                background.paste(img, mask=img.split()[-1])
+            else:
+                background.paste(img)
+            img = background
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Resize if too large
+        width, height = img.size
+        if width > max_dimension or height > max_dimension:
+            ratio = min(max_dimension / width, max_dimension / height)
+            new_size = (int(width * ratio), int(height * ratio))
+            img = img.resize(new_size, Image.Resampling.LANCZOS)
+        
+        # Try to compress to target size
+        max_bytes = max_size_kb * 1024
+        output_format = 'JPEG'  # Default to JPEG for better compression
+        quality = 85
+        output = None
+        
+        # Try different quality levels to get under max_size_kb
+        for attempt in range(10):
+            output = io.BytesIO()
+            img.save(output, format=output_format, quality=quality, optimize=True)
+            size = output.tell()
+            
+            if size <= max_bytes:
+                break
+            
+            # Reduce quality
+            quality -= 10
+            if quality < 20:
+                # If still too large, try resizing more
+                width, height = img.size
+                img = img.resize((int(width * 0.9), int(height * 0.9)), Image.Resampling.LANCZOS)
+                quality = 85
+        
+        # If still too large, resize more aggressively
+        while output and output.tell() > max_bytes and (img.size[0] > 100 or img.size[1] > 100):
+            width, height = img.size
+            img = img.resize((int(width * 0.8), int(height * 0.8)), Image.Resampling.LANCZOS)
+            output = io.BytesIO()
+            img.save(output, format=output_format, quality=50, optimize=True)
+        
+        if output:
+            output.seek(0)
+            return output, output_format.lower()
+        else:
+            return None, None
+    except Exception as e:
+        print(f"Error optimizing image: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None, None
+
+def handle_image_input(image_file=None, image_url=None, folder='products'):
+    """
+    Handle image input - either from file upload or URL
+    Returns the image URL (either uploaded optimized file path or provided URL)
+    """
+    # Priority: file upload > URL
+    if image_file and image_file.filename:
+        # Handle file upload
+        return save_file(image_file, folder)
+    elif image_url and image_url.strip():
+        # Handle URL - validate it's a proper URL
+        url = image_url.strip()
+        if url.startswith('http://') or url.startswith('https://'):
+            return url
+        elif url.startswith('/'):
+            # Relative URL
+            return url
+        else:
+            # Invalid URL format
+            return None
+    return None
+
 def save_file(file, folder):
-    """Save an uploaded file securely"""
+    """Save an uploaded file securely with image optimization"""
     if file and file.filename:
         try:
-            # Get file extension
-            filename = secure_filename(file.filename)
+            # Check if it's an image file
+            allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'}
+            file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+            
             # Create unique filename with timestamp
-            unique_filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4()}_{filename}"
+            unique_id = str(uuid.uuid4())[:8]
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             
             # Create folder path
             folder_path = os.path.join(app.root_path, 'static', 'uploads', folder)
             # Ensure folder exists
             os.makedirs(folder_path, exist_ok=True)
             
-            # Full file path
-            file_path = os.path.join(folder_path, unique_filename)
-            
-            # Save file
-            file.save(file_path)
-            
-            # Return relative path for database (without 'static' prefix)
-            return f'/static/uploads/{folder}/{unique_filename}'
+            # If it's an image, optimize it
+            if file_ext in allowed_extensions:
+                # Reset file pointer
+                file.seek(0)
+                
+                # Optimize image
+                optimized_image, img_format = optimize_image(file, max_size_kb=100)
+                
+                if optimized_image:
+                    # Use optimized format (jpg or png)
+                    final_ext = 'jpg' if img_format == 'jpeg' else img_format
+                    unique_filename = f"{timestamp}_{unique_id}.{final_ext}"
+                    file_path = os.path.join(folder_path, unique_filename)
+                    
+                    # Save optimized image
+                    with open(file_path, 'wb') as f:
+                        f.write(optimized_image.read())
+                    
+                    # Return relative path for database
+                    return f'/static/uploads/{folder}/{unique_filename}'
+                else:
+                    # Fallback to original save if optimization fails
+                    filename = secure_filename(file.filename)
+                    unique_filename = f"{timestamp}_{unique_id}_{filename}"
+                    file_path = os.path.join(folder_path, unique_filename)
+                    file.seek(0)
+                    file.save(file_path)
+                    return f'/static/uploads/{folder}/{unique_filename}'
+            else:
+                # For non-image files, save as-is
+                filename = secure_filename(file.filename)
+                unique_filename = f"{timestamp}_{unique_id}_{filename}"
+                file_path = os.path.join(folder_path, unique_filename)
+                file.save(file_path)
+                return f'/static/uploads/{folder}/{unique_filename}'
+                
         except Exception as e:
             print(f"Error saving file: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return None
     return None
 
-@app.route('/admin/identity-cards')
-@login_required
-@admin_required
-def admin_identity_cards():
-    # Get query parameters for filtering and sorting
-    verification_status = request.args.get('verification_status', 'all')
-    sort_by = request.args.get('sort_by', 'newest')
-    search = request.args.get('search', '').lower()
-
-    # Base query for users with identity cards
-    query = User.query.filter(User.identity_card.isnot(None))
-
-    # Verification filter removed
-
-    # Apply search filter
-    if search:
-        query = query.filter(
-            db.or_(
-                User.username.ilike(f'%{search}%'),
-                User.email.ilike(f'%{search}%')
-            )
-        )
-
-    # Apply sorting
-    if sort_by == 'newest':
-        query = query.order_by(User.created_at.desc())
-    elif sort_by == 'oldest':
-        query = query.order_by(User.created_at.asc())
-    elif sort_by == 'username':
-        query = query.order_by(User.username.asc())
-
-    # Get the filtered and sorted users
-    users = query.all()
-
-    return render_template('admin/identity_cards.html', users=users)
 
 @app.route('/order/<int:order_id>/comment', methods=['GET', 'POST'])
 @login_required
@@ -1816,7 +2057,7 @@ def payment_temp():
     
     if not amount or amount < 1000:
         flash_translated('invalid_amount', 'error')
-        return redirect(url_for('wallet' if payment_type == 'wallet' else 'cart'))
+        return redirect(url_for('cart'))
     
     # Store the amount in session for payment success
     session['payment_amount'] = amount
@@ -1828,105 +2069,16 @@ def payment_temp():
                          success_url=url_for('payment_success', type=payment_type, amount=amount),
                          failure_url=url_for('payment_failure', type=payment_type, amount=amount))
 
+# Payment success route - Note: This route should verify payment before clearing cart
+# Currently, ZarinPal redirects to /zarinpal/verify which handles payment verification
+# This route is kept for backward compatibility but should not clear cart without verification
 @app.route('/payment_success')
 @login_required
 def payment_success():
-    try:
-        payment_type = request.args.get('type', 'order')
-        amount = request.args.get('amount', type=float)
-        
-        if payment_type == 'wallet':
-            # Get or create wallet
-            if not current_user.wallet:
-                wallet = Wallet(user_id=current_user.id, balance=0.0)
-                db.session.add(wallet)
-            else:
-                wallet = current_user.wallet
-                if wallet.balance is None:
-                    wallet.balance = 0.0
-            
-            # Create deposit transaction
-            transaction = WalletTransaction(
-                wallet_id=wallet.id,
-                amount=amount,
-                type='deposit',
-                description=get_translation('wallet_deposit')
-            )
-            db.session.add(transaction)
-            
-            # Update wallet balance
-            current_balance = float(wallet.balance or 0.0)
-            wallet.balance = current_balance + amount
-            db.session.commit()
-            
-            flash_translated('wallet_deposit_successful', 'success')
-            return redirect(url_for('wallet'))
-        else:
-            # Handle order payment
-            # Get order details from session
-            order_total = session.get('order_total')
-            payment_method = session.get('payment_method')
-            delivery_type = session.get('delivery_type')
-            store_location_id = session.get('store_location_id')
-            address_id = session.get('address_id')
-            
-            if not all([order_total, payment_method, delivery_type]):
-                flash_translated('order_details_not_found', 'error')
-                return redirect(url_for('cart'))
-            
-            # Get cart items
-            cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-            
-            if not cart_items:
-                flash_translated('cart_empty', 'error')
-                return redirect(url_for('cart'))
-            
-            # Create order
-            order = Order(
-                user_id=current_user.id,
-                total_amount=order_total,
-                delivery_fee=0.0 if delivery_type == 'pickup' else max(20000, order_total * 0.05),
-                status='pending_approval',
-                payment_method=payment_method,
-                delivery_type=delivery_type,
-                store_location_id=store_location_id if delivery_type == 'pickup' else None,
-                address_id=address_id if delivery_type == 'delivery' else None,
-                description=session.get('order_description', '').strip()
-            )
-            db.session.add(order)
-            
-            # Create order items
-            for cart_item in cart_items:
-                order_item = OrderItem(
-                    order=order,
-                    product_id=cart_item.product_id,
-                    quantity=cart_item.quantity,
-                    price=cart_item.product.price * (1 - cart_item.product.discount/100)
-                )
-                db.session.add(order_item)
-            
-            # Clear cart
-            for cart_item in cart_items:
-                db.session.delete(cart_item)
-            
-            # Clear session data
-            session.pop('order_total', None)
-            session.pop('payment_method', None)
-            session.pop('delivery_type', None)
-            session.pop('store_location_id', None)
-            session.pop('address_id', None)
-            session.pop('order_description', None)
-            
-            db.session.commit()
-            
-            flash_translated('order_payment_successful', 'success')
-            return redirect(url_for('admin_orders'))  # Redirect to admin orders page
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error processing payment: {str(e)}")
-        flash_translated('error_processing_payment', 'error')
-        return redirect(url_for('wallet' if payment_type == 'wallet' else 'cart'))
-    
+    # DO NOT clear cart here - payment must be verified first
+    # This route should redirect to zarinpal/verify for proper payment verification
+    # Cart will only be cleared after successful payment verification in zarinpal/verify route
+    flash_translated('payment_verification_required', 'warning')
     return redirect(url_for('index'))
 
 @app.route('/payment_failure')
@@ -1954,7 +2106,7 @@ def process_order():
         
         # Get form data
         delivery_type = request.form.get('delivery_type')
-        payment_method = request.form.get('payment_method')
+        payment_method = 'online'  # Payment method is always online
         
         # Calculate delivery fee
         delivery_fee = 0.0
@@ -1976,8 +2128,6 @@ def process_order():
                 flash_translated('please_select_delivery_address', 'error')
                 return redirect(url_for('cart'))
         
-        # Handle online payment
-        if payment_method == 'online':
             # Store order details in session for payment success
             session['order_total'] = total
             session['payment_method'] = payment_method
@@ -1996,7 +2146,7 @@ def process_order():
             status, authority = create_payment_request(
                 amount=amount_in_tomans,
                 description=description,
-                email=current_user.email,
+            email=None,
                 callback_url=callback_url
             )
             
@@ -2008,42 +2158,6 @@ def process_order():
             else:
                 flash_translated('payment_gateway_error', 'error')
                 return redirect(url_for('cart'))
-        
-        # Wallet feature removed
-        
-        # Handle cash payment
-        else:  # cash payment
-            order = Order(
-                user_id=current_user.id,
-                total_amount=total,
-                delivery_fee=delivery_fee,
-                status='pending_approval',
-                payment_method=payment_method,
-                delivery_type=delivery_type,
-                store_location_id=store_location_id if delivery_type == 'pickup' else None,
-                address_id=address_id if delivery_type == 'delivery' else None,
-                description=request.form.get('order_description', '').strip()
-            )
-            db.session.add(order)
-            
-            # Create order items
-            for cart_item in cart_items:
-                order_item = OrderItem(
-                    order=order,
-                    product_id=cart_item.product_id,
-                    quantity=cart_item.quantity,
-                    price=cart_item.product.price  # Use base price without discount
-                )
-                db.session.add(order_item)
-            
-            # Clear cart
-            for cart_item in cart_items:
-                db.session.delete(cart_item)
-            
-            db.session.commit()
-            
-            flash_translated('order_placed_successfully', 'success')
-            return redirect(url_for('order_status', order_id=order.id))
             
     except Exception as e:
         db.session.rollback()
@@ -2094,8 +2208,16 @@ def zarinpal_verify():
                     db.session.add(order)
                     db.session.flush()  # Get order ID
                     
-                    # Add order items
+                    # Get cart items BEFORE creating order - preserve cart if order creation fails
                     cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+                    
+                    # Verify cart items still exist before proceeding
+                    if not cart_items:
+                        db.session.rollback()
+                        flash_translated('cart_empty', 'error')
+                        return redirect(url_for('cart'))
+                    
+                    # Add order items from cart
                     for item in cart_items:
                         order_item = OrderItem(
                             order_id=order.id,
@@ -2108,9 +2230,12 @@ def zarinpal_verify():
                         # Update product stock
                         item.product.stock -= item.quantity
                         
-                        # Remove item from cart
-                        db.session.delete(item)
+                    # Commit order and order items first
+                    db.session.commit()
                     
+                    # Only clear cart AFTER successful commit - ensures cart remains if commit fails
+                    for item in cart_items:
+                        db.session.delete(item)
                     db.session.commit()
                     
                     # Clear session data
@@ -2136,16 +2261,19 @@ def zarinpal_verify():
                 flash_translated('payment_verification_failed', 'error')
                 return redirect(url_for('cart'))
         else:
+            # Payment was cancelled by user - DO NOT clear cart
             flash_translated('payment_cancelled', 'error')
+            # Cart remains intact for user to retry
             return redirect(url_for('cart'))
             
     except Exception as e:
         db.session.rollback()
         print(f"Error verifying payment: {str(e)}")
         flash_translated('error_verifying_payment', 'error')
+        # Cart remains intact on error - user can retry
         return redirect(url_for('cart'))
 
 if __name__ == '__main__':
     with app.app_context():
-        init_db()  # Initialize the database with sample data
+        init_db()  # Initialize the database
     app.run(debug=True, port=8080, host='0.0.0.0') 

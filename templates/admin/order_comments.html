@@ -63,7 +63,7 @@
                     {% if entry.is_waiting %}
                         <tr class="table-warning">
                             <td>#{{ entry.order.id }}</td>
-                            <td>{{ entry.order.user.phone_number }}</td>
+                            <td><span dir="ltr" style="display: inline-block; direction: ltr;">{{ entry.order.user.phone_number }}</span></td>
                             <td colspan="6" class="text-center">
                                 <span class="badge bg-warning">{{ get_translation('waiting_for_user_comment') }}</span>
                             </td>
@@ -77,7 +77,7 @@
                     {% else %}
                         <tr>
                             <td>#{{ entry.order.id }}</td>
-                            <td>{{ entry.order.user.phone_number }}</td>
+                            <td><span dir="ltr" style="display: inline-block; direction: ltr;">{{ entry.order.user.phone_number }}</span></td>
                             <td>{{ entry.overall_experience }}/5</td>
                             <td>{{ entry.value_for_money }}/5</td>
                             <td>{{ entry.packaging }}/5</td>
@@ -116,7 +116,7 @@
                 <div class="mb-4">
                     <h6>{{ get_translation('customer_information') }}</h6>
                     <p><strong>{{ get_translation('name') }}:</strong> {{ entry.order.user.username }}</p>
-                    <p><strong>{{ get_translation('phone') }}:</strong> {{ entry.order.user.phone_number }}</p>
+                    <p><strong>{{ get_translation('phone') }}:</strong> <span dir="ltr" style="display: inline-block; direction: ltr;">{{ entry.order.user.phone_number }}</span></p>
                     <p><strong>{{ get_translation('address') }}:</strong> {{ entry.order.address }}</p>
                 </div>
 

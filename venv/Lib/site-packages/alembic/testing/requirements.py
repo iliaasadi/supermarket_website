@@ -114,6 +114,15 @@ class SuiteRequirements(Requirements):
         return exclusions.closed()
 
     @property
+    def computed_columns_warn_no_persisted(self):
+        def go(config):
+            return hasattr(
+                config.db.dialect, "supports_virtual_generated_columns"
+            )
+
+        return exclusions.only_if("postgresql<18") + exclusions.only_if(go)
+
+    @property
     def autoincrement_on_composite_pk(self):
         return exclusions.closed()
 
@@ -155,6 +164,10 @@ class SuiteRequirements(Requirements):
 
     @property
     def fk_names(self):
+        return self.foreign_key_name_reflection
+
+    @property
+    def foreign_key_name_reflection(self):
         return exclusions.open()
 
     @property

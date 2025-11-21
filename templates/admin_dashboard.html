@@ -19,7 +19,6 @@
                                                     <p class="mb-1"><strong>{{ get_translation('phone') }}:</strong> {{ order.user.phone }}</p>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <p class="mb-1"><strong>{{ get_translation('email') }}:</strong> {{ order.user.email }}</p>
                                                     <p class="mb-1"><strong>{{ get_translation('order_date') }}:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
                                                 </div>
                                             </div>
@@ -80,7 +79,7 @@
                                                         <tr>
                                                             <td>
                                                                 <div class="d-flex align-items-center">
-                                                                    <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                                                    <img src="{{ get_image_or_default(item.product.image_url) }}" alt="{{ item.product.name }}" class="me-2" style="width: 40px; height: 40px; object-fit: cover;" loading="lazy">
                                                                     <div>
                                                                         <div>{{ item.product.name }}</div>
                                                                         <small class="text-muted">{{ item.product.description }}</small>
@@ -121,9 +120,9 @@
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <p class="mb-1"><strong>{{ get_translation('payment_method') }}:</strong></p>
-                                                    <span class="badge bg-warning text-dark">
-                                                        <i class="fas fa-money-bill-wave me-1"></i>
-                                                        {{ get_translation('cash_on_delivery') }}
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-credit-card me-1"></i>
+                                                        {{ get_translation('pay_online') }}
                                                     </span>
                                                 </div>
                                                 <div class="col-md-6">

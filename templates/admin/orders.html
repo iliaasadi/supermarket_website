@@ -32,8 +32,7 @@
                                 <tr>
                                     <td>#{{ order.id }}</td>
                                     <td>
-                                        {{ order.user.phone_number }}<br>
-                                        <small class="text-muted">{{ order.user.email }}</small>
+                                        <span dir="ltr" style="display: inline-block; direction: ltr;">{{ order.user.phone_number }}</span>
                                     </td>
                                     <td>
                                         <ul class="list-unstyled mb-0">
@@ -44,8 +43,8 @@
                                     </td>
                                     <td>{{ "%.0f"|format(order.total_amount) }} تومان</td>
                                     <td>
-                                        <span class="badge {% if order.payment_method == 'cash' %}bg-secondary{% elif order.payment_method == 'online' %}bg-primary{% else %}bg-success{% endif %}">
-                                            {{ get_translation(order.payment_method) }}
+                                        <span class="badge bg-primary">
+                                            {{ get_translation('pay_online') }}
                                         </span>
                                     </td>
                                     <td>
@@ -160,8 +159,7 @@
                                 <tr>
                                     <td>#{{ order.id }}</td>
                                     <td>
-                                        {{ order.user.phone_number }}<br>
-                                        <small class="text-muted">{{ order.user.email }}</small>
+                                        <span dir="ltr" style="display: inline-block; direction: ltr;">{{ order.user.phone_number }}</span>
                                     </td>
                                     <td>
                                         <ul class="list-unstyled mb-0">
@@ -172,8 +170,8 @@
                                     </td>
                                     <td>{{ to_tehran_time(order.preparation_start).strftime('%H:%M') }}</td>
                                     <td>
-                                        <span class="badge {% if order.payment_method == 'cash' %}bg-secondary{% elif order.payment_method == 'online' %}bg-primary{% else %}bg-success{% endif %}">
-                                            {{ get_translation(order.payment_method) }}
+                                        <span class="badge bg-primary">
+                                            {{ get_translation('pay_online') }}
                                         </span>
                                     </td>
                                     <td>
@@ -369,8 +367,7 @@ updateCountdowns(); // Initial update
                 </div>
                 <div class="col-md-6">
                     <p><strong>{{ get_translation('customer') }}:</strong> {{ order.user.username }}</p>
-                    <p><strong>{{ get_translation('email') }}:</strong> {{ order.user.email }}</p>
-                    <p><strong>{{ get_translation('phone') }}:</strong> {{ order.user.phone }}</p>
+                    <p><strong>{{ get_translation('phone') }}:</strong> <span dir="ltr" style="display: inline-block; direction: ltr;">{{ order.user.phone_number }}</span></p>
                 </div>
             </div>
             {% if order.description %}

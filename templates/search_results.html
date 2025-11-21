@@ -1,68 +1,1181 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h2>Search Results for "{{ query }}"</h2>
-            <p class="text-muted">Found {{ products|length }} products</p>
+<div class="search-page">
+    <!-- Back Button -->
+    <div class="back-button-container">
+        <a href="{{ url_for('index') }}" class="back-button">
+            <i class="fas fa-arrow-right"></i>
+            <span>بازگشت به صفحه اصلی</span>
+        </a>
+    </div>
+    <!-- Search Header -->
+    <div class="search-header">
+        <div class="container">
+            <div class="search-header-content">
+                <div class="search-title-section">
+                    <h1 class="search-main-title">
+                        <i class="fas fa-search me-2"></i>
+                        {{ get_translation('search_results') }}
+                    </h1>
+                    {% if query %}
+                    <p class="search-query">
+                        نتایج جستجو برای: <span class="query-text">"{{ query }}"</span>
+                    </p>
+                    {% endif %}
+                    <p class="search-count">
+                        <i class="fas fa-box me-2"></i>
+                        {{ products|length }} {{ get_translation('found_products_plural') if products|length > 1 else get_translation('found_products') }}
+                    </p>
+                </div>
+                <div class="search-bar-wrapper">
+                    <form action="{{ url_for('search') }}" method="GET" class="search-form">
+                        <div class="search-input-group">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="search" name="q" id="search-input" class="search-input-field" 
+                                   placeholder="{{ get_translation('search_placeholder') }}" 
+                                   value="{{ query }}" autocomplete="off">
+                            <button type="submit" class="search-submit-btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div id="autocomplete-results" class="autocomplete-dropdown"></div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
-    {% if products %}
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for product in products %}
-                <div class="col">
-                    <div class="card h-100 product-card">
-                        {% if product.image_url %}
-                            <img src="{{ product.image_url }}" class="card-img-top product-image" alt="{{ product.name }}">
-                        {% endif %}
+    <div class="container search-container">
+
+        <!-- Filters Section -->
+        <div class="filters-card">
+            <div class="filters-header">
+                <i class="fas fa-filter me-2"></i>
+                <span>{{ get_translation('filters') }}</span>
+                <button class="filters-toggle-btn" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="true">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="collapse show" id="filtersCollapse">
+                <form method="GET" action="{{ url_for('search') }}" id="filter-form" class="filters-content">
+                    <input type="hidden" name="q" value="{{ query }}">
+                    
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-sort me-2"></i>{{ get_translation('sort_by') }}
+                            </label>
+                            <select name="sort" class="filter-select" onchange="document.getElementById('filter-form').submit()">
+                                <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>{{ get_translation('relevance') }}</option>
+                                <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>{{ get_translation('price_low_to_high') }}</option>
+                                <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>{{ get_translation('price_high_to_low') }}</option>
+                                <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>{{ get_translation('newest') }}</option>
+                                <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>{{ get_translation('oldest') }}</option>
+                                <option value="most_ordered" {% if sort_by == 'most_ordered' %}selected{% endif %}>{{ get_translation('most_ordered') }}</option>
+                            </select>
+                        </div>
                         
-                        {% if product.category %}
-                            <div class="product-category">{{ product.category }}</div>
-                        {% endif %}
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-tag me-2"></i>{{ get_translation('brand') }}
+                            </label>
+                            <select name="brand" class="filter-select" onchange="document.getElementById('filter-form').submit()">
+                                <option value="">{{ get_translation('all_brands') }}</option>
+                                {% for brand in all_brands %}
+                                <option value="{{ brand.id }}" {% if brand_filter == brand.id|string %}selected{% endif %}>{{ brand.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         
-                        {% if product.discount > 0 %}
-                            <div class="product-discount">-{{ product.discount }}%</div>
-                        {% endif %}
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-folder me-2"></i>{{ get_translation('category') }}
+                            </label>
+                            <select name="category" class="filter-select" onchange="document.getElementById('filter-form').submit()">
+                                <option value="">{{ get_translation('all_categories') }}</option>
+                                {% for cat in all_categories %}
+                                <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         
-                        <div class="card-body">
-                            <h5 class="card-title">{{ product.name }}</h5>
-                            <p class="card-text">{{ product.description }}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="product-price">{{ "%.0f"|format(product.price) }} تومان</div>
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-dollar-sign me-2"></i>{{ get_translation('min_price') }} (تومان)
+                            </label>
+                            <input type="number" name="min_price" class="filter-input" 
+                                   value="{{ min_price }}" placeholder="{{ get_translation('min_price') }}" 
+                                   onchange="document.getElementById('filter-form').submit()">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-dollar-sign me-2"></i>{{ get_translation('max_price') }} (تومان)
+                            </label>
+                            <input type="number" name="max_price" class="filter-input" 
+                                   value="{{ max_price }}" placeholder="{{ get_translation('max_price') }}" 
+                                   onchange="document.getElementById('filter-form').submit()">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-star me-2"></i>{{ get_translation('options') }}
+                            </label>
+                            <div class="filter-checkbox">
+                                <input class="filter-check" type="checkbox" name="featured" id="featured-check" 
+                                       {% if featured_only %}checked{% endif %} 
+                                       onchange="document.getElementById('filter-form').submit()">
+                                <label class="filter-check-label" for="featured-check">
+                                    {{ get_translation('featured_only') }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="filters-actions">
+                        <a href="{{ url_for('search', q=query) }}" class="clear-filters-btn">
+                            <i class="fas fa-times me-2"></i>{{ get_translation('clear_filters') }}
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Products List -->
+        {% if products %}
+            <div class="products-list">
+                {% for product in products %}
+                    <div class="product-list-item">
+                        <div class="product-list-image">
+                            <a href="{{ url_for('product_details', product_id=product.id) }}">
+                                <img src="{{ get_image_or_default(product.image_url) }}" class="product-list-img" alt="{{ product.name }}" loading="lazy">
+                            </a>
+                            {% if product.discount > 0 %}
+                                <div class="list-discount-badge">
+                                    <span>-{{ product.discount }}%</span>
+                                </div>
+                            {% endif %}
+                            {% if product.is_featured %}
+                                <div class="list-featured-badge">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="product-list-content">
+                            <div class="product-list-header">
+                                <div class="product-list-title-section">
+                                    <h3 class="product-list-name">
+                                        <a href="{{ url_for('product_details', product_id=product.id) }}">{{ product.name }}</a>
+                                    </h3>
+                                    <div class="product-list-meta">
+                                        {% if product.brand %}
+                                            <span class="list-brand">
+                                                <img src="{{ get_image_or_default(product.brand.image_url) }}" alt="{{ product.brand.name }}" loading="lazy">
+                                                <span>{{ product.brand.name }}</span>
+                                            </span>
+                                        {% endif %}
+                                        {% if product.category %}
+                                            <span class="list-category">{{ product.category }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="product-list-price-section">
+                                    <div class="list-price-wrapper">
+                                        {% if product.discount > 0 %}
+                                        <span class="list-price-original">{{ "%.0f"|format(product.price) }} تومان</span>
+                                        <span class="list-price-final">{{ "%.0f"|format(product.price * (1 - product.discount/100)) }} تومان</span>
+                                        {% else %}
+                                        <span class="list-price-final">{{ "%.0f"|format(product.price) }} تومان</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="product-list-actions">
                                 {% if current_user.is_authenticated %}
-                                    <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="d-flex gap-2">
+                                    <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="list-actions-form">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                        <div class="input-group" style="max-width: 120px;">
-                                            <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(this, -1)">-</button>
-                                            <input type="number" class="form-control text-center" name="quantity" value="1" min="1" max="{{ product.stock }}">
-                                            <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(this, 1)">+</button>
+                                        <div class="list-quantity-control">
+                                            <button type="button" class="list-qty-btn list-qty-minus" onclick="updateQuantity(this, -1)">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <input type="number" class="list-qty-input" name="quantity" value="1" min="1" max="{{ product.stock }}" readonly>
+                                            <button type="button" class="list-qty-btn list-qty-plus" onclick="updateQuantity(this, 1)">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
                                         </div>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-cart-plus"></i> {{ get_translation('add_to_cart') }}
+                                        <button type="submit" class="list-add-cart-btn">
+                                            <i class="fas fa-cart-plus"></i>
+                                            <span>{{ get_translation('add_to_cart') }}</span>
                                         </button>
                                     </form>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-results">
+                <div class="no-results-icon">
+                    <i class="fas fa-search"></i>
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-search fa-3x text-muted mb-3"></i>
-            <h3>No products found</h3>
-            <p class="text-muted">Try different keywords or browse our categories</p>
-            <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
-                <i class="fas fa-home"></i> Back to Home
-            </a>
-        </div>
-    {% endif %}
+                <h2 class="no-results-title">{{ get_translation('no_products_found') }}</h2>
+                <p class="no-results-text">{{ get_translation('try_different_keywords') }}</p>
+                <a href="{{ url_for('index') }}" class="back-home-btn">
+                    <i class="fas fa-home me-2"></i>
+                    {{ get_translation('back_to_home') }}
+                </a>
+            </div>
+        {% endif %}
+    </div>
 </div>
 
+<style>
+    :root {
+        --dark-blue-night: #0a0e27;
+        --dark-blue-night-light: #141b3d;
+        --dark-blue-night-lighter: #1e2749;
+        --yellow: #d4af37;
+        --yellow-bright: #e6c866;
+        --yellow-dark: #b8941f;
+        --yellow-glow: rgba(212, 175, 55, 0.2);
+        --text-light: #ffffff;
+        --text-gray: #b0b0b0;
+        --text-dark: #666666;
+    }
+
+    .search-page {
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    /* Back Button */
+    .back-button-container {
+        max-width: 1200px;
+        margin: 0 auto 1.5rem;
+        padding: 0 1rem;
+    }
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: rgba(10, 14, 39, 0.7);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: var(--yellow);
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .back-button:hover {
+        background: rgba(10, 14, 39, 0.9);
+        border-color: var(--yellow);
+        transform: translateX(5px);
+        box-shadow: 0 8px 25px var(--yellow-glow);
+        color: var(--yellow-bright);
+    }
+
+    .back-button i {
+        transition: transform 0.3s ease;
+    }
+
+    .back-button:hover i {
+        transform: translateX(-3px);
+    }
+
+    /* Search Header */
+    .search-header {
+        background: rgba(10, 14, 39, 0.7);
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .search-header-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .search-title-section {
+        text-align: center;
+    }
+
+    .search-main-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--yellow);
+        margin-bottom: 1rem;
+        text-shadow: 0 0 30px var(--yellow-glow);
+    }
+
+    .search-query {
+        font-size: 1.1rem;
+        color: var(--text-gray);
+        margin-bottom: 0.5rem;
+    }
+
+    .query-text {
+        color: var(--yellow);
+        font-weight: 600;
+    }
+
+    .search-count {
+        font-size: 1rem;
+        color: var(--text-gray);
+        margin: 0;
+    }
+
+    /* Search Bar */
+    .search-bar-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        width: 100%;
+        position: relative;
+    }
+
+    .search-form {
+        position: relative;
+    }
+
+    .search-input-group {
+        display: flex;
+        align-items: center;
+        background: rgba(10, 14, 39, 0.8);
+        border: 2px solid rgba(212, 175, 55, 0.3);
+        border-radius: 50px;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .search-input-group:focus-within {
+        border-color: var(--yellow);
+        box-shadow: 0 0 20px var(--yellow-glow);
+        background: rgba(10, 14, 39, 0.95);
+    }
+
+    .search-icon {
+        color: var(--yellow);
+        font-size: 1.1rem;
+        margin-left: 0.5rem;
+    }
+
+    .search-input-field {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--text-light);
+        font-size: 1rem;
+        padding: 0.5rem;
+        outline: none;
+    }
+
+    .search-input-field::placeholder {
+        color: var(--text-gray);
+    }
+
+    .search-submit-btn {
+        background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        border: none;
+        color: var(--dark-blue-night);
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-right: -0.5rem;
+    }
+
+    .search-submit-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 20px var(--yellow-glow);
+    }
+
+    /* Autocomplete Dropdown */
+    .autocomplete-dropdown {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        left: 0;
+        right: 0;
+        background: rgba(10, 14, 39, 0.95);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        border-radius: 15px;
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .autocomplete-item {
+        padding: 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-item:hover {
+        background: rgba(212, 175, 55, 0.1);
+        transform: translateX(-5px);
+    }
+
+    .autocomplete-item img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    .autocomplete-item strong {
+        color: var(--text-light);
+        display: block;
+    }
+
+    .autocomplete-item small {
+        color: var(--text-gray);
+    }
+
+    /* Filters Card */
+    .filters-card {
+        background: rgba(10, 14, 39, 0.7);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+
+    .filters-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem;
+        background: rgba(212, 175, 55, 0.1);
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        color: var(--yellow);
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .filters-toggle-btn {
+        background: transparent;
+        border: none;
+        color: var(--yellow);
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .filters-toggle-btn[aria-expanded="true"] {
+        transform: rotate(180deg);
+    }
+
+    .filters-content {
+        padding: 1.5rem;
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-label {
+        color: var(--text-light);
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .filter-select,
+    .filter-input {
+        background: rgba(10, 14, 39, 0.8);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        color: var(--text-light);
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .filter-select:focus,
+    .filter-input:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 15px var(--yellow-glow);
+        background: rgba(10, 14, 39, 0.95);
+    }
+
+    .filter-select option {
+        background: var(--dark-blue-night);
+        color: var(--text-light);
+    }
+
+    .filter-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: rgba(10, 14, 39, 0.5);
+        border-radius: 10px;
+        border: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .filter-check {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--yellow);
+        cursor: pointer;
+    }
+
+    .filter-check-label {
+        color: var(--text-light);
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .filters-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .clear-filters-btn {
+        background: transparent;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: var(--yellow);
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .clear-filters-btn:hover {
+        background: rgba(212, 175, 55, 0.1);
+        border-color: var(--yellow);
+        transform: translateY(-2px);
+    }
+
+    /* Products List */
+    .products-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .product-list-item {
+        background: rgba(10, 14, 39, 0.7);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 15px;
+        padding: 1rem;
+        display: flex;
+        gap: 1.25rem;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        animation: fadeInUp 0.4s ease-out;
+    }
+
+    .product-list-item:hover {
+        border-color: var(--yellow);
+        box-shadow: 0 8px 30px var(--yellow-glow);
+        transform: translateX(-5px);
+    }
+
+    .product-list-image {
+        position: relative;
+        flex-shrink: 0;
+        width: 140px;
+        height: 140px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(10, 14, 39, 0.5);
+    }
+
+    .product-list-image a {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .product-list-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .product-list-item:hover .product-list-img {
+        transform: scale(1.05);
+    }
+
+    .list-discount-badge {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: linear-gradient(135deg, #ff4757, #ff6348);
+        color: white;
+        padding: 0.3rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        z-index: 2;
+    }
+
+    .list-featured-badge {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 0.5rem;
+        background: linear-gradient(135deg, var(--yellow), var(--yellow-dark));
+        color: var(--dark-blue-night);
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        z-index: 2;
+    }
+
+    .product-list-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .product-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .product-list-title-section {
+        flex: 1;
+    }
+
+    .product-list-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+        line-height: 1.4;
+    }
+
+    .product-list-name a {
+        color: var(--text-light);
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .product-list-name a:hover {
+        color: var(--yellow);
+    }
+
+    .product-list-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .list-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--text-gray);
+    }
+
+    .list-brand img {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        border-radius: 4px;
+        border: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .list-category {
+        font-size: 0.8rem;
+        color: var(--text-gray);
+        padding: 0.25rem 0.5rem;
+        background: rgba(212, 175, 55, 0.1);
+        border-radius: 6px;
+        border: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .product-list-price-section {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .list-price-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.2rem;
+    }
+
+    .list-price-original {
+        font-size: 0.75rem;
+        color: var(--text-gray);
+        text-decoration: line-through;
+    }
+
+    .list-price-final {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--yellow);
+    }
+
+
+    .product-list-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .list-actions-form {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex: 1;
+    }
+
+    .list-quantity-control {
+        display: flex;
+        align-items: center;
+        background: rgba(10, 14, 39, 0.8);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .list-qty-btn {
+        background: transparent;
+        border: none;
+        color: var(--yellow);
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.8rem;
+    }
+
+    .list-qty-btn:hover {
+        background: rgba(212, 175, 55, 0.2);
+    }
+
+    .list-qty-input {
+        width: 45px;
+        text-align: center;
+        background: transparent;
+        border: none;
+        color: var(--text-light);
+        font-weight: 600;
+        padding: 0;
+        font-size: 0.85rem;
+    }
+
+    .list-add-cart-btn {
+        flex: 1;
+        background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        border: none;
+        color: var(--dark-blue-night);
+        padding: 0.65rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+    .list-add-cart-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px var(--yellow-glow);
+    }
+
+
+    /* No Results */
+    .no-results {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .no-results-icon {
+        font-size: 5rem;
+        color: var(--yellow);
+        margin-bottom: 2rem;
+        filter: drop-shadow(0 0 20px var(--yellow-glow));
+        animation: iconFloat 3s ease-in-out infinite;
+    }
+
+    .no-results-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-light);
+        margin-bottom: 1rem;
+    }
+
+    .no-results-text {
+        font-size: 1.1rem;
+        color: var(--text-gray);
+        margin-bottom: 2rem;
+    }
+
+    .back-home-btn {
+        background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .back-home-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px var(--yellow-glow);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 991.98px) {
+        .search-main-title {
+            font-size: 2rem;
+        }
+
+        .filters-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .product-list-item {
+            padding: 0.875rem;
+            gap: 1rem;
+        }
+
+        .product-list-image {
+            width: 120px;
+            height: 120px;
+        }
+
+        .product-list-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .product-list-price-section {
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .back-button-container {
+            margin-bottom: 1rem;
+            padding: 0 0.75rem;
+        }
+
+        .back-button {
+            padding: 0.65rem 1.25rem;
+            font-size: 0.85rem;
+        }
+
+        .search-header {
+            padding: 1.5rem 0;
+        }
+
+        .search-main-title {
+            font-size: 1.75rem;
+        }
+
+        .search-header-content {
+            gap: 1.5rem;
+        }
+
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .products-list {
+            gap: 0.75rem;
+        }
+
+        .product-list-item {
+            padding: 0.75rem;
+            gap: 0.75rem;
+            border-radius: 12px;
+        }
+
+        .product-list-image {
+            width: 90px;
+            height: 90px;
+            border-radius: 10px;
+        }
+
+        .list-discount-badge {
+            top: 0.3rem;
+            right: 0.3rem;
+            padding: 0.2rem 0.4rem;
+            font-size: 0.65rem;
+        }
+
+        .list-featured-badge {
+            bottom: 0.3rem;
+            right: 0.3rem;
+            width: 24px;
+            height: 24px;
+            font-size: 0.7rem;
+        }
+
+        .product-list-content {
+            gap: 0.5rem;
+        }
+
+        .product-list-name {
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .product-list-meta {
+            gap: 0.5rem;
+        }
+
+        .list-brand {
+            font-size: 0.7rem;
+            gap: 0.3rem;
+        }
+
+        .list-brand img {
+            width: 16px;
+            height: 16px;
+        }
+
+        .list-category {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+
+        .product-list-price-section {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.35rem;
+        }
+
+        .list-price-final {
+            font-size: 1rem;
+        }
+
+        .list-price-original {
+            font-size: 0.7rem;
+        }
+
+
+        .product-list-actions {
+            gap: 0.5rem;
+        }
+
+        .list-actions-form {
+            gap: 0.5rem;
+        }
+
+        .list-quantity-control {
+            border-radius: 6px;
+        }
+
+        .list-qty-btn {
+            width: 28px;
+            height: 28px;
+            font-size: 0.75rem;
+        }
+
+        .list-qty-input {
+            width: 35px;
+            font-size: 0.75rem;
+        }
+
+        .list-add-cart-btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            gap: 0.4rem;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .search-main-title {
+            font-size: 1.5rem;
+        }
+
+        .products-list {
+            gap: 0.6rem;
+        }
+
+        .product-list-item {
+            padding: 0.6rem;
+            gap: 0.6rem;
+            border-radius: 10px;
+        }
+
+        .product-list-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+        }
+
+        .product-list-name {
+            font-size: 0.9rem;
+        }
+
+        .list-price-final {
+            font-size: 0.95rem;
+        }
+
+        .list-add-cart-btn {
+            padding: 0.45rem 0.65rem;
+            font-size: 0.75rem;
+        }
+
+        .list-qty-btn {
+            width: 26px;
+            height: 26px;
+        }
+
+        .list-qty-input {
+            width: 30px;
+        }
+    }
+</style>
+
 <script>
+let autocompleteTimeout;
+const searchInput = document.getElementById('search-input');
+const autocompleteResults = document.getElementById('autocomplete-results');
+
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        clearTimeout(autocompleteTimeout);
+        
+        if (query.length < 2) {
+            autocompleteResults.style.display = 'none';
+            return;
+        }
+        
+        autocompleteTimeout = setTimeout(() => {
+            fetch(`/api/search/autocomplete?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        autocompleteResults.style.display = 'none';
+                        return;
+                    }
+                    
+                    autocompleteResults.innerHTML = '';
+                    data.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-item';
+                        
+                        let content = '';
+                        if (item.image) {
+                            content += `<img src="${item.image}" alt="${item.name}" onerror="this.src='/static/default-product.png'">`;
+                        }
+                        content += `<div><strong>${item.name}</strong>`;
+                        if (item.category) content += ` <small class="text-muted">- ${item.category}</small>`;
+                        if (item.brand) content += ` <small class="text-muted">- ${item.brand}</small>`;
+                        content += `<br><small class="text-muted">${item.type}</small></div>`;
+                        
+                        div.innerHTML = content;
+                        div.addEventListener('click', () => {
+                            if (item.type === 'product') {
+                                window.location.href = `/product/${item.id}`;
+                            } else if (item.type === 'category') {
+                                window.location.href = `/category/${item.name}`;
+                            } else if (item.type === 'brand') {
+                                window.location.href = `/brand/${item.id}`;
+                            }
+                        });
+                        
+                        autocompleteResults.appendChild(div);
+                    });
+                    
+                    autocompleteResults.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    autocompleteResults.style.display = 'none';
+                });
+        }, 300);
+    });
+    
+    // Hide autocomplete when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !autocompleteResults.contains(e.target)) {
+            autocompleteResults.style.display = 'none';
+        }
+    });
+}
+
 function updateQuantity(button, change) {
     const input = button.parentElement.querySelector('input[name="quantity"]');
     const newValue = parseInt(input.value) + change;
@@ -71,4 +1184,4 @@ function updateQuantity(button, change) {
     }
 }
 </script>
-{% endblock %} 
+{% endblock %}

@@ -1,5 +1,4 @@
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db
 from datetime import datetime, timedelta
 import random
@@ -9,11 +8,7 @@ import json
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=True)
-    email = db.Column(db.String(120), unique=True, nullable=True)
-    password_hash = db.Column(db.String(128))
     phone_number = db.Column(db.String(20), unique=True, nullable=False)
-    profile_picture = db.Column(db.String(200))  # Path to profile picture
-    identity_card = db.Column(db.String(200))    # Path to identity card
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     verification_code = db.Column(db.String(6), nullable=True)
@@ -23,7 +18,6 @@ class User(UserMixin, db.Model):
     addresses = db.relationship('Address', backref='user', lazy=True)
     cart = db.relationship('CartItem', backref='user', lazy=True)
     orders = db.relationship('Order', backref='user', lazy=True)
-    wallet = db.relationship('Wallet', backref='user', uselist=False)
 
     def generate_verification_code(self):
         """Generate a 6-digit verification code and send it via SMS"""
@@ -47,6 +41,11 @@ class User(UserMixin, db.Model):
             conn = http.client.HTTPSConnection("api.sms.ir")
             
             # Prepare payload
+            # IMPORTANT: For WebOTP auto-fill to work, the SMS template must include:
+            # - The domain: @marketamazoon.com
+            # - The code format: #CODE (where CODE is the 6-digit verification code)
+            # Example SMS format: "کد تایید شما: CODE @marketamazoon.com #CODE"
+            # Update your SMS.ir template (ID: 347229) to include this format
             payload = json.dumps({
                 "mobile": phone,
                 "templateId": 347229,  # Replace with your actual template ID
@@ -58,6 +57,10 @@ class User(UserMixin, db.Model):
                     {
                         "name": "CODE",  # Note: lowercase 'name' and matches the template placeholder without #
                         "value": self.verification_code  # The verification code to insert
+                    },
+                    {
+                        "name": "DOMAIN",  # Domain for WebOTP API
+                        "value": "marketamazoon.com"  # Domain for auto-fill
                     }
                 ]
             })
@@ -124,12 +127,6 @@ class User(UserMixin, db.Model):
             username = f'user{total_users + 1}'
         return username
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
     def get_recent_orders(self, months=2):
         two_months_ago = datetime.utcnow() - timedelta(days=months * 30)
         return Order.query.filter(
@@ -164,7 +161,6 @@ class User(UserMixin, db.Model):
                 phone_number='+989137597568',
                 is_admin=True
             )
-            admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
             print("Default admin user created successfully!")
@@ -220,7 +216,7 @@ class Order(db.Model):
     address_id = db.Column(db.Integer, db.ForeignKey('address.id'))
     
     # Payment information
-    payment_method = db.Column(db.String(20), default='cash')  # 'cash' or 'wallet'
+    payment_method = db.Column(db.String(20), default='online')  # 'online' only
     
     # Relationships
     items = db.relationship('OrderItem', backref='order', lazy=True)
@@ -235,7 +231,30 @@ class OrderItem(db.Model):
     price = db.Column(db.Float, nullable=False)
     
     # Relationship
-    product = db.relationship('Product')
+    product = db.relationship('Product', overlaps='order_items,product_item')
+
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    image_url = db.Column(db.String(200), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Category {self.name}>'
+
+class Brand(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    image_url = db.Column(db.String(200), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    products = db.relationship('Product', backref='brand', lazy=True)
+    
+    def __repr__(self):
+        return f'<Brand {self.name}>'
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -245,16 +264,34 @@ class Product(db.Model):
     stock = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(50))
     image_url = db.Column(db.String(200), nullable=True)
+    brand_id = db.Column(db.Integer, db.ForeignKey('brand.id'), nullable=True)
     discount = db.Column(db.Float, default=0)
     is_featured = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    # brand relationship is created by Brand.products backref
+    # Note: OrderItem already has 'product' relationship, so we use overlaps to avoid conflict
+    order_items = db.relationship('OrderItem', backref='product_item', lazy=True, overlaps='product')
+    
+    def get_order_count(self):
+        """Calculate total number of times this product has been ordered"""
+        from sqlalchemy import func
+        from extensions import db
+        return db.session.query(func.sum(OrderItem.quantity)).filter_by(product_id=self.id).scalar() or 0
+    
+    def get_final_price(self):
+        """Calculate final price after discount"""
+        return self.price * (1 - self.discount / 100)
 
 class CartItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, default=1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     product = db.relationship('Product') 
 
 class Wallet(db.Model):

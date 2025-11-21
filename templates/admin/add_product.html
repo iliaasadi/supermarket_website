@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('add_new_product') }} - Fresh Market{% endblock %}
+{% block title %}{{ get_translation('add_new_product') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -40,6 +40,20 @@
                     </div>
                 </div>
 
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="brand_id" class="form-label">{{ get_translation('brand') }} ({{ get_translation('optional') }})</label>
+                            <select class="form-select" id="brand_id" name="brand_id">
+                                <option value="">{{ get_translation('no_brand') }}</option>
+                                {% for brand in brands %}
+                                <option value="{{ brand.id }}">{{ brand.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mb-3">
                     <label for="description" class="form-label">{{ get_translation('description') }}</label>
                     <textarea class="form-control" id="description" name="description" rows="3"></textarea>
@@ -67,10 +81,17 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="image" class="form-label">{{ get_translation('product_image') }}</label>
+                    <label for="image_url" class="form-label">{{ get_translation('product_image') }} ({{ get_translation('optional') }}) - {{ get_translation('or_enter_url') }}</label>
+                    <input type="text" class="form-control" id="image_url" name="image_url" 
+                           placeholder="https://example.com/image.jpg">
+                    <small class="text-muted">{{ get_translation('image_url_help') }}</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="image" class="form-label">{{ get_translation('or_upload_image') }} ({{ get_translation('optional') }})</label>
                     <input type="file" class="form-control" id="image" name="image" accept="image/*" onchange="previewImage(this)">
                     <div id="imagePreview" class="mt-2" style="display: none;">
-                        <img src="" alt="Preview" class="img-thumbnail" style="max-height: 200px;">
+                        <img src="" alt="Preview" class="img-thumbnail" style="max-height: 200px;" loading="lazy">
                     </div>
                     <small class="text-muted">{{ get_translation('image_upload_help') }}</small>
                 </div>

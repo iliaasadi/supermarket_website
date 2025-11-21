@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('store_locations') }} - Fresh Market{% endblock %}
+{% block title %}{{ get_translation('store_locations') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -23,7 +23,6 @@
                         <tr>
                             <th>{{ get_translation('store_name') }}</th>
                             <th>{{ get_translation('address') }}</th>
-                            <th>{{ get_translation('description') }}</th>
                             <th>{{ get_translation('status') }}</th>
                             <th>{{ get_translation('actions') }}</th>
                         </tr>
@@ -33,7 +32,6 @@
                         <tr>
                             <td>{{ location.name }}</td>
                             <td>{{ location.address }}</td>
-                            <td>{{ location.description }}</td>
                             <td>
                                 <span class="badge {% if location.is_active %}bg-success{% else %}bg-danger{% endif %}">
                                     {{ get_translation('active') if location.is_active else get_translation('inactive') }}

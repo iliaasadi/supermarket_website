@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('order_details') }} #{{ order.id }} - Fresh Market{% endblock %}
+{% block title %}{{ get_translation('order_details') }} #{{ order.id }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -80,17 +80,10 @@
                     <div class="row">
                         <div class="col-md-6">
                             <p class="mb-1"><strong>{{ get_translation('payment_method') }}:</strong></p>
-                            {% if order.payment_method == 'online' %}
                                 <span class="badge bg-primary">
                                     <i class="fas fa-credit-card me-1"></i>
                                     {{ get_translation('pay_online') }}
                                 </span>
-                            {% else %}
-                                <span class="badge bg-warning text-dark">
-                                    <i class="fas fa-money-bill-wave me-1"></i>
-                                    {{ get_translation('cash_on_delivery') }}
-                                </span>
-                            {% endif %}
                         </div>
                         <div class="col-md-6">
                             <p class="mb-1"><strong>{{ get_translation('payment_status') }}:</strong></p>
@@ -170,8 +163,7 @@
                     <h5 class="mb-0">{{ get_translation('customer_information') }}</h5>
                 </div>
                 <div class="card-body">
-                    <p><strong>{{ get_translation('phone') }}:</strong> {{ order.user.phone_number }}</p>
-                    <p><strong>{{ get_translation('email') }}:</strong> {{ order.user.email }}</p>
+                    <p><strong>{{ get_translation('phone') }}:</strong> <span dir="ltr" style="display: inline-block; direction: ltr;">{{ order.user.phone_number }}</span></p>
                     <hr>
                     <h6 class="mb-3">{{ get_translation('delivery_address') }}:</h6>
                     <p class="mb-0">{{ order.address.street }}</p>

@@ -1,81 +1,193 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
-{% block content %}
-<div class="container py-4">
-    <h2>{{ get_translation('users') }}</h2>
-    
+{% block admin_title %}{{ get_translation('users') }}{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-users me-2"></i>{{ get_translation('users') }}</h2>
+        <span class="badge bg-primary">{{ users|length }} {{ get_translation('users') }}</span>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin_users') }}" class="row g-3">
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" 
+                               class="form-control" 
+                               name="search" 
+                               placeholder="{{ get_translation('search_by_name_or_phone') }}"
+                               value="{{ search_query }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>{{ get_translation('search') }}
+                    </button>
+                </div>
+                {% if search_query %}
+                <div class="col-12">
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-times me-1"></i>{{ get_translation('clear_search') }}
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Users List -->
+    {% if users %}
     <div class="row">
         {% for user in users %}
-            <div class="col-md-6 mb-4">
-                <div class="card">
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user me-2"></i>{{ user.username or get_translation('no_username') }}
+                        </h5>
+                        {% if user.is_admin %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-crown me-1"></i>{{ get_translation('admin') }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
                     <div class="card-body">
-                        <h5 class="card-title">{{ user.username }}</h5>
-                        <p class="card-text">
-                            <strong>{{ get_translation('email') }}:</strong> {{ user.email }}<br>
-                            <strong>{{ get_translation('phone') }}:</strong> {{ user.phone_number }}<br>
-                            <strong>{{ get_translation('age') }}:</strong> {{ user.age }}<br>
-                            <strong>{{ get_translation('sex') }}:</strong> {{ get_translation(user.sex) }}<br>
-                            <strong>{{ get_translation('registered') }}:</strong> {{ user.created_at.strftime('%Y-%m-%d') }}
+                    <div class="mb-3">
+                        <p class="mb-2">
+                            <i class="fas fa-phone me-2 text-muted"></i>
+                            <strong>{{ get_translation('phone') }}:</strong> <span dir="ltr" style="display: inline-block; direction: ltr;">{{ user.phone_number }}</span>
                         </p>
-                        
-                        <!-- {% if user.identity_card %}
-                            <div class="mb-3">
-                                <strong>{{ get_translation('identity_card') }}:</strong><br>
-                                <img src="{{ url_for('static', filename=user.identity_card) }}" 
-                                     class="img-fluid identity-card-img" 
-                                     style="max-height: 200px; cursor: pointer;"
-                                     data-bs-toggle="modal"
-                                     data-bs-target="#identityCardModal{{ user.id }}">
-                            </div>
-                        {% endif %} -->
-                        
-                        {# Verification action removed #}
+                        <p class="mb-2">
+                            <i class="fas fa-calendar me-2 text-muted"></i>
+                            <strong>{{ get_translation('registered') }}:</strong> 
+                            {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="fas fa-shopping-cart me-2 text-muted"></i>
+                            <strong>{{ get_translation('total_orders') }}:</strong> 
+                            <span class="badge bg-info">{{ user.order_count }}</span>
+                        </p>
+                        <p class="mb-0">
+                            <i class="fas fa-money-bill-wave me-2 text-muted"></i>
+                            <strong>{{ get_translation('total_spent') }}:</strong> 
+                            <span class="badge bg-success">{{ "%.0f"|format(user.total_spent) }} تومان</span>
+                        </p>
                     </div>
-                </div>
-            </div>
 
-            <!-- Identity Card Modal -->
-            <!-- {% if user.identity_card %}
-            <div class="modal fade" id="identityCardModal{{ user.id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">{{ get_translation('identity_card') }} - {{ user.username }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body text-center">
-                            <img src="{{ url_for('static', filename=user.identity_card) }}" 
-                                 class="img-fluid" 
-                                 style="max-height: 80vh;">
-                        </div>
-                    </div>
+                    <!-- Orders Accordion -->
+                    {% if user.orders %}
+                    <div class="accordion" id="ordersAccordion{{ user.id }}">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ user.id }}">
+                                <button class="accordion-button collapsed" 
+                                        type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ user.id }}" 
+                                        aria-expanded="false" 
+                                        aria-controls="collapse{{ user.id }}">
+                                    <i class="fas fa-list me-2"></i>
+                                    {{ get_translation('view_orders') }} ({{ user.order_count }})
+                                </button>
+                            </h2>
+                            <div id="collapse{{ user.id }}" 
+                                 class="accordion-collapse collapse" 
+                                 aria-labelledby="heading{{ user.id }}" 
+                                 data-bs-parent="#ordersAccordion{{ user.id }}">
+                                <div class="accordion-body">
+                                    <div class="list-group">
+                                        {% for order in user.orders|sort(attribute='created_at', reverse=true) %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">
+                                                        <a href="{{ url_for('admin_order_details', order_id=order.id) }}" 
+                                                           class="text-decoration-none">
+                                                            {{ get_translation('order') }} #{{ order.id }}
+                                                        </a>
+                                                    </h6>
+                                                    <p class="mb-1 text-muted small">
+                                                        <i class="fas fa-calendar me-1"></i>
+                                                        {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                                    </p>
+                                                    <p class="mb-1">
+                                                        <strong>{{ get_translation('total') }}:</strong> 
+                                                        {{ "%.0f"|format(order.total_amount) }} تومان
+                                                    </p>
+                                                    <p class="mb-0">
+                                                        <strong>{{ get_translation('items') }}:</strong> 
+                                                        {{ order.items|length }}
+                                                    </p>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge 
+                                                        {% if order.status == 'pending_approval' %}bg-warning
+                                                        {% elif order.status == 'preparing' %}bg-info
+                                                        {% elif order.status == 'completed' %}bg-success
+                                                        {% elif order.status == 'cancelled' %}bg-secondary
+                                                        {% else %}bg-danger{% endif %}">
+                                                        {{ get_translation(order.status) }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
                 </div>
             </div>
-            {% endif %} -->
-        {% else %}
-            <div class="col">
-                <p class="text-muted">{{ get_translation('no_users') }}</p>
+                        </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {{ get_translation('no_orders') }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
             </div>
         {% endfor %}
     </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <i class="fas fa-info-circle fa-2x mb-3"></i>
+        <p class="mb-0">{{ get_translation('no_users_found') }}</p>
+    </div>
+    {% endif %}
 </div>
 
 <style>
-    .identity-card-img {
-        transition: transform 0.2s;
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
     }
-    .identity-card-img:hover {
-        transform: scale(1.05);
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
     }
-    .modal-content {
-        background-color: #fff;
-        border-radius: 12px;
+    
+    .accordion-button {
+        font-size: 0.9rem;
     }
-    .modal-header {
-        border-bottom: 1px solid #dee2e6;
+    
+    .list-group-item {
+        border-left: 3px solid transparent;
+        transition: all 0.2s;
     }
-    .modal-body {
-        padding: 1rem;
+    
+    .list-group-item:hover {
+        border-left-color: var(--primary-red);
+        background-color: #f8f9fa;
+    }
+    
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.4em 0.6em;
     }
 </style>
 {% endblock %} 

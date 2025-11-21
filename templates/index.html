@@ -1,145 +1,461 @@
 {% extends "base.html" %}
 
-{% block title %}Fresh Market - {{ get_translation('home') }}{% endblock %}
+{% block title %}AMAZOON MARKET - {{ get_translation('home') }}{% endblock %}
 
 {% block content %}
-<div class="hero-section">
-    <div class="container text-center">
-        <h1 class="display-4 fw-bold mb-4">{{ get_translation('fresh_food_fresh_life') }}</h1>
-        <!-- <h1 class="display-4 fw-bold mb-4">{{ get_translation('zarin_pal') }}</h1> -->
-        <p class="lead mb-4">{{ get_translation('discover_quality') }}</p>
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <form action="{{ url_for('search') }}" method="GET" class="d-flex">
-                    <input type="search" name="q" class="search-input" 
-                           placeholder="{{ get_translation('search_placeholder') }}" aria-label="Search">
-                </form>
-            </div>
+<div class="home-hero">
+    <div class="hero-content">
+        <!-- Animated Logo -->
+        <div class="logo-wrapper">
+            <div class="logo-ring"></div>
+            <div class="logo-ring ring-2"></div>
+            <div class="logo-ring ring-3"></div>
+            <img src="{{ url_for('static', filename='images/logo.jpeg') }}?v={{ timestamp }}" 
+                 alt="AMAZOON MARKET Logo" 
+                 class="hero-logo"
+                 id="heroLogo">
         </div>
-    </div>
+        
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h1 class="hero-title">
+                <span class="title-line">{{ get_translation('welcome_to_amazoon') }}</span>
+            </h1>
+            <p class="hero-subtitle">{{ get_translation('discover_quality_products') }}</p>
 </div>
 
-<!-- Categories -->
-<section class="mb-4">
-    <h2 class="section-title mb-3">{{ get_translation('categories') }}</h2>
-    <div class="row row-cols-4 row-cols-md-6 row-cols-lg-8 g-1">
-        {% for category in categories %}
-        <div class="col">
-            <a href="{{ url_for('category', category=category) }}" class="text-decoration-none">
-                <div class="category-card h-100">
-                    {% if 'میوه' in category or 'سبزی' in category %}
-                        <i class="fas fa-apple-alt category-icon"></i>
-                    {% elif 'لبنیات' in category or 'تخم' in category %}
-                        <i class="fas fa-egg category-icon"></i>
-                    {% elif 'نان' in category or 'شیرینی' in category %}
-                        <i class="fas fa-bread-slice category-icon"></i>
-                    {% elif 'گوشت' in category or 'ماهی' in category %}
-                        <i class="fas fa-fish category-icon"></i>
-                    {% elif 'نوشیدنی' in category %}
-                        <i class="fas fa-coffee category-icon"></i>
-                    {% elif 'مواد غذایی' in category or 'خشکبار' in category %}
-                        <i class="fas fa-box-open category-icon"></i>
-                    {% elif 'تنقلات' in category %}
-                        <i class="fas fa-cookie category-icon"></i>
-                    {% else %}
-                        <i class="fas fa-shopping-basket category-icon"></i>
-                    {% endif %}
-                    <h6 class="mb-0 small">{{ category }}</h6>
-                </div>
-            </a>
+        <!-- Action Buttons -->
+        <div class="hero-actions">
+            <button class="hero-btn primary-btn" id="searchBtn">
+                <span class="btn-content">
+                    <i class="fas fa-search"></i>
+                    <span>{{ get_translation('start_searching') }}</span>
+                </span>
+                <div class="btn-shine"></div>
+            </button>
         </div>
-        {% endfor %}
-    </div>
-</section>
-
-<!-- Featured Products -->
-<section class="mb-4">
-    <h2 class="section-title mb-3">{{ get_translation('featured_products') }}</h2>
-    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-6 g-2">
-        {% for product in featured_products[:3] %}
-        <div class="col">
-            <a href="{{ url_for('product_details', product_id=product.id) }}" class="text-decoration-none">
-                <div class="product-card h-100 position-relative">
-                    {% if product.image_url %}
-                        <img src="{{ product.image_url }}" class="product-image w-100" alt="{{ product.name }}">
-                    {% endif %}
-                    {% if product.discount > 0 %}
-                        <div class="position-absolute top-0 end-0 m-2">
-                            <span class="badge bg-danger">-{{ product.discount }}%</span>
-                        </div>
-                    {% endif %}
-                </div>
-            </a>
+        
+        <!-- Floating Elements -->
+        <div class="floating-elements">
+            <div class="float-element float-1"></div>
+            <div class="float-element float-2"></div>
+            <div class="float-element float-3"></div>
         </div>
-        {% endfor %}
     </div>
-</section>
-
-<!-- Categories with Products -->
-{% for category in categories[:3] %}
-<section class="mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="section-title mb-0">{{ category }}</h2>
-        <a href="{{ url_for('category', category=category) }}" class="btn btn-outline-success btn-sm">
-            {{ get_translation('view_all') }} <i class="fas fa-arrow-right ms-1"></i>
-        </a>
     </div>
-    
-    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-6 g-2">
-        {% for product in products_by_category[category][:3] %}
-        <div class="col">
-            <a href="{{ url_for('product_details', product_id=product.id) }}" class="text-decoration-none">
-                <div class="product-card h-100 position-relative">
-                    {% if product.image_url %}
-                        <img src="{{ product.image_url }}" class="product-image w-100" alt="{{ product.name }}">
-                    {% endif %}
-                    {% if product.discount > 0 %}
-                        <div class="position-absolute top-0 end-0 m-2">
-                            <span class="badge bg-danger">-{{ product.discount }}%</span>
-                        </div>
-                    {% endif %}
-                </div>
-            </a>
-        </div>
-        {% endfor %}
-    </div>
-</section>
-{% endfor %}
 
 <style>
-.category-scroll {
-    overflow-x: auto;
-    padding-bottom: 1rem;
-    margin: 0 -15px;
-    padding: 0 15px;
+/* Hero Section */
+.home-hero {
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    position: relative;
+    overflow: hidden;
 }
 
-.category-scroll::-webkit-scrollbar {
-    height: 8px;
+.hero-content {
+    text-align: center;
+    width: 100%;
+    max-width: 700px;
+    position: relative;
+    z-index: 2;
+    animation: fadeInUp 1s ease-out;
 }
 
-.category-scroll::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
+/* Logo Wrapper with Rings */
+.logo-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 3rem;
+    animation: logoFloat 4s ease-in-out infinite;
 }
 
-.category-scroll::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
+.logo-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 250px;
+    height: 250px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 50%;
+    animation: ringRotate 8s linear infinite;
 }
 
-.category-scroll::-webkit-scrollbar-thumb:hover {
-    background: #555;
+.logo-ring.ring-2 {
+    width: 280px;
+    height: 280px;
+    border-color: rgba(212, 175, 55, 0.2);
+    animation: ringRotate 10s linear infinite reverse;
 }
 
-.row.flex-nowrap {
-    margin-right: -15px;
-    margin-left: -15px;
+.logo-ring.ring-3 {
+    width: 310px;
+    height: 310px;
+    border-color: rgba(212, 175, 55, 0.1);
+    animation: ringRotate 12s linear infinite;
 }
 
-.row.flex-nowrap > [class*='col-'] {
-    padding-right: 15px;
-    padding-left: 15px;
+.hero-logo {
+    width: 220px;
+    height: 220px;
+    object-fit: contain;
+    cursor: pointer;
+    position: relative;
+    z-index: 10;
+    filter: drop-shadow(0 0 30px var(--yellow-glow));
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.hero-logo:hover {
+    transform: scale(1.15) rotate(5deg);
+    filter: drop-shadow(0 0 50px rgba(212, 175, 55, 0.6));
+}
+
+.hero-logo:active {
+    transform: scale(0.95);
+}
+
+/* Welcome Section */
+.welcome-section {
+    margin-bottom: 3rem;
+    animation: fadeIn 1.2s ease-out 0.3s both;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #ffffff 0%, var(--yellow) 50%, #ffffff 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
+    text-shadow: 0 0 30px var(--yellow-glow);
+}
+
+@keyframes shimmer {
+    to {
+        background-position: 200% center;
+    }
+}
+
+.title-line {
+    display: block;
+    position: relative;
+}
+
+.hero-subtitle {
+    font-size: 1.4rem;
+    color: var(--text-gray);
+    font-weight: 300;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Hero Buttons */
+.hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+}
+
+.hero-btn {
+    position: relative;
+    padding: 1.25rem 3rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    z-index: 1;
+}
+
+.primary-btn {
+    background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+    color: var(--dark-blue-night);
+    box-shadow: 0 10px 40px var(--yellow-glow), 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+.primary-btn:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 50px rgba(212, 175, 55, 0.5), 0 0 30px rgba(212, 175, 55, 0.4);
+}
+
+.primary-btn:active {
+    transform: translateY(-2px) scale(1.02);
+}
+
+.btn-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn-shine {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s;
+}
+
+.hero-btn:hover .btn-shine {
+    left: 100%;
+}
+
+/* Floating Elements */
+.floating-elements {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.float-element {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--yellow-glow) 0%, transparent 70%);
+    opacity: 0.3;
+    animation: float 15s ease-in-out infinite;
+}
+
+.float-1 {
+    width: 200px;
+    height: 200px;
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.float-2 {
+    width: 150px;
+    height: 150px;
+    top: 60%;
+    right: 15%;
+    animation-delay: 5s;
+}
+
+.float-3 {
+    width: 100px;
+    height: 100px;
+    bottom: 20%;
+    left: 20%;
+    animation-delay: 10s;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes logoFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes ringRotate {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+}
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.4;
+    }
+    33% {
+        transform: translate(30px, -30px) scale(1.1);
+        opacity: 0.6;
+    }
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
+        opacity: 0.3;
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .hero-logo {
+        width: 160px;
+        height: 160px;
+    }
+    
+    .logo-ring {
+        width: 180px;
+        height: 180px;
+    }
+    
+    .logo-ring.ring-2 {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .logo-ring.ring-3 {
+        width: 220px;
+        height: 220px;
+    }
+    
+    .hero-title {
+        font-size: 2.2rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .hero-btn {
+        padding: 1rem 2rem;
+        font-size: 0.95rem;
+    }
+    
+    .home-hero {
+        min-height: 85vh;
+        padding: 2rem 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-logo {
+        width: 130px;
+        height: 130px;
+    }
+    
+    .logo-ring {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .logo-ring.ring-2 {
+        width: 170px;
+        height: 170px;
+    }
+    
+    .logo-ring.ring-3 {
+        width: 190px;
+        height: 190px;
+    }
+    
+    .hero-title {
+        font-size: 1.8rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+    
+    .hero-btn {
+        padding: 0.9rem 1.75rem;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+    }
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const heroLogo = document.getElementById('heroLogo');
+    const searchBtn = document.getElementById('searchBtn');
+    
+    // Logo click animation and redirect
+    if (heroLogo) {
+        heroLogo.addEventListener('click', function() {
+            // Create ripple effect
+            const ripple = document.createElement('div');
+            ripple.style.position = 'absolute';
+            ripple.style.width = '300px';
+            ripple.style.height = '300px';
+            ripple.style.borderRadius = '50%';
+            ripple.style.background = 'radial-gradient(circle, rgba(212, 175, 55, 0.4) 0%, transparent 70%)';
+            ripple.style.top = '50%';
+            ripple.style.left = '50%';
+            ripple.style.transform = 'translate(-50%, -50%)';
+            ripple.style.animation = 'rippleExpand 0.8s ease-out';
+            ripple.style.pointerEvents = 'none';
+            
+            this.parentElement.appendChild(ripple);
+            
+            // Logo animation
+            this.style.transform = 'scale(1.3) rotate(360deg)';
+            this.style.transition = 'all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+            this.style.filter = 'drop-shadow(0 0 60px rgba(212, 175, 55, 0.8))';
+            
+            setTimeout(() => {
+                ripple.remove();
+                window.location.href = "{{ url_for('search') }}";
+            }, 800);
+        });
+    }
+    
+    // Search button click
+    if (searchBtn) {
+        searchBtn.addEventListener('click', function() {
+            // Button animation
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+                window.location.href = "{{ url_for('search') }}";
+            }, 150);
+        });
+    }
+});
+
+// Ripple animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes rippleExpand {
+        from {
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 1;
+        }
+        to {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %} 

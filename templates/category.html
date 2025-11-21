@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ category }} - Fresh Market{% endblock %}
+{% block title %}{{ category }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -22,7 +22,15 @@
         {% for product in products %}
         <div class="col">
             <div class="card h-100">
-                <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+                <div class="position-relative">
+                    <img src="{{ get_image_or_default(product.image_url) }}" class="card-img-top" alt="{{ product.name }}" loading="lazy">
+                    {% if product.brand %}
+                        <div class="position-absolute top-0 start-0 m-2">
+                            <img src="{{ get_image_or_default(product.brand.image_url) }}" alt="{{ product.brand.name }}" 
+                                 style="width: 35px; height: 35px; object-fit: contain; background: white; border: 1px solid #ddd; border-radius: 4px; padding: 3px;" loading="lazy">
+                        </div>
+                    {% endif %}
+                </div>
                 <div class="card-body">
                     <h5 class="card-title">{{ product.name }}</h5>
                     <p class="card-text">{{ product.description }}</p>

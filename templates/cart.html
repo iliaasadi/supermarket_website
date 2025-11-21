@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('cart') }} - Fresh Market{% endblock %}
+{% block title %}{{ get_translation('cart') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -27,7 +27,7 @@
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ item.product.image_url }}" 
+                                            <img src="{{ get_image_or_default(item.product.image_url) }}" loading="lazy"
                                                  alt="{{ item.product.name }}" 
                                                  style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"
                                                  class="me-3">
@@ -120,10 +120,16 @@
                         <div id="store-location" class="mb-3">
                             <label for="store_location_id" class="form-label">{{ get_translation('select_store_location') }}</label>
                             <select class="form-select" id="store_location_id" name="store_location_id" required>
+                                {% if default_location %}
+                                    {% for location in locations %}
+                                    <option value="{{ location.id }}" {% if location.id == default_location.id %}selected{% endif %}>{{ location.name }} - {{ location.address }}</option>
+                                    {% endfor %}
+                                {% else %}
                                 <option value="">{{ get_translation('choose_location') }}</option>
                                 {% for location in locations %}
                                 <option value="{{ location.id }}">{{ location.name }} - {{ location.address }}</option>
                                 {% endfor %}
+                                {% endif %}
                             </select>
                         </div>
 
@@ -145,30 +151,23 @@
                         </div>
                     </div>
 
-                    <!-- Payment Method Selection -->
+                    <!-- Payment Method - Fixed to Online -->
                     <div class="mb-3">
                         <h6 class="mb-2">{{ get_translation('payment_method') }}</h6>
                         <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="payment_method" id="cash" value="cash" checked>
-                            <label class="form-check-label" for="cash">
-                                {{ get_translation('cash_on_delivery') }}
-                            </label>
-                        </div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="payment_method" id="online" value="online">
+                            <input class="form-check-input" type="radio" name="payment_method" id="online" value="online" checked disabled>
                             <label class="form-check-label" for="online">
                                 <i class="fas fa-credit-card me-1"></i>{{ get_translation('pay_online') }}
                             </label>
                         </div>
-                        {# Wallet feature removed #}
                     </div>
 
                     <form action="{{ url_for('checkout') }}" method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <input type="hidden" name="delivery_type" id="delivery_type_input" value="pickup">
-                        <input type="hidden" name="store_location_id" id="store_location_input">
+                        <input type="hidden" name="store_location_id" id="store_location_input" value="{% if default_location %}{{ default_location.id }}{% endif %}">
                         <input type="hidden" name="delivery_address_id" id="delivery_address_input">
-                        <input type="hidden" name="payment_method" id="payment_method_input" value="cash">
+                        <input type="hidden" name="payment_method" id="payment_method_input" value="online">
                         
                         <!-- Order Description -->
                         <div class="mb-3">
@@ -312,14 +311,14 @@
         });
     });
 
-    // Update payment method input only
-    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            document.getElementById('payment_method_input').value = this.value;
-        });
-    });
+    // Payment method is fixed to online - no need to update
 
     // Update store location and delivery address hidden inputs
+    // Set default location on page load
+    {% if default_location %}
+    document.getElementById('store_location_input').value = '{{ default_location.id }}';
+    {% endif %}
+    
     document.getElementById('store_location_id').addEventListener('change', function() {
         document.getElementById('store_location_input').value = this.value;
     });

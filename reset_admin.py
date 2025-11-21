@@ -27,11 +27,6 @@ def reset_admin():
         db.session.commit()
         print("New admin user created successfully!")
 
-        # Create wallet for admin
-        admin_wallet = Wallet(user_id=admin.id, balance=0.0)
-        db.session.add(admin_wallet)
-        db.session.commit()
-        print("Admin wallet created successfully!")
 
         # Create admin's address
         admin_address = Address(
@@ -48,7 +43,7 @@ def reset_admin():
 
         # Create supermarket location
         store_location = StoreLocation(
-            name='Deniz Supermarket',
+            name='AMAZOON MARKET',
             address='ورزی شمالی',
             description='فروشگاه اصلی دنیز',
             is_active=True

@@ -1,281 +1,629 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('login') }} - Apple SuperMarket{% endblock %}
+{% block title %}{{ get_translation('login') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <i class="fas fa-user-circle"></i>
-            <h1>{{ get_translation('welcome_back') }}</h1>
-            <p>{{ get_translation('enter_phone_to_continue') }}</p>
-        </div>
-        <form method="POST" action="{{ url_for('login') }}" class="auth-form">
-            {{ form.hidden_tag() }}
-            
-            {% if form.step == 1 %}
-            <div class="form-group">
-                <label for="phone_number">
-                    <i class="fas fa-phone"></i>
-                    {{ get_translation('phone_number') }}
-                </label>
-                {{ form.phone_number(
-                    class="form-control",
-                    placeholder=get_translation('enter_phone_number'),
-                    pattern="^(\+98|0)?9\d{9}$",
-                    title=get_translation('phone_number_format')
-                ) }}
-                {% if form.phone_number.errors %}
-                <div class="error-message">
-                    {% for error in form.phone_number.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
+<div class="login-page">
+    <div class="login-glow glow-1"></div>
+    <div class="login-glow glow-2"></div>
+    <div class="login-glow glow-3"></div>
+
+    <div class="login-particles">
+        <span class="particle p1"></span>
+        <span class="particle p2"></span>
+        <span class="particle p3"></span>
+        <span class="particle p4"></span>
+        <span class="particle p5"></span>
+    </div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="card-glow-line"></div>
+            <div class="login-header">
+                <div class="login-icon-wrapper">
+                    <span class="login-ring ring-1"></span>
+                    <span class="login-ring ring-2"></span>
+                    <span class="login-ring ring-3"></span>
+                    <i class="fas fa-shield-alt login-icon"></i>
                 </div>
-                {% endif %}
-                <small class="form-text text-muted">{{ get_translation('phone_number_format') }}</small>
+                <h1>{{ get_translation('welcome_back') }}</h1>
+                <p>
+                    {% if form.step == 1 %}
+                        {{ get_translation('enter_phone_to_continue') }}
+                    {% else %}
+                        {{ get_translation('enter_verification_code') }}
+                    {% endif %}
+                </p>
             </div>
-            {% else %}
-            <div class="verification-info">
-                <p>{{ get_translation('verification_code_sent_to') }}: {{ form.phone_number.data }}</p>
-                <div class="countdown-timer">
-                    <span>{{ get_translation('code_expires_in') }}: </span>
-                    <span id="timer">2:00</span>
-                </div>
-                <button type="button" class="change-phone-btn" onclick="changePhoneNumber()">
-                    <i class="fas fa-edit"></i>
-                    {{ get_translation('change_phone_number') }}
-                </button>
-            </div>
-            <div class="form-group">
-                <label for="verification_code">
-                    <i class="fas fa-key"></i>
-                    {{ get_translation('verification_code') }}
-                </label>
-                {{ form.verification_code(
-                    class="form-control",
-                    placeholder=get_translation('enter_verification_code'),
-                    pattern="\d{6}",
-                    maxlength="6",
-                    minlength="6",
-                    required=true,
-                    title=get_translation('verification_code_format')
-                ) }}
-                {% if form.verification_code.errors %}
-                <div class="error-message">
-                    {% for error in form.verification_code.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                <small class="form-text text-muted">{{ get_translation('verification_code_format') }}</small>
+
+            {% if form.step == 2 %}
+            <div class="auto-fill-banner">
+                <i class="fas fa-bolt"></i>
+                <span>{{ get_translation('auto_fill_notice') }}</span>
             </div>
             {% endif %}
-            
-            {{ form.submit(class="btn btn-primary", value=get_translation('continue')) }}
-        </form>
+
+            <form method="POST" action="{{ url_for('login') }}" class="login-form">
+                {{ form.hidden_tag() }}
+
+                {% if form.step == 1 %}
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-phone"></i>
+                        <span>{{ get_translation('phone_number') }}</span>
+                    </label>
+                    <div class="phone-input-stack">
+                        <div class="phone-prefix">+98</div>
+                        <div class="input-shell">
+                            <i class="fas fa-phone input-icon"></i>
+                            {{ form.phone_number(
+                                class="form-control phone-input-field",
+                                placeholder="9123456789",
+                                dir="ltr",
+                                style="direction: ltr; text-align: left;",
+                                maxlength="10"
+                            ) }}
+                            <div class="focus-line"></div>
+                        </div>
+                    </div>
+                    <div class="input-hint">
+                        <i class="fas fa-info-circle"></i>
+                        <span>شماره تلفن معتبر ایران را وارد کنید</span>
+                    </div>
+                    {% if form.phone_number.errors %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {% for error in form.phone_number.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                {{ form.phone_number(type='hidden', value=session.get('login_phone', '')) }}
+                <div class="verification-panel">
+                    <p class="verification-target">
+                        {{ get_translation('verification_code_sent_to') }}:
+                        <span dir="ltr" style="direction: ltr;">{{ form.phone_number.data }}</span>
+                    </p>
+                    <div class="timer-chip">
+                        <i class="fas fa-clock"></i>
+                        <span>{{ get_translation('code_expires_in') }}</span>
+                        <strong id="timer">2:00</strong>
+                    </div>
+                    <button type="button" class="change-phone-btn" onclick="changePhoneNumber()">
+                        <i class="fas fa-undo"></i>
+                        {{ get_translation('change_phone_number') }}
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="verification_code">
+                        <i class="fas fa-lock"></i>
+                        <span>{{ get_translation('verification_code') }}</span>
+                    </label>
+                    <div class="input-shell">
+                        <i class="fas fa-key input-icon"></i>
+                        {{ form.verification_code(
+                            class="form-control verification-input",
+                            id="verification_code",
+                            placeholder=get_translation('enter_verification_code'),
+                            pattern="\d{6}",
+                            maxlength="6",
+                            minlength="6",
+                            required=true,
+                            autocomplete="one-time-code",
+                            inputmode="numeric",
+                            title=get_translation('verification_code_format'),
+                            dir="ltr",
+                            style="direction: ltr; text-align: center;"
+                        ) }}
+                        <div class="focus-line"></div>
+                    </div>
+                    
+                    {% if form.verification_code.errors %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {% for error in form.verification_code.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="submit-wrap">
+                    {{ form.submit(class="login-submit-btn", value=get_translation('continue')) }}
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <style>
-    .auth-container {
-        min-height: 80vh;
+    .login-page {
+        position: relative;
+        min-height: 90vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
-        background: linear-gradient(135deg, #f5f5f7 0%, #ffffff 100%);
+        padding: 2rem 1rem;
+        overflow: hidden;
     }
 
-    .auth-card {
-        background: white;
-        border-radius: 20px;
-        padding: 2.5rem;
+    .login-glow {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.5;
+        animation: glowDrift 10s ease-in-out infinite;
+    }
+
+    .glow-1 {
+        width: 420px;
+        height: 420px;
+        top: -10%;
+        left: -15%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 70%);
+    }
+
+    .glow-2 {
+        width: 360px;
+        height: 360px;
+        bottom: -5%;
+        right: -10%;
+        background: radial-gradient(circle, rgba(20, 30, 80, 0.5), transparent 70%);
+        animation-delay: 2s;
+    }
+
+    .glow-3 {
+        width: 300px;
+        height: 300px;
+        top: 40%;
+        right: 5%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.2), transparent 70%);
+        animation-delay: 4s;
+    }
+
+    @keyframes glowDrift {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(20px, -20px) scale(1.1); }
+    }
+
+    .login-particles {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: var(--yellow);
+        border-radius: 50%;
+        opacity: 0.6;
+        animation: particleRise 14s linear infinite;
+    }
+
+    .p1 { top: 75%; left: 15%; animation-delay: 0s; }
+    .p2 { top: 50%; right: 20%; animation-delay: 3s; }
+    .p3 { top: 30%; left: 30%; animation-delay: 6s; }
+    .p4 { bottom: 15%; right: 35%; animation-delay: 9s; }
+    .p5 { bottom: 5%; left: 45%; animation-delay: 12s; }
+
+    @keyframes particleRise {
+        0% { transform: translateY(0) translateX(0); opacity: 0; }
+        20% { opacity: 0.7; }
+        80% { opacity: 0.7; }
+        100% { transform: translateY(-90vh) translateX(40px); opacity: 0; }
+    }
+
+    .login-container {
         width: 100%;
-        max-width: 400px;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-        animation: fadeIn 0.5s ease;
+        max-width: 460px;
+        position: relative;
+        z-index: 2;
     }
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .login-card {
+        background: rgba(10, 14, 39, 0.78);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        border-radius: 26px;
+        padding: 2.75rem 2.25rem;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        position: relative;
+        overflow: hidden;
     }
 
-    .auth-header {
+    .card-glow-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+        opacity: 0.7;
+        animation: glowPulse 3.5s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+
+    .login-header {
         text-align: center;
         margin-bottom: 2rem;
     }
 
-    .auth-header i {
-        font-size: 3rem;
-        color: var(--primary-red);
-        margin-bottom: 1rem;
+    .login-icon-wrapper {
+        position: relative;
+        width: 125px;
+        height: 125px;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .auth-header h1 {
-        font-size: 1.8rem;
-        color: var(--dark-text);
+    .login-icon {
+        font-size: 2.8rem;
+        color: var(--yellow);
+        filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.4));
+        z-index: 2;
+        animation: iconPulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+        0%, 100% { transform: scale(1); filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.4)); }
+        50% { transform: scale(1.05); filter: drop-shadow(0 0 35px rgba(212, 175, 55, 0.6)); }
+    }
+
+    .login-ring {
+        position: absolute;
+        border-radius: 50%;
+        border: 2px solid rgba(212, 175, 55, 0.25);
+        animation: ringSpin 12s linear infinite;
+    }
+
+    .ring-1 { width: 115px; height: 115px; }
+    .ring-2 { width: 135px; height: 135px; animation-duration: 14s; animation-direction: reverse; border-color: rgba(212, 175, 55, 0.18); }
+    .ring-3 { width: 155px; height: 155px; animation-duration: 18s; border-color: rgba(212, 175, 55, 0.12); }
+
+    @keyframes ringSpin {
+        from { transform: rotate(0); }
+        to { transform: rotate(360deg); }
+    }
+
+    .login-header h1 {
+        color: var(--text-light);
+        font-size: 2rem;
         margin-bottom: 0.5rem;
     }
 
-    .auth-header p {
-        color: var(--gray-text);
-        font-size: 0.9rem;
+    .login-header p {
+        color: var(--text-gray);
+        font-size: 1rem;
+        margin: 0;
     }
 
-    .auth-form {
+    .auto-fill-banner {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.9rem 1rem;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        border-radius: 14px;
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .auto-fill-banner i {
+        color: var(--yellow);
+        font-size: 1.1rem;
+    }
+
+    .login-form {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.75rem;
     }
 
     .form-group {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.75rem;
     }
 
-    .form-group label {
-        color: var(--dark-text);
-        font-weight: 500;
+    .form-label {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        color: var(--text-light);
+        font-weight: 600;
     }
 
-    .form-group label i {
-        color: var(--gray-text);
+    .form-label i {
+        color: var(--yellow);
+    }
+
+    .phone-input-stack {
+        display: flex;
+        gap: 0.6rem;
+        align-items: stretch;
+        direction: ltr;
+    }
+
+    .phone-prefix {
+        min-width: 70px;
+        padding: 1rem 1.1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        background: rgba(10, 14, 39, 0.7);
+        color: var(--text-gray);
+        font-weight: 600;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .phone-input-stack:focus-within .phone-prefix {
+        border-color: var(--yellow);
+        color: var(--yellow);
+        background: rgba(10, 14, 39, 0.9);
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+    }
+
+    .input-shell {
+        position: relative;
+        flex: 1;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        right: 1rem;
+        color: var(--yellow);
+        font-size: 1rem;
+        pointer-events: none;
     }
 
     .form-control {
-        padding: 0.8rem 1rem;
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
+        width: 100%;
+        padding: 1rem 2.75rem 1rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        background: rgba(10, 14, 39, 0.7);
+        color: var(--text-light);
         font-size: 1rem;
         transition: all 0.3s ease;
+        caret-color: var(--yellow);
+    }
+
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.45);
     }
 
     .form-control:focus {
         outline: none;
-        border-color: var(--primary-red);
-        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+        border-color: var(--yellow);
+        background: rgba(10, 14, 39, 0.9);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+    }
+
+    .focus-line {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 1rem;
+        left: 1rem;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .form-control:focus + .focus-line {
+        opacity: 1;
+    }
+
+    .phone-input-field,
+    .phone-input-field:focus,
+    .verification-input,
+    .verification-input:focus {
+        color: var(--text-light) !important;
+        caret-color: var(--yellow);
+        -webkit-text-fill-color: var(--text-light);
+        background: rgba(10, 14, 39, 0.9);
+    }
+
+    .verification-input {
+        text-align: center;
+        letter-spacing: 0.35rem;
+        font-size: 1.3rem;
+        direction: ltr;
+    }
+
+    .input-hint {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--text-gray);
+        font-size: 0.85rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.5rem 0.75rem;
+        border-radius: 10px;
+    }
+
+    .input-hint i {
+        color: var(--yellow);
     }
 
     .error-message {
-        color: var(--primary-red);
-        font-size: 0.8rem;
-        margin-top: 0.3rem;
-    }
-
-    .form-text {
-        font-size: 0.8rem;
-        color: var(--gray-text);
-        margin-top: 0.3rem;
-    }
-
-    .verification-info {
-        background-color: #f8f9fa;
-        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #ff6b81;
+        font-size: 0.85rem;
+        padding: 0.55rem 0.8rem;
         border-radius: 10px;
-        text-align: center;
-        margin-bottom: 1rem;
+        background: rgba(255, 107, 129, 0.12);
+        border: 1px solid rgba(255, 107, 129, 0.25);
     }
 
-    .verification-info p {
-        color: var(--dark-text);
-        margin-bottom: 1rem;
+    .verification-panel {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        border-radius: 18px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
     }
 
-    .countdown-timer {
-        font-size: 1.1rem;
-        font-weight: 500;
-        color: var(--primary-red);
-        margin: 1rem 0;
+    .verification-target {
+        color: var(--text-light);
+        margin: 0;
+    }
+
+    .timer-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.4rem 0.9rem;
+        background: rgba(10, 14, 39, 0.85);
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: var(--yellow);
+        font-size: 0.9rem;
+        width: fit-content;
+    }
+
+    .timer-chip strong {
+        font-size: 1rem;
+        letter-spacing: 0.05rem;
     }
 
     .change-phone-btn {
-        background: none;
-        border: 1px solid var(--primary-red);
-        color: var(--primary-red);
-        padding: 0.8rem 1.5rem;
-        border-radius: 10px;
+        margin-top: 0.5rem;
+        align-self: stretch;
+        border-radius: 14px;
+        border: 1px solid rgba(212, 175, 55, 0.35);
+        background: transparent;
+        color: var(--yellow);
+        padding: 0.85rem;
+        font-weight: 600;
         cursor: pointer;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        margin: 1rem auto 0;
+        transition: all 0.3s ease;
     }
 
     .change-phone-btn:hover {
-        background-color: var(--primary-red);
-        color: white;
+        background: rgba(212, 175, 55, 0.12);
         transform: translateY(-2px);
     }
 
-    .btn-primary {
-        background: var(--primary-red);
-        color: white;
-        padding: 1rem;
+    .submit-wrap {
+        margin-top: 0.5rem;
+    }
+
+    .login-submit-btn {
+        width: 100%;
+        padding: 1rem 2rem;
         border: none;
-        border-radius: 12px;
-        font-size: 1rem;
-        font-weight: 500;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        font-weight: 700;
+        font-size: 1.05rem;
         cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        margin-top: 1rem;
+        box-shadow: 0 12px 30px rgba(212, 175, 55, 0.35), 0 0 25px rgba(212, 175, 55, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .btn-primary:hover {
-        background: var(--secondary-red);
-        transform: translateY(-2px);
+    .login-submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 40px rgba(212, 175, 55, 0.4), 0 0 35px rgba(212, 175, 55, 0.25);
     }
 
-    @media (max-width: 480px) {
-        .auth-card {
-            padding: 2rem;
+    .login-submit-btn:active {
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 575.98px) {
+        .login-card {
+            padding: 2.2rem 1.6rem;
+            border-radius: 20px;
         }
 
-        .auth-header h1 {
-            font-size: 1.5rem;
+        .login-icon-wrapper {
+            width: 100px;
+            height: 100px;
+        }
+
+        .login-icon {
+            font-size: 2.3rem;
+        }
+
+        .ring-1 { width: 95px; height: 95px; }
+        .ring-2 { width: 110px; height: 110px; }
+        .ring-3 { width: 125px; height: 125px; }
+
+        .phone-prefix {
+            min-width: 60px;
+            padding: 0.85rem 0.9rem;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            padding: 0.9rem 2.2rem 0.9rem 0.8rem;
+            font-size: 0.95rem;
+        }
+
+        .verification-input {
+            letter-spacing: 0.2rem;
+            font-size: 1.1rem;
+        }
+
+        .login-submit-btn {
+            padding: 0.9rem 1.5rem;
+            font-size: 1rem;
         }
     }
 </style>
 
 <script>
 function startCountdown() {
-    let timeLeft = 120; // 2 minutes in seconds
+    let timeLeft = 120;
     const timerElement = document.getElementById('timer');
-    
+    if (!timerElement) return;
+
     const countdown = setInterval(() => {
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
-        
         timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
+
         if (timeLeft <= 0) {
             clearInterval(countdown);
             window.location.href = "{{ url_for('login') }}";
         }
-        
+
         timeLeft--;
     }, 1000);
 }
 
 function changePhoneNumber() {
-    // Clear the session data and redirect to step 1
     fetch("{{ url_for('login') }}", {
         method: 'POST',
         headers: {
@@ -287,44 +635,73 @@ function changePhoneNumber() {
     });
 }
 
-// Start countdown if we're on step 2
-if (document.getElementById('timer')) {
-    document.addEventListener('DOMContentLoaded', startCountdown);
-}
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('timer')) {
+        startCountdown();
+    }
 
-// Format phone number as user types
-document.addEventListener('DOMContentLoaded', function() {
-    const phoneInput = document.querySelector('input[name="phone_number"]');
+    const phoneInput = document.querySelector('.phone-input-field');
     if (phoneInput) {
-        // Set initial value to +98
-        phoneInput.value = '+98';
-        
-        phoneInput.addEventListener('input', function(e) {
-            let value = e.target.value;
-            
-            // Remove any non-digit characters except +
-            value = value.replace(/[^\d+]/g, '');
-            
-            // Ensure it starts with +98
-            if (!value.startsWith('+98')) {
-                value = '+98' + value.replace(/^\+98/, '');
+        phoneInput.addEventListener('input', (e) => {
+            let digits = e.target.value.replace(/\D/g, '');
+            if (digits.length > 10) {
+                digits = digits.slice(0, 10);
             }
-            
-            // Limit to 13 characters (+98 + 10 digits)
-            if (value.length > 13) {
-                value = value.slice(0, 13);
-            }
-            
-            e.target.value = value;
+            e.target.value = digits;
         });
 
-        // Prevent backspace from deleting +98
-        phoneInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Backspace' && this.value === '+98') {
-                e.preventDefault();
-            }
+        phoneInput.addEventListener('paste', (e) => {
+            e.preventDefault();
+            let digits = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+            digits = digits.slice(0, 10);
+            phoneInput.value = digits;
         });
+
+        const form = phoneInput.closest('form');
+        if (form) {
+            form.addEventListener('submit', () => {
+                let digits = phoneInput.value.replace(/\D/g, '');
+                if (digits && digits.length >= 10) {
+                    digits = digits.slice(-10);
+                    phoneInput.value = '+98' + digits;
+                }
+            });
+        }
     }
 });
+
+if ('OTPCredential' in window) {
+    document.addEventListener('DOMContentLoaded', function() {
+        const verificationCodeInput = document.getElementById('verification_code');
+        const timer = document.getElementById('timer');
+        if (!verificationCodeInput || !timer) return;
+
+        const abortController = new AbortController();
+        setTimeout(() => abortController.abort(), 30000);
+
+        navigator.credentials.get({
+            otp: { transport: ['sms'] },
+            signal: abortController.signal
+        }).then(otp => {
+            if (otp && otp.code) {
+                verificationCodeInput.value = otp.code;
+                verificationCodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+                const form = verificationCodeInput.closest('form');
+                if (form) {
+                    setTimeout(() => {
+                        if (verificationCodeInput.value.length === 6) {
+                            form.submit();
+                        }
+                    }, 300);
+                }
+            }
+        }).catch(err => {
+            if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+                console.log('WebOTP API:', err.name);
+            }
+        });
+    });
+}
 </script>
 {% endblock %} 

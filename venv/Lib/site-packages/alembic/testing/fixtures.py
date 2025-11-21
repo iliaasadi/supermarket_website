@@ -8,6 +8,9 @@ import re
 import shutil
 from typing import Any
 from typing import Dict
+from typing import Generator
+from typing import Literal
+from typing import overload
 
 from sqlalchemy import Column
 from sqlalchemy import create_mock_engine
@@ -23,6 +26,7 @@ from sqlalchemy.testing.assertions import eq_
 from sqlalchemy.testing.fixtures import FutureEngineMixin
 from sqlalchemy.testing.fixtures import TablesTest as SQLAlchemyTablesTest
 from sqlalchemy.testing.fixtures import TestBase as SQLAlchemyTestBase
+from sqlalchemy.testing.util import drop_all_tables_from_metadata
 
 import alembic
 from .assertions import _get_dialect
@@ -52,7 +56,7 @@ class TestBase(SQLAlchemyTestBase):
                 shutil.rmtree(file_path)
 
     @contextmanager
-    def pushd(self, dirname):
+    def pushd(self, dirname) -> Generator[None, None, None]:
         current_dir = os.getcwd()
         try:
             os.chdir(dirname)
@@ -84,8 +88,57 @@ class TestBase(SQLAlchemyTestBase):
 
     @testing.fixture
     def connection(self):
+        global _connection_fixture_connection
+
         with config.db.connect() as conn:
+            _connection_fixture_connection = conn
             yield conn
+
+            _connection_fixture_connection = None
+
+    @testing.fixture
+    def restore_operations(self):
+        """Restore runners for modified operations"""
+
+        saved_impls = None
+        op_cls = None
+
+        def _save_attrs(_op_cls):
+            nonlocal saved_impls, op_cls
+            saved_impls = _op_cls._to_impl._registry.copy()
+            op_cls = _op_cls
+
+        yield _save_attrs
+
+        if op_cls is not None and saved_impls is not None:
+            op_cls._to_impl._registry = saved_impls
+
+    @config.fixture()
+    def metadata(self, request):
+        """Provide bound MetaData for a single test, dropping afterwards."""
+
+        from sqlalchemy.sql import schema
+
+        metadata = schema.MetaData()
+        request.instance.metadata = metadata
+        yield metadata
+        del request.instance.metadata
+
+        if (
+            _connection_fixture_connection
+            and _connection_fixture_connection.in_transaction()
+        ):
+            trans = _connection_fixture_connection.get_transaction()
+            trans.rollback()
+            with _connection_fixture_connection.begin():
+                drop_all_tables_from_metadata(
+                    metadata, _connection_fixture_connection
+                )
+        else:
+            drop_all_tables_from_metadata(metadata, config.db)
+
+
+_connection_fixture_connection = None
 
 
 class TablesTest(TestBase, SQLAlchemyTablesTest):
@@ -108,8 +161,24 @@ def capture_db(dialect="postgresql://"):
 _engs: Dict[Any, Any] = {}
 
 
+@overload
 @contextmanager
-def capture_context_buffer(**kw):
+def capture_context_buffer(
+    bytes_io: Literal[True], **kw: Any
+) -> Generator[io.BytesIO, None, None]: ...
+
+
+@overload
+@contextmanager
+def capture_context_buffer(
+    **kw: Any,
+) -> Generator[io.StringIO, None, None]: ...
+
+
+@contextmanager
+def capture_context_buffer(
+    **kw: Any,
+) -> Generator[io.StringIO | io.BytesIO, None, None]:
     if kw.pop("bytes_io", False):
         buf = io.BytesIO()
     else:
@@ -127,7 +196,9 @@ def capture_context_buffer(**kw):
 
 
 @contextmanager
-def capture_engine_context_buffer(**kw):
+def capture_engine_context_buffer(
+    **kw: Any,
+) -> Generator[io.StringIO, None, None]:
     from .env import _sqlite_file_db
     from sqlalchemy import event
 

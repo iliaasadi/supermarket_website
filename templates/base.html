@@ -1,231 +1,276 @@
 <!DOCTYPE html>
-<html lang="{{ current_language }}" dir="{{ 'rtl' if current_language == 'fa' else 'ltr' }}">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %} - Deniz Supermarket</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>{% block title %}{% endblock %} - AMAZOON MARKET</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         :root {
-            --primary-red: #dc3545;
-            --secondary-red: #c82333;
-            --light-red: #f8d7da;
-            --dark-text: #2d3436;
-            --gray-text: #636e72;
-            --light-gray: #f5f6fa;
-            --white: #ffffff;
+            --dark-blue-night: #0a0e27;
+            --dark-blue-night-light: #141b3d;
+            --dark-blue-night-lighter: #1e2749;
+            --yellow: #d4af37;
+            --yellow-bright: #e6c866;
+            --yellow-dark: #b8941f;
+            --yellow-glow: rgba(212, 175, 55, 0.2);
+            --text-light: #ffffff;
+            --text-gray: #b0b0b0;
+            --text-dark: #666666;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
         }
 
         body {
-            background-color: var(--light-gray);
-            color: var(--dark-text);
+            font-family: 'Poppins', sans-serif;
+            background: var(--dark-blue-night);
+            color: var(--text-light);
             line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+            min-height: 100vh;
         }
 
-        [dir="rtl"] {
-            text-align: right;
+        /* Video Background */
+        .video-background {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2;
+            object-fit: cover;
+            opacity: 0.6;
         }
 
-        [dir="rtl"] .navbar-nav {
-            padding-right: 0;
+        /* Dark Blue Night Overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(10, 14, 39, 0.65) 0%, rgba(10, 14, 39, 0.75) 100%);
+            z-index: -1;
+            pointer-events: none;
         }
 
-        [dir="rtl"] .me-2 {
-            margin-right: 0 !important;
-            margin-left: 0.5rem !important;
+        /* Animated Background Particles */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, var(--yellow-glow) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, var(--yellow-glow) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, var(--yellow-glow) 0%, transparent 50%);
+            z-index: -1;
+            animation: particleFloat 20s ease-in-out infinite;
+            opacity: 0.15;
+            pointer-events: none;
         }
 
-        [dir="rtl"] .ms-auto {
-            margin-left: 0 !important;
-            margin-right: auto !important;
+        @keyframes particleFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
         }
 
+        /* Navbar */
         .navbar {
-            background-color: var(--white);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: rgba(10, 14, 39, 0.85) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
             padding: 1rem 0;
+            box-shadow: 0 4px 30px rgba(212, 175, 55, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .navbar.scrolled {
+            background: rgba(10, 14, 39, 0.95) !important;
+            box-shadow: 0 8px 40px rgba(212, 175, 55, 0.2);
         }
 
         .navbar-brand {
-            color: var(--primary-red);
-            font-size: 1.8rem;
-            font-weight: 700;
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            padding: 0.75rem 0;
         }
 
-        .navbar-brand img {
-            height: 40px;
-            width: auto;
-            object-fit: contain;
-            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.1));
-        }
-
-        .navbar-brand:hover {
-            color: var(--secondary-red);
-            transform: translateY(-1px);
-            transition: all 0.3s ease;
-        }
-
-        .market-name {
+        .navbar-brand-text {
             font-size: 2rem;
             font-weight: 800;
-            background: linear-gradient(45deg, var(--primary-red), var(--secondary-red));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: none;
+            color: var(--yellow);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px var(--yellow-glow), 0 0 40px rgba(212, 175, 55, 0.3);
+            transition: all 0.3s ease;
+            text-decoration: none;
         }
 
+        .navbar-brand-text:hover {
+            color: var(--yellow-bright);
+            text-shadow: 0 0 30px var(--yellow-glow), 0 0 60px rgba(212, 175, 55, 0.5);
+            transform: scale(1.05);
+        }
+
+        .navbar-brand img.main-logo {
+            display: none;
+        }
+
+        /* Navigation Links */
         .nav-link {
-            color: var(--dark-text);
+            color: var(--text-light) !important;
             font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 12px;
             transition: all 0.3s ease;
             position: relative;
+            margin: 0 0.25rem;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: var(--yellow);
+            transition: width 0.3s ease;
         }
 
         .nav-link:hover {
-            color: var(--primary-red);
-            background-color: var(--light-red);
+            color: var(--yellow) !important;
+            background: rgba(255, 215, 0, 0.1);
         }
 
-        .nav-link .badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            transform: translate(-50%, -50%);
+        .nav-link:hover::before {
+            width: 80%;
         }
 
-        .search-input {
-            width: 100%;
+        /* Badge */
+        .badge {
+            background: var(--yellow) !important;
+            color: var(--black) !important;
+            font-weight: 700;
+            box-shadow: 0 0 15px var(--yellow-glow);
+        }
+
+        /* Dropdown */
+        .dropdown-menu {
+            background: rgba(0, 0, 0, 0.95) !important;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px var(--yellow-glow);
+            border-radius: 12px;
+            padding: 0.5rem;
+        }
+
+        .dropdown-item {
+            color: var(--text-light) !important;
+            border-radius: 8px;
             padding: 0.75rem 1rem;
-            border: 2px solid var(--light-gray);
-            border-radius: 12px;
-            font-size: 0.95rem;
             transition: all 0.3s ease;
         }
 
-        .search-input:focus {
-            border-color: var(--primary-red);
-            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
-            outline: none;
+        .dropdown-item:hover {
+            background: rgba(255, 215, 0, 0.2) !important;
+            color: var(--yellow) !important;
+            transform: translateX(-5px);
         }
 
+        /* Buttons */
         .btn-primary {
-            background-color: var(--primary-red);
+            background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+            color: var(--dark-blue-night);
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            font-weight: 500;
+            padding: 0.875rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 20px var(--yellow-glow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .btn-primary:hover {
-            background-color: var(--secondary-red);
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
+            background: linear-gradient(135deg, var(--yellow-bright) 0%, var(--yellow) 100%);
         }
 
-        .category-card {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        /* Search Input */
+        .search-input {
+            background: rgba(0, 0, 0, 0.6) !important;
+            border: 2px solid rgba(255, 215, 0, 0.3) !important;
+            color: var(--text-light) !important;
+            border-radius: 50px;
+            padding: 0.875rem 1.5rem;
             transition: all 0.3s ease;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
-        .category-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        .search-input {
+            background: rgba(10, 14, 39, 0.6) !important;
         }
 
-        .category-icon {
-            font-size: 2rem;
-            color: var(--primary-red);
-            margin-bottom: 1rem;
+        .search-input:focus {
+            background: rgba(10, 14, 39, 0.8) !important;
+            border-color: var(--yellow) !important;
+            box-shadow: 0 0 20px var(--yellow-glow) !important;
+            outline: none;
         }
 
-        .product-card {
-            background: var(--white);
-            border-radius: 16px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        .search-input::placeholder {
+            color: var(--text-gray);
         }
 
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .product-image {
-            height: 200px;
-            object-fit: cover;
-        }
-
-        .product-info {
-            padding: 1.5rem;
-        }
-
-        .product-title {
-            font-weight: 600;
-            color: var(--dark-text);
-            margin-bottom: 0.5rem;
-        }
-
-        .product-price {
-            color: var(--primary-red);
-            font-weight: 700;
-            font-size: 1.25rem;
-        }
-
-        .cart-badge {
-            background-color: var(--primary-red);
-            color: var(--white);
-            border-radius: 50%;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            position: absolute;
-            top: -5px;
-            right: -5px;
-        }
-
+        /* Flash Messages */
         .flash-messages {
             position: fixed;
-            top: 5rem;
+            top: 6rem;
             right: 2rem;
             z-index: 1000;
         }
 
         .flash-message {
-            background-color: var(--primary-red);
-            color: var(--white);
-            padding: 1rem 2rem;
-            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.95) 0%, rgba(184, 148, 31, 0.95) 100%);
+            color: var(--dark-blue-night);
+            padding: 1.25rem 2rem;
+            border-radius: 15px;
             margin-bottom: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            animation: slideIn 0.3s ease;
+            box-shadow: 0 8px 30px var(--yellow-glow);
+            animation: slideInRight 0.5s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+            border: 2px solid rgba(212, 175, 55, 0.5);
         }
 
-        @keyframes slideIn {
+        @keyframes slideInRight {
             from {
-                transform: translateX(100%);
+                transform: translateX(150%);
                 opacity: 0;
             }
             to {
@@ -234,121 +279,116 @@
             }
         }
 
-        .hero-section {
-            background: linear-gradient(135deg, var(--light-red) 0%, var(--white) 100%);
-            padding: 4rem 0;
-            margin-bottom: 2rem;
-            border-radius: 24px;
+        /* Cards */
+        .category-card, .product-card {
+            background: rgba(10, 14, 39, 0.7);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 20px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
         }
 
-        .section-title {
-            color: var(--dark-text);
-            font-weight: 700;
-            margin-bottom: 2rem;
+        .category-card:hover, .product-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--yellow);
+            box-shadow: 0 15px 40px var(--yellow-glow);
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(10, 14, 39, 0.9);
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+            color: var(--text-light);
+            padding: 2rem 0;
+        }
+
+        /* Main Content */
+        main {
             position: relative;
-            display: inline-block;
+            z-index: 1;
+            min-height: calc(100vh - 200px);
         }
 
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 0;
-            width: 50%;
-            height: 4px;
-            background-color: var(--primary-red);
-            border-radius: 2px;
+        /* Mobile Menu */
+        .navbar-toggler {
+            border: 2px solid rgba(212, 175, 55, 0.5);
+            border-radius: 8px;
+            padding: 0.5rem;
         }
 
-        @media (max-width: 768px) {
-            .search-form {
-                margin: 1rem 0;
+        .navbar-toggler:focus {
+            box-shadow: 0 0 15px var(--yellow-glow);
             }
             
-            .navbar-nav {
-                margin-top: 1rem;
-            }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(212, 175, 55, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
-        /* Mobile Menu Styles */
         @media (max-width: 991.98px) {
             .navbar-collapse {
-                background: white;
-                padding: 1rem;
-                border-radius: 0.5rem;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                margin-top: 0.5rem;
-            }
-            
-            .navbar-nav {
-                gap: 0.5rem;
-            }
-            
-            .nav-item {
-                padding: 0.5rem 0;
+                background: rgba(10, 14, 39, 0.98);
+                border: 1px solid rgba(212, 175, 55, 0.3);
+                border-radius: 15px;
+                padding: 1.5rem;
+                margin-top: 1rem;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             }
             
             .nav-link {
-                padding: 0.5rem 1rem;
-                border-radius: 0.25rem;
-            }
-            
-            .nav-link:hover {
-                background-color: #f8f9fa;
-            }
-            
-            .dropdown-menu {
-                border: none;
-                box-shadow: none;
-                padding-left: 1rem;
-            }
-            
-            .navbar-toggler {
-                border: none;
-                padding: 0.5rem;
-            }
-            
-            .navbar-toggler:focus {
-                box-shadow: none;
+                margin: 0.5rem 0;
             }
         }
 
-        .support-numbers, .poem {
-            display: none;
+        @media (max-width: 768px) {
+            .navbar-brand img.main-logo {
+                width: 100px;
+                height: 100px;
+            }
         }
 
-        footer .support-numbers {
-            display: block;
-            font-size: 1rem;
-            color: var(--gray-text);
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            }
+            
+        ::-webkit-scrollbar-track {
+            background: var(--black);
         }
 
-        footer .support-numbers a {
-            color: var(--primary-red);
-            text-decoration: none;
-            transition: color 0.3s ease;
-            font-weight: 500;
+        ::-webkit-scrollbar-thumb {
+            background: var(--yellow);
+            border-radius: 5px;
         }
 
-        footer .support-numbers a:hover {
-            color: var(--secondary-red);
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--yellow-bright);
+        }
+
+        /* Dropdown divider */
+        .dropdown-divider {
+            border-color: rgba(212, 175, 55, 0.3);
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <!-- Video Background -->
+    <video id="backgroundVideo" autoplay muted loop playsinline class="video-background">
+        <source src="{{ url_for('static', filename='uploads/WhatsApp Video 2025-11-21 at 01.53.51.mp4') }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="Deniz Supermarket Logo">
-                <span class="market-name">{{ get_translation('deniz_supermarket') }}</span>
+            <a class="navbar-brand home-logo" href="{{ url_for('index') }}">
+                <span class="navbar-brand-text">Amazoon Market</span>
+                <img src="{{ url_for('static', filename='images/logo.jpeg') }}?v={{ timestamp }}" alt="AMAZOON MARKET Logo" loading="lazy" class="main-logo">
             </a>
             
-            <!-- Mobile Menu Button -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                <i class="fas fa-bars"></i>
+                <span class="navbar-toggler-icon"></span>
             </button>
 
-            <!-- Navigation Content -->
             <div class="collapse navbar-collapse" id="navbarContent">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     {% if current_user.is_authenticated %}
@@ -363,20 +403,20 @@
                                 <i class="fas fa-shopping-bag me-2"></i>{{ get_translation('manage_orders') }}
                             </a>
                         </li>
-                        <!-- <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin_users') }}">
-                                <i class="fas fa-user-check me-2"></i>{{ get_translation('verify_users') }}
-                            </a>
-                        </li> -->
                         {% endif %}
                         <li class="nav-item">
                             <a class="nav-link position-relative" href="{{ url_for('cart') }}">
                                 <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('cart') }}
                                 {% if cart_count > 0 %}
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill">
                                         {{ cart_count }}
                                     </span>
                                 {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('support') }}">
+                                <i class="fas fa-headset me-2"></i>{{ get_translation('support') }}
                             </a>
                         </li>
                         <li class="nav-item dropdown">
@@ -387,7 +427,7 @@
                                 <li><a class="dropdown-item" href="{{ url_for('profile') }}">
                                     <i class="fas fa-user-circle me-2"></i>{{ get_translation('profile') }}
                                 </a></li>
-                                <li><hr class="dropdown-divider"></li>
+                                <li><hr class="dropdown-divider" style="border-color: rgba(255, 215, 0, 0.3);"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('logout') }}">
                                     <i class="fas fa-sign-out-alt me-2"></i>{{ get_translation('logout') }}
                                 </a></li>
@@ -395,21 +435,16 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('support') }}">
+                                <i class="fas fa-headset me-2"></i>{{ get_translation('support') }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('login') }}">
                                 <i class="fas fa-sign-in-alt me-2"></i>{{ get_translation('login') }}
                             </a>
                         </li>
-                        <!-- <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('register') }}">
-                                <i class="fas fa-user-plus me-2"></i>{{ get_translation('register') }}
-                            </a>
-                        </li> -->
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('set_language', language='en' if current_language == 'fa' else 'fa') }}">
-                            <i class="fas fa-globe me-2"></i>{{ 'English' if current_language == 'fa' else 'فارسی' }}
-                        </a>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -432,25 +467,14 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer mt-5 py-3 bg-white">
+    <footer class="footer mt-5">
         <div class="container text-center">
             <div class="row">
                 <div class="col-12">
                     <p class="mb-0">
-                        <i class="fas fa-phone-alt me-2"></i>
-                        {{ get_translation('support') }}: 
-                        <a href="tel:+989391969992" class="text-decoration-none">
-                            <i class="fas fa-phone me-1"></i>+98 939 196 9992
-                        </a> |
-                        <a href="tel:+982144107000" class="text-decoration-none">
-                            <i class="fas fa-phone me-1"></i>+98 21 4410 7000
+                        <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=616503&Code=6yxNIT859N4vNzcMnOYkw5QK0l5Uzzek'>
+                            <img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=616503&Code=6yxNIT859N4vNzcMnOYkw5QK0l5Uzzek' alt='' style='cursor:pointer' code='6yxNIT859N4vNzcMnOYkw5QK0l5Uzzek' loading="lazy">
                         </a>
-                        <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=616503&Code=6yxNIT859N4vNzcMnOYkw5QK0l5Uzzek'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=616503&Code=6yxNIT859N4vNzcMnOYkw5QK0l5Uzzek' alt='' style='cursor:pointer' code='6yxNIT859N4vNzcMnOYkw5QK0l5Uzzek'>
-                        </a>
-                    </p>
-                    <p class="mt-3 text-muted">
-                        <i class="fas fa-info-circle me-2"></i>
-                        {{ get_translation('click_categories_for_more') }}
                     </p>
                 </div>
             </div>
@@ -458,15 +482,39 @@
     </footer>
 
     <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Auto-hide flash messages
         document.addEventListener('DOMContentLoaded', function() {
-            // Auto-hide flash messages
             const flashMessages = document.querySelectorAll('.flash-message');
             flashMessages.forEach(message => {
                 setTimeout(() => {
                     message.style.opacity = '0';
+                    message.style.transform = 'translateX(150%)';
                     setTimeout(() => message.remove(), 300);
                 }, 5000);
             });
+
+            // Ensure video background plays
+            const video = document.getElementById('backgroundVideo');
+            if (video) {
+                video.play().catch(function(error) {
+                    // Auto-play was prevented, try again on user interaction
+                    console.log('Video autoplay prevented, will play on interaction');
+                    document.addEventListener('click', function playVideo() {
+                        video.play();
+                        document.removeEventListener('click', playVideo);
+                    }, { once: true });
+                });
+            }
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

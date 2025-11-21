@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ product.name }} - Fresh Market{% endblock %}
+{% block title %}{{ product.name }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -8,9 +8,7 @@
         <!-- Product Image -->
         <div class="col-md-6 mb-4">
             <div class="position-relative">
-                {% if product.image_url %}
-                    <img src="{{ product.image_url }}" class="img-fluid rounded" alt="{{ product.name }}">
-                {% endif %}
+                <img src="{{ get_image_or_default(product.image_url) }}" class="img-fluid rounded" alt="{{ product.name }}" loading="lazy">
                 {% if product.discount > 0 %}
                     <div class="position-absolute top-0 end-0 m-3">
                         <span class="badge bg-danger fs-5">-{{ product.discount }}%</span>
@@ -39,6 +37,13 @@
                 <span class="badge bg-success">{{ product.category }}</span>
                 {% if product.discount > 0 %}
                     <span class="badge bg-danger">-{{ product.discount }}%</span>
+                {% endif %}
+                {% if product.brand %}
+                    <div class="mt-2 d-flex align-items-center">
+                        <img src="{{ get_image_or_default(product.brand.image_url) }}" alt="{{ product.brand.name }}" 
+                             style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border: 1px solid #ddd; border-radius: 4px; padding: 4px;" loading="lazy">
+                        <span class="badge bg-info">{{ product.brand.name }}</span>
+                    </div>
                 {% endif %}
             </div>
             

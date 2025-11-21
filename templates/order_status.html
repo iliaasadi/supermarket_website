@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('order_details') }} #{{ order.id }} - Deniz Supermarket{% endblock %}
+{% block title %}{{ get_translation('order_details') }} #{{ order.id }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -51,7 +51,7 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" 
+                                                <img src="{{ get_image_or_default(item.product.image_url) }}" alt="{{ item.product.name }}" loading="lazy"
                                                      class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
                                                 <div>
                                                     <div>{{ item.product.name }}</div>
@@ -98,7 +98,7 @@
                                 {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <p><strong>{{ get_translation('payment_method') }}:</strong> {{ get_translation(order.payment_method) }}</p>
+                                <p><strong>{{ get_translation('payment_method') }}:</strong> {{ get_translation('pay_online') }}</p>
                                 {% if order.description %}
                                 <p><strong>{{ get_translation('order_notes') }}:</strong> {{ order.description }}</p>
                                 {% endif %}

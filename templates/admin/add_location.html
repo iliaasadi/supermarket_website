@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('add_store_location') }} - Fresh Market{% endblock %}
+{% block title %}{{ get_translation('add_store_location') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -26,26 +26,6 @@
                         <div class="mb-3">
                             <label for="address" class="form-label">{{ get_translation('address') }}</label>
                             <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="description" class="form-label">{{ get_translation('description') }} ({{ get_translation('optional') }})</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="latitude" class="form-label">{{ get_translation('latitude') }} ({{ get_translation('optional') }})</label>
-                                    <input type="number" step="any" class="form-control" id="latitude" name="latitude">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="longitude" class="form-label">{{ get_translation('longitude') }} ({{ get_translation('optional') }})</label>
-                                    <input type="number" step="any" class="form-control" id="longitude" name="longitude">
-                                </div>
-                            </div>
                         </div>
 
                         <div class="mb-3">

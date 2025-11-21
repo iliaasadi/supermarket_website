@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('edit_category') }} - Fresh Market{% endblock %}
+{% block title %}{{ get_translation('edit_category') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -15,19 +15,60 @@
                         </a>
                     </div>
 
-                    <form method="POST">
+                    <form method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         
                         <div class="mb-3">
                             <label for="category_name" class="form-label">{{ get_translation('category_name') }}</label>
                             <input type="text" class="form-control" id="category_name" name="category_name" 
-                                   value="{{ category }}" required>
+                                   value="{{ category.name if category.name else category }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="image_url" class="form-label">{{ get_translation('category_image') }} ({{ get_translation('optional') }}) - {{ get_translation('or_enter_url') }}</label>
+                            <input type="text" class="form-control" id="image_url" name="image_url" 
+                                   placeholder="https://example.com/image.jpg" 
+                                   value="{{ category.image_url if category.image_url and not category.image_url.startswith('/static/uploads/') else '' }}">
+                            <small class="text-muted">{{ get_translation('image_url_help') }}</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="image" class="form-label">{{ get_translation('or_upload_image') }} ({{ get_translation('optional') }})</label>
+                            <div class="mb-2">
+                                <img src="{{ get_image_or_default(category.image_url) }}" alt="{{ category.name if category.name else category }}" 
+                                     class="img-thumbnail" style="max-height: 200px;" loading="lazy">
+                            </div>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*" onchange="previewImage(this)">
+                            <div id="imagePreview" class="mt-2" style="display: none;">
+                                <img src="" alt="Preview" class="img-thumbnail" style="max-height: 200px;" loading="lazy">
+                            </div>
+                            <small class="text-muted">{{ get_translation('image_upload_help') }}</small>
                         </div>
 
                         <button type="submit" class="btn" style="background-color: var(--primary-red); color: white;">
                             <i class="fas fa-save me-2"></i>{{ get_translation('save') }}
                         </button>
                     </form>
+                    
+                    <script>
+                    function previewImage(input) {
+                        const preview = document.getElementById('imagePreview');
+                        const previewImg = preview.querySelector('img');
+                        
+                        if (input.files && input.files[0]) {
+                            const reader = new FileReader();
+                            
+                            reader.onload = function(e) {
+                                previewImg.src = e.target.result;
+                                preview.style.display = 'block';
+                            }
+                            
+                            reader.readAsDataURL(input.files[0]);
+                        } else {
+                            preview.style.display = 'none';
+                        }
+                    }
+                    </script>
                 </div>
             </div>
         </div>

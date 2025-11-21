@@ -1,91 +1,239 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('create_account') }} - Apple SuperMarket{% endblock %}
+{% block title %}{{ get_translation('create_account') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <i class="fas fa-user-plus"></i>
-            <h1>{{ get_translation('create_account') }}</h1>
-            <p>{{ get_translation('enter_phone_and_password') }}</p>
-        </div>
-        <form method="POST" action="{{ url_for('register') }}" class="auth-form">
-            {{ form.hidden_tag() }}
+<div class="register-page">
+    <!-- Animated Background Elements -->
+    <div class="register-glow glow-1"></div>
+    <div class="register-glow glow-2"></div>
+    <div class="register-glow glow-3"></div>
+    
+    <!-- Floating Particles -->
+    <div class="register-particles">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+    </div>
+
+    <div class="register-container">
+        <div class="register-card">
+            <!-- Card Glow Effect -->
+            <div class="card-glow"></div>
+            
+            <!-- Header Section -->
+            <div class="register-header">
+                <div class="register-icon-wrapper">
+                    <div class="icon-ring ring-1"></div>
+                    <div class="icon-ring ring-2"></div>
+                    <div class="icon-ring ring-3"></div>
+                    <i class="fas fa-user-plus register-icon"></i>
+                </div>
+                <h1 class="register-title">{{ get_translation('create_account') }}</h1>
+                <p class="register-subtitle">{{ get_translation('enter_phone_number') }}</p>
+            </div>
+
+            <!-- Form Section -->
+            <form method="POST" action="{{ url_for('register') }}" class="register-form">
+                {{ form.hidden_tag() }}
+                
                 <div class="form-group">
-                    <label for="phone_number">
-                        <i class="fas fa-phone"></i>
-                    {{ get_translation('phone_number') }}
+                    <label for="phone_number" class="form-label">
+                        <i class="fas fa-phone label-icon"></i>
+                        <span>{{ get_translation('phone_number') }}</span>
                     </label>
-                    {{ form.phone_number(class="form-control", placeholder=get_translation('enter_phone_number')) }}
+                    
+                    <!-- Phone Number Input with Prefix -->
+                    <div class="phone-input-container">
+                        <div class="phone-prefix">+98</div>
+                        <div class="input-wrapper">
+                            <i class="fas fa-phone input-icon"></i>
+                            {{ form.phone_number(class="form-control phone-input", placeholder="9123456789", dir="ltr", style="direction: ltr; text-align: left;", maxlength="10") }}
+                            <div class="input-focus-line"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hint Text -->
+                    <div class="phone-hint">
+                        <i class="fas fa-info-circle"></i>
+                        <span>{{ get_translation('phone_number_format') }}</span>
+                    </div>
+                    
                     {% if form.phone_number.errors %}
-                    <div class="error-message">
-                        {% for error in form.phone_number.errors %}
-                        <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.phone_number.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
                     {% endif %}
                 </div>
-                <div class="form-group">
-                    <label for="password">
-                        <i class="fas fa-lock"></i>
-                    {{ get_translation('password') }}
-                    </label>
-                    {{ form.password(class="form-control", placeholder=get_translation('choose_password')) }}
-                    {% if form.password.errors %}
-                    <div class="error-message">
-                        {% for error in form.password.errors %}
-                        <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
+
+                <div class="submit-wrapper">
+                    {{ form.submit(class="register-submit-btn", value=get_translation('continue')) }}
                 </div>
-                <div class="form-group">
-                    <label for="confirm_password">
-                        <i class="fas fa-lock"></i>
-                    {{ get_translation('confirm_password') }}
-                    </label>
-                    {{ form.confirm_password(class="form-control", placeholder=get_translation('confirm_password')) }}
-                    {% if form.confirm_password.errors %}
-                    <div class="error-message">
-                        {% for error in form.confirm_password.errors %}
-                        <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-            {{ form.submit(class="btn btn-primary", value=get_translation('continue')) }}
-        </form>
-        <div class="auth-footer">
-            <p>{{ get_translation('already_have_account') }} <a href="{{ url_for('login') }}" class="link">{{ get_translation('login') }}</a></p>
+            </form>
+
+            <!-- Footer Section -->
+            <div class="register-footer">
+                <p class="footer-text">
+                    {{ get_translation('already_have_account') }}
+                    <a href="{{ url_for('login') }}" class="footer-link">
+                        {{ get_translation('login') }}
+                    </a>
+                </p>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-    .auth-container {
-        min-height: 80vh;
+    :root {
+        --dark-blue-night: #0a0e27;
+        --dark-blue-night-light: #141b3d;
+        --dark-blue-night-lighter: #1e2749;
+        --yellow: #d4af37;
+        --yellow-bright: #e6c866;
+        --yellow-dark: #b8941f;
+        --yellow-glow: rgba(212, 175, 55, 0.2);
+        --text-light: #ffffff;
+        --text-gray: #b0b0b0;
+        --text-dark: #666666;
+    }
+
+    /* Fix white background issue */
+    html, body {
+        background: var(--dark-blue-night) !important;
+        background-color: var(--dark-blue-night) !important;
+        margin: 0;
+        padding: 0;
+    }
+
+    .register-page {
+        position: relative;
+        min-height: 100vh;
+        width: 100vw;
+        margin: 0;
+        padding: 2rem 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
-        background: linear-gradient(135deg, #f5f5f7 0%, #ffffff 100%);
+        overflow-x: hidden;
+        background: var(--dark-blue-night) !important;
+        background-color: var(--dark-blue-night) !important;
     }
 
-    .auth-card {
-        background: white;
-        border-radius: 20px;
-        padding: 2.5rem;
+    /* Override any white backgrounds from base template or Bootstrap */
+    .container,
+    .content-wrapper,
+    #content,
+    main,
+    .main-content {
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    /* Animated Background Glows */
+    .register-glow {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.4;
+        z-index: 0;
+        animation: glowFloat 8s ease-in-out infinite;
+    }
+
+    .glow-1 {
+        width: 400px;
+        height: 400px;
+        top: -10%;
+        left: -5%;
+        background: radial-gradient(circle, var(--yellow-glow) 0%, transparent 70%);
+        animation-delay: 0s;
+    }
+
+    .glow-2 {
+        width: 350px;
+        height: 350px;
+        bottom: -5%;
+        right: -5%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
+        animation-delay: 2s;
+    }
+
+    .glow-3 {
+        width: 300px;
+        height: 300px;
+        top: 50%;
+        right: 10%;
+        background: radial-gradient(circle, rgba(20, 30, 80, 0.4) 0%, transparent 70%);
+        animation-delay: 4s;
+    }
+
+    @keyframes glowFloat {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(20px, -20px) scale(1.1); }
+    }
+
+    /* Floating Particles */
+    .register-particles {
+        position: absolute;
         width: 100%;
-        max-width: 400px;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-        animation: fadeIn 0.5s ease;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        pointer-events: none;
     }
 
-    @keyframes fadeIn {
+    .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: var(--yellow);
+        border-radius: 50%;
+        opacity: 0.6;
+        animation: particleFloat 15s linear infinite;
+    }
+
+    .particle-1 { top: 20%; left: 10%; animation-delay: 0s; }
+    .particle-2 { top: 60%; left: 20%; animation-delay: 3s; }
+    .particle-3 { top: 40%; right: 15%; animation-delay: 6s; }
+    .particle-4 { bottom: 30%; left: 30%; animation-delay: 9s; }
+    .particle-5 { top: 80%; right: 25%; animation-delay: 12s; }
+
+    @keyframes particleFloat {
+        0% {
+            transform: translateY(0) translateX(0);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.6;
+        }
+        90% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translateY(-100vh) translateX(50px);
+            opacity: 0;
+        }
+    }
+
+    /* Main Container */
+    .register-container {
+        width: 100%;
+        max-width: 480px;
+        position: relative;
+        z-index: 2;
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    @keyframes fadeInUp {
         from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(30px);
         }
         to {
             opacity: 1;
@@ -93,109 +241,531 @@
         }
     }
 
-    .auth-header {
+    /* Register Card */
+    .register-card {
+        position: relative;
+        background: rgba(10, 14, 39, 0.75);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 80px rgba(212, 175, 55, 0.1);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        overflow: hidden;
+    }
+
+    .card-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+        opacity: 0.6;
+        animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+
+    /* Header Section */
+    .register-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
     }
 
-    .auth-header i {
+    .register-icon-wrapper {
+        position: relative;
+        display: inline-flex;
+        width: 130px;
+        height: 130px;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .register-icon {
         font-size: 3rem;
-        color: var(--primary-red);
-        margin-bottom: 1rem;
+        color: var(--yellow);
+        filter: drop-shadow(0 0 30px var(--yellow-glow));
+        z-index: 3;
+        position: relative;
+        animation: iconPulse 2s ease-in-out infinite;
     }
 
-    .auth-header h1 {
-        font-size: 1.8rem;
-        color: var(--dark-text);
-        margin-bottom: 0.5rem;
+    @keyframes iconPulse {
+        0%, 100% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 30px var(--yellow-glow));
+        }
+        50% {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.5));
+        }
     }
 
-    .auth-header p {
-        color: var(--gray-text);
-        font-size: 0.9rem;
+    .icon-ring {
+        position: absolute;
+        border: 2px solid rgba(212, 175, 55, 0.3);
+        border-radius: 50%;
+        animation: ringRotate 10s linear infinite;
     }
 
-    .auth-form {
+    .ring-1 {
+        width: 120px;
+        height: 120px;
+    }
+
+    .ring-2 {
+        width: 140px;
+        height: 140px;
+        border-color: rgba(212, 175, 55, 0.2);
+        animation-duration: 12s;
+        animation-direction: reverse;
+    }
+
+    .ring-3 {
+        width: 160px;
+        height: 160px;
+        border-color: rgba(212, 175, 55, 0.15);
+        animation-duration: 15s;
+    }
+
+    @keyframes ringRotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .register-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--yellow);
+        margin-bottom: 0.75rem;
+        text-shadow: 0 0 30px var(--yellow-glow), 0 0 60px rgba(212, 175, 55, 0.3);
+        background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-bright) 50%, var(--yellow) 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: 0% center; }
+        100% { background-position: 200% center; }
+    }
+
+    .register-subtitle {
+        font-size: 1.05rem;
+        color: var(--text-gray);
+        margin: 0;
+    }
+
+    /* Form Section */
+    .register-form {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.75rem;
     }
 
     .form-group {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.75rem;
     }
 
-    .form-group label {
-        color: var(--dark-text);
-        font-weight: 500;
+    .form-label {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.6rem;
+        color: var(--text-light);
+        font-weight: 600;
+        font-size: 0.95rem;
     }
 
-    .form-group label i {
-        color: var(--gray-text);
+    .label-icon {
+        color: var(--yellow);
+        font-size: 1rem;
+    }
+
+    /* Phone Input Container */
+    .phone-input-container {
+        display: flex;
+        align-items: stretch;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .phone-prefix {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem 1.25rem;
+        border-radius: 14px;
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        background: rgba(10, 14, 39, 0.7);
+        color: var(--text-gray);
+        font-size: 1rem;
+        font-weight: 600;
+        min-width: 70px;
+        text-align: center;
+        transition: all 0.3s ease;
+        user-select: none;
+    }
+
+    .phone-input-container:focus-within .phone-prefix {
+        border-color: var(--yellow);
+        background: rgba(10, 14, 39, 0.9);
+        color: var(--yellow);
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        flex: 1;
+    }
+
+    .input-icon {
+        position: absolute;
+        right: 1rem;
+        color: var(--yellow);
+        font-size: 1.1rem;
+        z-index: 2;
+        pointer-events: none;
     }
 
     .form-control {
-        padding: 0.8rem 1rem;
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
+        width: 100%;
+        padding: 1rem 3rem 1rem 1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        background: rgba(10, 14, 39, 0.7);
+        color: var(--text-light);
         font-size: 1rem;
         transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .phone-input {
+        border-top-right-radius: 14px;
+        border-bottom-right-radius: 14px;
+    }
+
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.4);
     }
 
     .form-control:focus {
         outline: none;
-        border-color: var(--primary-red);
-        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+        border-color: var(--yellow);
+        background: rgba(10, 14, 39, 0.9);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2), 0 8px 25px rgba(212, 175, 55, 0.15);
+    }
+
+    .input-focus-line {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--yellow), var(--yellow-bright));
+        transition: width 0.3s ease;
+        border-radius: 2px;
+    }
+
+    .form-control:focus ~ .input-focus-line {
+        width: 100%;
+    }
+
+    /* Phone Hint */
+    .phone-hint {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.6rem 0.75rem;
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 8px;
+        color: var(--text-gray);
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+
+    .phone-hint i {
+        color: var(--yellow);
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .phone-hint span {
+        color: var(--text-gray);
     }
 
     .error-message {
-        color: var(--primary-red);
-        font-size: 0.8rem;
-        margin-top: 0.3rem;
-    }
-
-    .btn-primary {
-        background: var(--primary-red);
-        color: white;
-        padding: 1rem;
-        border: none;
-        border-radius: 12px;
-        font-size: 1rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
         display: flex;
         align-items: center;
-        justify-content: center;
         gap: 0.5rem;
-        margin-top: 1rem;
+        color: #ff6b81;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        background: rgba(255, 107, 129, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 107, 129, 0.2);
     }
 
-    .btn-primary:hover {
-        background: var(--secondary-red);
-        transform: translateY(-2px);
+    .error-message i {
+        font-size: 0.9rem;
     }
 
-    .auth-footer {
+    /* Submit Button */
+    .submit-wrapper {
+        margin-top: 0.5rem;
+    }
+
+    .register-submit-btn {
+        width: 100%;
+        padding: 1.1rem 2rem;
+        border-radius: 14px;
+        border: none;
+        background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        font-weight: 700;
+        font-size: 1.05rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3), 0 0 20px rgba(212, 175, 55, 0.2);
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .register-submit-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .register-submit-btn:hover::before {
+        left: 100%;
+    }
+
+    .register-submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3);
+        background: linear-gradient(135deg, var(--yellow-bright) 0%, var(--yellow) 100%);
+    }
+
+    .register-submit-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* Footer Section */
+    .register-footer {
+        margin-top: 2.5rem;
         text-align: center;
-        margin-top: 2rem;
-        color: var(--gray-text);
+        padding-top: 2rem;
+        border-top: 1px solid rgba(212, 175, 55, 0.2);
     }
 
-    .link {
-        color: var(--primary-red);
+    .footer-text {
+        color: var(--text-gray);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    .footer-link {
+        color: var(--yellow);
         text-decoration: none;
-        font-weight: 500;
-        transition: color 0.3s ease;
+        font-weight: 600;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
+        position: relative;
     }
 
-    .link:hover {
-        color: var(--secondary-red);
+    .footer-link::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        right: 0;
+        width: 0;
+        height: 2px;
+        background: var(--yellow);
+        transition: width 0.3s ease;
+    }
+
+    .footer-link:hover {
+        color: var(--yellow-bright);
+    }
+
+    .footer-link:hover::after {
+        width: 100%;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 767.98px) {
+        .register-page {
+            padding: 1.5rem 1rem;
+            min-height: 85vh;
+        }
+
+        .register-card {
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+        }
+
+        .register-icon-wrapper {
+            width: 110px;
+            height: 110px;
+        }
+
+        .register-icon {
+            font-size: 2.5rem;
+        }
+
+        .ring-1 { width: 100px; height: 100px; }
+        .ring-2 { width: 120px; height: 120px; }
+        .ring-3 { width: 140px; height: 140px; }
+
+        .register-title {
+            font-size: 1.85rem;
+        }
+
+        .register-subtitle {
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            padding: 0.9rem 2.5rem 0.9rem 0.9rem;
+            font-size: 0.95rem;
+        }
+
+        .phone-prefix {
+            padding: 0.9rem 1rem;
+            font-size: 0.95rem;
+            min-width: 65px;
+        }
+
+        .phone-hint {
+            font-size: 0.8rem;
+            padding: 0.55rem 0.7rem;
+        }
+
+        .register-submit-btn {
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .register-card {
+            padding: 2rem 1.5rem;
+            border-radius: 18px;
+        }
+
+        .register-icon-wrapper {
+            width: 90px;
+            height: 90px;
+            margin-bottom: 1.25rem;
+        }
+
+        .register-icon {
+            font-size: 2rem;
+        }
+
+        .ring-1 { width: 85px; height: 85px; }
+        .ring-2 { width: 100px; height: 100px; }
+        .ring-3 { width: 115px; height: 115px; }
+
+        .register-title {
+            font-size: 1.6rem;
+        }
+
+        .register-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .register-form {
+            gap: 1.5rem;
+        }
+
+        .form-control {
+            padding: 0.85rem 2.25rem 0.85rem 0.85rem;
+            font-size: 0.9rem;
+        }
+
+        .register-submit-btn {
+            padding: 0.95rem 1.25rem;
+            font-size: 0.95rem;
+        }
+
+        .footer-text {
+            font-size: 0.9rem;
+        }
+
+        .phone-prefix {
+            padding: 0.85rem 1rem;
+            font-size: 0.9rem;
+            min-width: 60px;
+        }
+
+        .phone-hint {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.65rem;
+        }
     }
 </style>
+
+<script>
+// Format phone number as user types
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.querySelector('input[name="phone_number"]');
+    if (phoneInput) {
+        // Only allow digits
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value;
+            
+            // Remove any non-digit characters
+            value = value.replace(/\D/g, '');
+            
+            // Limit to 10 digits (Iranian mobile number without country code)
+            if (value.length > 10) {
+                value = value.slice(0, 10);
+            }
+            
+            e.target.value = value;
+        });
+
+        // Prevent paste of invalid characters
+        phoneInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            const digits = paste.replace(/\D/g, '').slice(0, 10);
+            this.value = digits;
+        });
+
+        // Format on form submit - add +98 prefix
+        const form = phoneInput.closest('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const currentValue = phoneInput.value.replace(/\D/g, '');
+                if (currentValue.length === 10) {
+                    // Prepend +98 to the phone number before submission
+                    phoneInput.value = '+98' + currentValue;
+                }
+            });
+        }
+    }
+});
+</script>
 {% endblock %} 

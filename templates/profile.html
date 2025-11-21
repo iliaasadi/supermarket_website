@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('profile') }} - Fresh Market{% endblock %}
+{% block title %}{{ get_translation('profile') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -9,20 +9,13 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-body text-center">
-                    {% if user.profile_picture %}
-                        <img src="{{ url_for('static', filename=user.profile_picture) }}" 
-                             alt="{{ get_translation('profile_picture') }}" 
-                             class="rounded-circle mb-3" 
-                             style="width: 150px; height: 150px; object-fit: cover;">
-                    {% else %}
                         <div class="rounded-circle bg-light mb-3 d-flex align-items-center justify-content-center mx-auto" 
                              style="width: 150px; height: 150px;">
                             <i class="fas fa-user fa-4x text-muted"></i>
                         </div>
-                    {% endif %}
                     
                     <h4>{{ user.username }}</h4>
-                    <p class="text-muted">{{ user.email or user.phone_number }}</p>
+                    <p class="text-muted" dir="ltr" style="text-align: left; direction: ltr;">{{ user.phone_number }}</p>
                     
                     <!-- {% if not user.is_verified %}
                         <div class="alert alert-warning">
@@ -57,21 +50,9 @@
                             {% endif %}
                         </div>
 
-                        <!-- <div class="mb-3">
-                            <label for="email" class="form-label">
-                                {{ get_translation('email') }} <span class="optional">({{ get_translation('optional') }})</span>
-                            </label>
-                            {{ form.email(class="form-control") }}
-                            {% if form.email.errors %}
-                                {% for error in form.email.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div> -->
-
                         <div class="mb-3">
                             {{ form.phone_number.label(class="form-label") }}
-                            {{ form.phone_number(class="form-control") }}
+                            {{ form.phone_number(class="form-control", dir="ltr", style="direction: ltr; text-align: left;") }}
                             {% if form.phone_number.errors %}
                                 {% for error in form.phone_number.errors %}
                                     <div class="text-danger">{{ error }}</div>
@@ -79,49 +60,8 @@
                             {% endif %}
                         </div>
 
-                        <!-- <div class="mb-3">
-                            <label for="profile_picture" class="form-label">
-                                {{ get_translation('profile_picture') }} <span class="optional">({{ get_translation('optional') }})</span>
-                            </label>
-                            {{ form.profile_picture(class="form-control") }}
-                            {% if form.profile_picture.errors %}
-                                {% for error in form.profile_picture.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div> -->
-
-                        <!-- <div class="mb-3">
-                            <label for="identity_card" class="form-label">
-                                {{ get_translation('identity_card') }} <span class="optional">({{ get_translation('optional') }})</span>
-                            </label>
-                            {{ form.identity_card(class="form-control", disabled=user.is_verified) }}
-                            {% if form.identity_card.errors %}
-                                {% for error in form.identity_card.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                            <small class="text-muted">{{ get_translation('upload_id_for_verification') }}</small>
-                        </div> -->
-
                         <div class="profile-actions">
-                            <div class="d-grid gap-3">
-                                {# Wallet feature removed #}
-                                <!-- <a href="{{ url_for('reset_password') }}" class="btn btn-password">
-                                    <div class="btn-content">
-                                        <i class="fas fa-key"></i>
-                                        <span>{{ get_translation('change_password') }}</span>
-                                    </div>
-                                    <div class="btn-hover-effect"></div>
-                                </a> -->
-                                <!-- <a href="{{ url_for('logout') }}" class="btn btn-logout">
-                                    <div class="btn-content">
-                                        <i class="fas fa-sign-out-alt"></i>
-                                        <span>{{ get_translation('logout') }}</span>
-                                    </div>
-                                    <div class="btn-hover-effect"></div>
-                                </a> -->
-                            </div>
+                            {# Password and wallet features removed #}
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100">{{ get_translation('update_profile') }}</button>
