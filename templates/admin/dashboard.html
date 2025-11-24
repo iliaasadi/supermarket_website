@@ -17,16 +17,16 @@
                 <p class="muted-label">{{ get_translation('admin_panel') or 'پنل مدیریت' }}</p>
                 <h1>{{ get_translation('admin_dashboard') }}</h1>
                 <p>{{ get_translation('admin_subtitle') or 'مدیریت محصولات، سفارشات و کاربران' }}</p>
-            </div>
+        </div>
             <div class="header-actions">
                 <a href="{{ url_for('admin_add_product') }}" class="primary-btn">
                     <i class="fas fa-plus"></i>
                     <span>{{ get_translation('add_new_product') }}</span>
-                </a>
-            </div>
+            </a>
         </div>
-
-        <!-- Statistics Cards -->
+    </div>
+    
+    <!-- Statistics Cards -->
         <div class="stats-grid">
             <div class="stat-card glass-card">
                 <div class="stat-icon">
@@ -35,8 +35,8 @@
                 <div class="stat-content">
                     <p class="stat-label">{{ get_translation('total_products') }}</p>
                     <h2>{{ total_products }}</h2>
-                </div>
             </div>
+        </div>
             <div class="stat-card glass-card">
                 <div class="stat-icon">
                     <i class="fas fa-tags"></i>
@@ -44,8 +44,8 @@
                 <div class="stat-content">
                     <p class="stat-label">{{ get_translation('categories') }}</p>
                     <h2>{{ categories|length }}</h2>
-                </div>
             </div>
+        </div>
             <div class="stat-card glass-card">
                 <div class="stat-icon">
                     <i class="fas fa-users"></i>
@@ -53,8 +53,8 @@
                 <div class="stat-content">
                     <p class="stat-label">{{ get_translation('users') }}</p>
                     <h2>{{ total_users }}</h2>
-                </div>
             </div>
+        </div>
             <div class="stat-card glass-card">
                 <div class="stat-icon">
                     <i class="fas fa-shopping-bag"></i>
@@ -62,64 +62,11 @@
                 <div class="stat-content">
                     <p class="stat-label">{{ get_translation('total_orders') }}</p>
                     <h2>{{ total_orders }}</h2>
-                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Global Search -->
-        <div class="glass-card search-card">
-            <div class="card-heading">
-                <p class="muted-label">{{ get_translation('search') }}</p>
-                <h3>{{ get_translation('global_search') or 'جستجوی جامع' }}</h3>
-            </div>
-            <form method="GET" action="{{ url_for('admin_dashboard') }}" class="admin-search-form">
-                <div class="search-row">
-                    <div class="search-input-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text"
-                               name="search"
-                               id="admin-search-input"
-                               class="search-input"
-                               placeholder="{{ get_translation('search_placeholder') }}"
-                               value="{{ search_query }}"
-                               autocomplete="off">
-                        <div id="admin-autocomplete-results" class="autocomplete-dropdown"></div>
-                    </div>
-                    <select name="scope" id="admin-search-scope" class="scope-select">
-                        <option value="all" {% if search_scope == 'all' %}selected{% endif %}>{{ get_translation('all') }}</option>
-                        <option value="products" {% if search_scope == 'products' %}selected{% endif %}>{{ get_translation('products') }}</option>
-                        <option value="brands" {% if search_scope == 'brands' %}selected{% endif %}>{{ get_translation('brands') }}</option>
-                        <option value="categories" {% if search_scope == 'categories' %}selected{% endif %}>{{ get_translation('categories') }}</option>
-                    </select>
-                    <button type="submit" class="search-btn">
-                        <i class="fas fa-search"></i>
-                        <span>{{ get_translation('search') }}</span>
-                    </button>
-                    <a href="{{ url_for('admin_dashboard') }}" class="reset-btn">
-                        <i class="fas fa-undo"></i>
-                        <span>{{ get_translation('reset') if get_translation('reset') else 'Reset' }}</span>
-                    </a>
-                </div>
-                {% if search_query %}
-                <div class="search-summary">
-                    <span>{{ get_translation('showing_results_for') if get_translation('showing_results_for') else 'Showing results for' }} "<strong>{{ search_query }}</strong>"</span>
-                    {% if search_scope != 'all' %}
-                        <span class="scope-badge">{{ get_translation(search_scope) }}</span>
-                    {% endif %}
-                    {% if search_summary %}
-                        <div class="summary-badges">
-                            {% for item in search_summary %}
-                                <span class="summary-chip">{{ item.count }} {{ get_translation(item.key) }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <span class="no-results">{{ get_translation('no_results_found') if get_translation('no_results_found') else 'No matches found' }}</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </form>
-        </div>
-
+    
         <!-- Quick Actions -->
         <div class="quick-actions-grid">
             <a href="{{ url_for('admin_orders') }}" class="action-card glass-card">
@@ -146,69 +93,84 @@
                 </div>
                 <i class="fas fa-arrow-left action-arrow"></i>
             </a>
+            <a href="{{ url_for('admin_locations') }}" class="action-card glass-card">
+                <i class="fas fa-map-marker-alt"></i>
+                <div>
+                    <h4>{{ get_translation('store_locations') }}</h4>
+                    <p>{{ get_translation('manage_store_locations') or 'مدیریت فروشگاه‌ها و مراکز تحویل' }}</p>
+                </div>
+                <i class="fas fa-arrow-left action-arrow"></i>
+            </a>
         </div>
 
-        <!-- Location Management -->
-        <div class="glass-card management-card">
+    <!-- Global Search -->
+        <div class="glass-card search-card">
             <div class="card-heading">
-                <div>
-                    <p class="muted-label">{{ get_translation('store_locations') }}</p>
-                    <h3>{{ get_translation('location_management') or 'مدیریت فروشگاه‌ها' }}</h3>
+                <p class="muted-label">{{ get_translation('search') }}</p>
+                <h3>{{ get_translation('global_search') or 'جستجوی جامع' }}</h3>
+            </div>
+            <form method="GET" action="{{ url_for('admin_dashboard') }}" class="admin-search-form">
+                <div class="search-row">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                    <input type="text"
+                           name="search"
+                           id="admin-search-input"
+                               class="search-input"
+                           placeholder="{{ get_translation('search_placeholder') }}"
+                           value="{{ search_query }}"
+                           autocomplete="off">
+                    <div id="admin-autocomplete-results" class="autocomplete-dropdown"></div>
                 </div>
-                <a href="{{ url_for('admin_add_location') }}" class="add-btn">
-                    <i class="fas fa-plus"></i>
-                    <span>{{ get_translation('add_location') }}</span>
-                </a>
-            </div>
-            <div class="table-wrapper">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>{{ get_translation('name') }}</th>
-                            <th>{{ get_translation('address') }}</th>
-                            <th>{{ get_translation('status') }}</th>
-                            <th>{{ get_translation('actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for location in locations %}
-                        <tr>
-                            <td><strong>{{ location.name }}</strong></td>
-                            <td>{{ location.address }}</td>
-                            <td>
-                                <span class="status-chip {% if location.is_active %}status-active{% else %}status-inactive{% endif %}">
-                                    {{ get_translation('active') if location.is_active else get_translation('inactive') }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <a href="{{ url_for('admin_edit_location', location_id=location.id) }}" class="action-btn edit-btn">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form action="{{ url_for('admin_delete_location', location_id=location.id) }}" method="POST" class="d-inline needs-confirm" data-confirm="{{ get_translation('confirm_delete_location') }}">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                        <button type="submit" class="action-btn delete-btn">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
+                    <select name="scope" id="admin-search-scope" class="scope-select">
+                        <option value="all" {% if search_scope == 'all' %}selected{% endif %}>{{ get_translation('all') }}</option>
+                        <option value="products" {% if search_scope == 'products' %}selected{% endif %}>{{ get_translation('products') }}</option>
+                        <option value="brands" {% if search_scope == 'brands' %}selected{% endif %}>{{ get_translation('brands') }}</option>
+                        <option value="categories" {% if search_scope == 'categories' %}selected{% endif %}>{{ get_translation('categories') }}</option>
+                    </select>
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i>
+                        <span>{{ get_translation('search') }}</span>
+                    </button>
+                    <a href="{{ url_for('admin_dashboard') }}" class="reset-btn">
+                        <i class="fas fa-undo"></i>
+                        <span>{{ get_translation('reset') if get_translation('reset') else 'Reset' }}</span>
+                    </a>
+                </div>
+            {% if search_query %}
+                <div class="search-summary">
+                    <span>{{ get_translation('showing_results_for') if get_translation('showing_results_for') else 'Showing results for' }} "<strong>{{ search_query }}</strong>"</span>
+                    {% if search_scope != 'all' %}
+                        <span class="scope-badge">{{ get_translation(search_scope) }}</span>
+                    {% endif %}
+                    {% if search_summary %}
+                        <div class="summary-badges">
+                        {% for item in search_summary %}
+                                <span class="summary-chip">{{ item.count }} {{ get_translation(item.key) }}</span>
                         {% endfor %}
-                    </tbody>
-                </table>
+                        </div>
+                    {% else %}
+                        <span class="no-results">{{ get_translation('no_results_found') if get_translation('no_results_found') else 'No matches found' }}</span>
+                    {% endif %}
             </div>
+            {% endif %}
+            </form>
         </div>
 
         <!-- Product Management -->
-        <div class="glass-card management-card">
+        <div class="glass-card management-card collapsible-section" data-section="products">
             <div class="card-heading">
                 <div>
                     <p class="muted-label">{{ get_translation('product_management') }}</p>
                     <h3>{{ get_translation('all_products') or 'همه محصولات' }}</h3>
+                    <span class="item-count">{{ filtered_products|length }} {{ get_translation('items') or 'آیتم' }}</span>
+        </div>
+                <button type="button" class="toggle-btn" data-target="products">
+                    <i class="fas fa-chevron-down"></i>
+                    <span class="toggle-text">{{ get_translation('show_all') or 'نمایش همه' }}</span>
+                    </button>
                 </div>
-            </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper collapsible-content" id="products-content" style="display: none;">
                 <table class="admin-table">
                     <thead>
                         <tr>
@@ -290,22 +252,29 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
         </div>
+    </div>
 
-        <!-- Brand Management -->
-        <div class="glass-card management-card">
+    <!-- Brand Management -->
+        <div class="glass-card management-card collapsible-section" data-section="brands">
             <div class="card-heading">
                 <div>
                     <p class="muted-label">{{ get_translation('brand_management') }}</p>
                     <h3>{{ get_translation('all_brands') or 'همه برندها' }}</h3>
+                    <span class="item-count">{{ filtered_brands|length }} {{ get_translation('items') or 'آیتم' }}</span>
                 </div>
-                <a href="{{ url_for('admin_add_brand') }}" class="add-btn">
-                    <i class="fas fa-plus"></i>
-                    <span>{{ get_translation('add_brand') }}</span>
-                </a>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <button type="button" class="toggle-btn" data-target="brands">
+                        <i class="fas fa-chevron-down"></i>
+                        <span class="toggle-text">{{ get_translation('show_all') or 'نمایش همه' }}</span>
+                    </button>
+                    <a href="{{ url_for('admin_add_brand') }}" class="add-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>{{ get_translation('add_brand') }}</span>
+            </a>
+        </div>
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper collapsible-content" id="brands-content" style="display: none;">
                 <table class="admin-table">
                     <thead>
                         <tr>
@@ -347,22 +316,29 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
         </div>
+    </div>
 
-        <!-- Category Management -->
-        <div class="glass-card management-card">
+    <!-- Category Management -->
+        <div class="glass-card management-card collapsible-section" data-section="categories">
             <div class="card-heading">
                 <div>
                     <p class="muted-label">{{ get_translation('category_management') }}</p>
                     <h3>{{ get_translation('all_categories') or 'همه دسته‌بندی‌ها' }}</h3>
+                    <span class="item-count">{{ filtered_categories|length }} {{ get_translation('items') or 'آیتم' }}</span>
+        </div>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <button type="button" class="toggle-btn" data-target="categories">
+                        <i class="fas fa-chevron-down"></i>
+                        <span class="toggle-text">{{ get_translation('show_all') or 'نمایش همه' }}</span>
+                    </button>
+                    <a href="{{ url_for('admin_add_category') }}" class="add-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>{{ get_translation('add_category') }}</span>
+                    </a>
                 </div>
-                <a href="{{ url_for('admin_add_category') }}" class="add-btn">
-                    <i class="fas fa-plus"></i>
-                    <span>{{ get_translation('add_category') }}</span>
-                </a>
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper collapsible-content" id="categories-content" style="display: none;">
                 <table class="admin-table">
                     <thead>
                         <tr>
@@ -558,10 +534,15 @@
     .card-heading {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
         margin-bottom: 1.5rem;
         flex-wrap: wrap;
         gap: 1rem;
+    }
+
+    .card-heading > div:first-child {
+        flex: 1;
+        min-width: 200px;
     }
 
     .card-heading h3 {
@@ -618,11 +599,40 @@
     }
 
     .scope-select {
-        padding: 0.85rem 1rem;
+        padding: 0.85rem 2.5rem 0.85rem 1rem;
         border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.12);
         background: rgba(255, 255, 255, 0.04);
         color: var(--text-light);
+        font-size: 0.95rem;
+        cursor: pointer;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: left 1rem center;
+        transition: all 0.3s ease;
+    }
+
+    .scope-select:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .scope-select option {
+        background: rgba(10, 14, 39, 0.98);
+        color: var(--text-light);
+        padding: 0.75rem;
+        border: none;
+    }
+
+    .scope-select option:hover,
+    .scope-select option:checked {
+        background: rgba(212, 175, 55, 0.2);
+        color: var(--yellow);
     }
 
     .search-btn, .reset-btn {
@@ -732,6 +742,56 @@
 
     .management-card {
         margin-bottom: 2rem;
+    }
+
+    .item-count {
+        display: inline-block;
+        margin-top: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text-light);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+
+    .toggle-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--yellow);
+        color: var(--yellow);
+    }
+
+    .toggle-btn i {
+        transition: transform 0.3s ease;
+    }
+
+    .toggle-btn.expanded i {
+        transform: rotate(180deg);
+    }
+
+    .collapsible-content {
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .collapsible-content.show {
+        display: block !important;
     }
 
     .add-btn {
@@ -976,6 +1036,17 @@
         .quick-actions-grid {
             grid-template-columns: 1fr;
         }
+
+        .card-heading {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .card-heading > div:last-child {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
     }
 
     @media (max-width: 575.98px) {
@@ -993,6 +1064,21 @@
 
         .table-wrapper {
             overflow-x: scroll;
+        }
+
+        .toggle-btn,
+        .add-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .toggle-btn .toggle-text {
+            display: none;
+        }
+
+        .item-count {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.6rem;
         }
     }
 </style>
@@ -1079,5 +1165,142 @@ document.querySelectorAll('.needs-confirm').forEach((element) => {
         }
     });
 });
+
+// Collapsible sections functionality
+(function() {
+    const toggleButtons = document.querySelectorAll('.toggle-btn');
+    const searchInput = document.getElementById('admin-search-input');
+    const searchScope = document.getElementById('admin-search-scope');
+    const hasSearchQuery = '{{ search_query }}'.trim().length > 0;
+
+    // Toggle section visibility
+    function toggleSection(targetId) {
+        const content = document.getElementById(targetId + '-content');
+        const button = document.querySelector(`[data-target="${targetId}"]`);
+        const toggleText = button?.querySelector('.toggle-text');
+        
+        if (!content || !button) return;
+
+        const isExpanded = content.classList.contains('show') || content.style.display !== 'none';
+        
+        if (isExpanded) {
+            content.style.display = 'none';
+            content.classList.remove('show');
+            button.classList.remove('expanded');
+            if (toggleText) toggleText.textContent = '{{ get_translation("show_all") or "نمایش همه" }}';
+        } else {
+            content.style.display = 'block';
+            content.classList.add('show');
+            button.classList.add('expanded');
+            if (toggleText) toggleText.textContent = '{{ get_translation("hide") or "مخفی کردن" }}';
+        }
+    }
+
+    // Initialize toggle buttons
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const target = this.getAttribute('data-target');
+            toggleSection(target);
+        });
+    });
+
+    // Auto-expand sections when filters are applied
+    if (hasSearchQuery) {
+        const sectionsToExpand = [];
+        const searchScopeValue = searchScope ? searchScope.value : 'all';
+        
+        if (searchScopeValue === 'all' || searchScopeValue === 'products') {
+            sectionsToExpand.push('products');
+        }
+        if (searchScopeValue === 'all' || searchScopeValue === 'brands') {
+            sectionsToExpand.push('brands');
+        }
+        if (searchScopeValue === 'all' || searchScopeValue === 'categories') {
+            sectionsToExpand.push('categories');
+        }
+
+        sectionsToExpand.forEach(sectionId => {
+            const content = document.getElementById(sectionId + '-content');
+            const button = document.querySelector(`[data-target="${sectionId}"]`);
+            const toggleText = button?.querySelector('.toggle-text');
+            
+            if (content && button) {
+                content.style.display = 'block';
+                content.classList.add('show');
+                button.classList.add('expanded');
+                if (toggleText) toggleText.textContent = '{{ get_translation("hide") or "مخفی کردن" }}';
+            }
+        });
+    }
+
+    // Auto-expand when search input changes
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const query = this.value.trim();
+                if (query.length >= 2) {
+                    const scopeValue = searchScope ? searchScope.value : 'all';
+                    const sectionsToExpand = [];
+                    
+                    if (scopeValue === 'all' || scopeValue === 'products') {
+                        sectionsToExpand.push('products');
+                    }
+                    if (scopeValue === 'all' || scopeValue === 'brands') {
+                        sectionsToExpand.push('brands');
+                    }
+                    if (scopeValue === 'all' || scopeValue === 'categories') {
+                        sectionsToExpand.push('categories');
+                    }
+
+                    sectionsToExpand.forEach(sectionId => {
+                        const content = document.getElementById(sectionId + '-content');
+                        const button = document.querySelector(`[data-target="${sectionId}"]`);
+                        const toggleText = button?.querySelector('.toggle-text');
+                        
+                        if (content && button && !content.classList.contains('show')) {
+                            content.style.display = 'block';
+                            content.classList.add('show');
+                            button.classList.add('expanded');
+                            if (toggleText) toggleText.textContent = '{{ get_translation("hide") or "مخفی کردن" }}';
+                        }
+                    });
+                }
+            }, 500);
+        });
+    }
+
+    // Auto-expand when scope changes
+    if (searchScope) {
+        searchScope.addEventListener('change', function() {
+            const scopeValue = this.value;
+            const sectionsToExpand = [];
+            
+            if (scopeValue === 'all' || scopeValue === 'products') {
+                sectionsToExpand.push('products');
+            }
+            if (scopeValue === 'all' || scopeValue === 'brands') {
+                sectionsToExpand.push('brands');
+            }
+            if (scopeValue === 'all' || scopeValue === 'categories') {
+                sectionsToExpand.push('categories');
+            }
+
+            sectionsToExpand.forEach(sectionId => {
+                const content = document.getElementById(sectionId + '-content');
+                const button = document.querySelector(`[data-target="${sectionId}"]`);
+                const toggleText = button?.querySelector('.toggle-text');
+                
+                if (content && button) {
+                    content.style.display = 'block';
+                    content.classList.add('show');
+                    button.classList.add('expanded');
+                    if (toggleText) toggleText.textContent = '{{ get_translation("hide") or "مخفی کردن" }}';
+                }
+            });
+        });
+    }
+})();
 </script>
-{% endblock %}
+{% endblock %} 

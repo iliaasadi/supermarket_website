@@ -1,6 +1,5 @@
 {% extends "admin/base.html" %}
 
-{% block admin_title %}{{ get_translation('store_locations') }}{% endblock %}
 
 {% block admin_content %}
 {% set total_locations = locations|length %}
@@ -18,13 +17,7 @@
                 <span>{{ get_translation('back_to_dashboard') or get_translation('back') }}</span>
             </a>
             <div class="header-text">
-                <p class="muted-label">{{ get_translation('location_management') or get_translation('store_locations') }}</p>
                 <h1>{{ get_translation('store_locations') }}</h1>
-                <p>{{ get_translation('locations_subtitle_admin') or 'فروشگاه‌ها و مراکز تحویل را مدیریت کنید.' }}</p>
-            </div>
-            <div class="header-badge">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>{{ total_locations }} {{ get_translation('locations') or 'مکان' }}</span>
             </div>
         </header>
 
@@ -42,7 +35,6 @@
                     <i class="fas fa-store"></i>
                 </div>
                 <strong>{{ total_locations }}</strong>
-                <small>{{ get_translation('all_stores') or 'تمام فروشگاه‌ها' }}</small>
             </div>
             <div class="summary-card success-card">
                 <div class="summary-top">
@@ -50,15 +42,6 @@
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <strong>{{ active_locations|length }}</strong>
-                <small>{{ get_translation('operational_stores') or 'فروشگاه‌های فعال' }}</small>
-            </div>
-            <div class="summary-card info-card">
-                <div class="summary-top">
-                    <span>{{ get_translation('primary_hub') or 'مرکز اصلی' }}</span>
-                    <i class="fas fa-star"></i>
-                </div>
-                <strong>{{ primary_locations|length }}</strong>
-                <small>{{ get_translation('main_hubs') or 'مراکز اصلی' }}</small>
             </div>
         </div>
 
@@ -72,12 +55,6 @@
                         <h3>{{ location.name }}</h3>
                     </div>
                     <div class="status-badges">
-                        {% if location.is_primary %}
-                        <span class="status-chip status-primary">
-                            <i class="fas fa-star"></i>
-                            {{ get_translation('primary_hub') or 'مرکز اصلی' }}
-                        </span>
-                        {% endif %}
                         <span class="status-chip {% if location.is_active %}status-active{% else %}status-inactive{% endif %}">
                             <i class="fas fa-{% if location.is_active %}check{% else %}times{% endif %}-circle"></i>
                             {{ get_translation('active') if location.is_active else get_translation('inactive') }}
@@ -102,22 +79,6 @@
                         </div>
                     </div>
                     {% endif %}
-                    {% if location.latitude and location.longitude %}
-                    <div class="info-row">
-                        <i class="fas fa-globe"></i>
-                        <div>
-                            <p class="muted-label">{{ get_translation('coordinates') or 'مختصات' }}</p>
-                            <p class="value">{{ "%.6f"|format(location.latitude) }}, {{ "%.6f"|format(location.longitude) }}</p>
-                        </div>
-                    </div>
-                    {% endif %}
-                    <div class="info-row">
-                        <i class="fas fa-calendar"></i>
-                        <div>
-                            <p class="muted-label">{{ get_translation('created_at') or 'تاریخ ایجاد' }}</p>
-                            <p class="value">{{ location.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="location-actions">

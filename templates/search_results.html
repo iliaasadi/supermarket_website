@@ -16,7 +16,6 @@
                 <div class="search-title-section">
                     <h1 class="search-main-title">
                         <i class="fas fa-search me-2"></i>
-                        {{ get_translation('search_results') }}
                     </h1>
                     {% if query %}
                     <p class="search-query">
@@ -49,6 +48,7 @@
     <div class="container search-container">
 
         <!-- Filters Section -->
+        {% set filters_active = (sort_by != 'relevance') or brand_filter or category_filter or min_price or max_price or featured_only or discounted_only %}
         <div class="filters-card">
             <div class="filters-header">
                 <i class="fas fa-filter me-2"></i>
@@ -57,7 +57,7 @@
                     <i class="fas fa-chevron-down"></i>
                 </button>
             </div>
-            <div class="collapse show" id="filtersCollapse">
+            <div class="collapse {% if filters_active %}show{% endif %}" id="filtersCollapse">
                 <form method="GET" action="{{ url_for('search') }}" id="filter-form" class="filters-content">
                     <input type="hidden" name="q" value="{{ query }}">
                     

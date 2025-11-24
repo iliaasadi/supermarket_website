@@ -383,8 +383,12 @@ def admin_add_product():
             return redirect(url_for('admin_add_product'))
     
     # Get all categories for the form
-    categories = db.session.query(Product.category).distinct().all()
-    categories = [cat[0] for cat in categories if cat[0]]
+    # Get categories from Category model, fallback to product categories for backward compatibility
+    category_objects = Category.query.all()
+    product_categories = list(set([p.category for p in Product.query.all() if p.category]))
+    # Merge both sources
+    all_category_names = set([cat.name for cat in category_objects] + product_categories)
+    categories = sorted(list(all_category_names))
     
     # Get all brands for the form
     brands = Brand.query.all()
@@ -442,8 +446,12 @@ def admin_edit_product(product_id):
             return redirect(url_for('admin_edit_product', product_id=product_id))
     
     # Get all categories for the form
-    categories = db.session.query(Product.category).distinct().all()
-    categories = [cat[0] for cat in categories if cat[0]]
+    # Get categories from Category model, fallback to product categories for backward compatibility
+    category_objects = Category.query.all()
+    product_categories = list(set([p.category for p in Product.query.all() if p.category]))
+    # Merge both sources
+    all_category_names = set([cat.name for cat in category_objects] + product_categories)
+    categories = sorted(list(all_category_names))
     
     # Get all brands for the form
     brands = Brand.query.all()

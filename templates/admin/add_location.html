@@ -18,15 +18,10 @@
                 <h1>{{ get_translation('add_new_store_location') }}</h1>
                 <p>{{ get_translation('add_location_subtitle') or 'مکان‌های جدید خود را برای تحویل سریع به نقشه اضافه کنید.' }}</p>
             </div>
-            <div class="header-badge">
-                <i class="fas fa-map-marked-alt"></i>
-                <span>{{ get_translation('delivery_spots') }}</span>
-            </div>
         </header>
 
         <div class="location-form-layout">
             <form method="POST" class="glass-card primary-form" novalidate>
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
                 <div class="card-heading">
                     <p class="muted-label">{{ get_translation('location_details') or 'جزئیات موقعیت' }}</p>
@@ -41,75 +36,12 @@
                             <input type="text" id="name" name="name" placeholder="{{ get_translation('store_name_placeholder') or get_translation('store_name') }}" required>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="city">{{ get_translation('city') or 'شهر' }}</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-city"></i>
-                            <input type="text" id="city" name="city" placeholder="{{ get_translation('city_placeholder') or 'تهران' }}">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="contact_phone">{{ get_translation('contact_phone') or 'شماره تماس' }}</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-phone"></i>
-                            <input type="tel" id="contact_phone" name="contact_phone" placeholder="{{ get_translation('phone_placeholder') or '+98...' }}">
-                        </div>
-                    </div>
-
                     <div class="form-group full-width">
                         <label for="address">{{ get_translation('address') }}</label>
                         <div class="input-with-icon textarea-wrap">
                             <i class="fas fa-map-marker-alt"></i>
                             <textarea id="address" name="address" rows="3" placeholder="{{ get_translation('store_address_placeholder') or get_translation('address') }}" required></textarea>
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="working_hours">{{ get_translation('working_hours') or 'ساعات کاری' }}</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-clock"></i>
-                            <input type="text" id="working_hours" name="working_hours" placeholder="{{ get_translation('working_hours_placeholder') or '08:00 - 22:00' }}">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="delivery_radius">{{ get_translation('delivery_radius_km') or 'محدوده ارسال (کیلومتر)' }}</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-ruler-combined"></i>
-                            <input type="number" min="1" id="delivery_radius" name="delivery_radius" placeholder="10">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="latitude">{{ get_translation('latitude') or 'عرض جغرافیایی' }}</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-compass"></i>
-                            <input type="text" id="latitude" name="latitude" placeholder="35.6892">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="longitude">{{ get_translation('longitude') or 'طول جغرافیایی' }}</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-location-arrow"></i>
-                            <input type="text" id="longitude" name="longitude" placeholder="51.3890">
-                        </div>
-                    </div>
-
-                    <div class="form-group full-width">
-                        <label for="map_url">{{ get_translation('map_url') or 'لینک نقشه' }}</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-link"></i>
-                            <input type="text" id="map_url" name="map_url" placeholder="https://maps.google.com/...">
-                        </div>
-                        <small>{{ get_translation('map_url_hint') or 'لینک مستقیم نقشه شعبه را وارد کنید.' }}</small>
-                    </div>
-
-                    <div class="form-group full-width">
-                        <label for="notes">{{ get_translation('notes') or 'توضیحات' }}</label>
-                        <textarea id="notes" name="notes" rows="3" placeholder="{{ get_translation('location_notes_placeholder') or 'توضیحات اضافی برای پیک یا مشتریان.' }}"></textarea>
                     </div>
                 </div>
 
@@ -119,14 +51,6 @@
                         <span>{{ get_translation('active_location') }}</span>
                         <label class="switch">
                             <input type="checkbox" id="is_active" name="is_active" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="status-chip info">
-                        <i class="fas fa-star"></i>
-                        <span>{{ get_translation('primary_hub') or 'شعبه اصلی' }}</span>
-                        <label class="switch">
-                            <input type="checkbox" id="is_primary" name="is_primary">
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -158,13 +82,6 @@
                     <p class="muted-label">{{ get_translation('tips') if get_translation('tips') else 'راهنما' }}</p>
                     <h3>{{ get_translation('location_tips_title') or 'نمایش بهتر شعبه' }}</h3>
                 </div>
-                <div class="map-preview">
-                    <div class="glow-ring"></div>
-                    <div class="map-placeholder">
-                        <i class="fas fa-map"></i>
-                        <p>{{ get_translation('map_preview_hint') or 'پیش‌نمایش لینک نقشه در اینجا نمایش داده می‌شود.' }}</p>
-                    </div>
-                </div>
                 <ul>
                     <li>
                         <i class="fas fa-thumbtack"></i>
@@ -173,20 +90,7 @@
                             <p>{{ get_translation('location_tip_accuracy_desc') or 'نام خیابان، پلاک و توضیح مسیر را دقیق ثبت کنید.' }}</p>
                         </div>
                     </li>
-                    <li>
-                        <i class="fas fa-clock"></i>
-                        <div>
-                            <strong>{{ get_translation('location_tip_hours') or 'ساعات کاری' }}</strong>
-                            <p>{{ get_translation('location_tip_hours_desc') or 'در توضیحات ساعات حضور یا محدوده زمانی فعال را اضافه کنید.' }}</p>
-                        </div>
-                    </li>
-                    <li>
-                        <i class="fas fa-route"></i>
-                        <div>
-                            <strong>{{ get_translation('location_tip_landmarks') or 'نشانه‌های اطراف' }}</strong>
-                            <p>{{ get_translation('location_tip_landmarks_desc') or 'نزدیکی به مراکز معروف یا ایستگاه‌ها را برای راهنمایی اضافه کنید.' }}</p>
-                        </div>
-                    </li>
+                 
                 </ul>
             </aside>
         </div>

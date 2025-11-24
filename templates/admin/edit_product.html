@@ -16,12 +16,9 @@
             <div class="header-text">
                 <p class="muted-label">{{ get_translation('product_management') }}</p>
                 <h1>{{ get_translation('edit_product') }}</h1>
-                <p>{{ get_translation('edit_product_subtitle') or 'مشخصات محصول فعلی را با همان تم لوکس بروزرسانی کنید.' }}</p>
+                
             </div>
-            <div class="header-badge">
-                <i class="fas fa-box-open"></i>
-                <span>{{ get_translation('inventory') or get_translation('stock') }}</span>
-            </div>
+          
         </header>
 
         <div class="product-form-layout">
@@ -79,9 +76,10 @@
                             <i class="fas fa-money-bill"></i>
                             <input type="number" id="price" name="price" step="0.01" value="{{ product.price }}" required>
                         </div>
-                        <div class="gradient-card metrics-card">
-                            <p>{{ get_translation('pricing_tip') or 'قیمت‌گذاری مناسب' }}</p>
-                            <small>{{ get_translation('pricing_hint') or 'با توجه به تخفیف‌ها و رقبا قیمت را تنظیم کنید.' }}</small>
+                        <label for="discount">{{ get_translation('discount') }} (%)</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-percent"></i>
+                            <input type="number" id="discount" name="discount" min="0" max="100" value="{{ product.discount or 0 }}">
                         </div>
                     </div>
 
@@ -98,15 +96,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="discount">{{ get_translation('discount') }} (%)</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-percent"></i>
-                            <input type="number" id="discount" name="discount" min="0" max="100" value="{{ product.discount or 0 }}">
-                        </div>
-                        <div class="status-chip promo-chip">
-                            <i class="fas fa-bolt"></i>
-                            <span>{{ get_translation('promotion_tip') or 'پیشنهاد ویژه' }}</span>
-                        </div>
+                        
                     </div>
                 </div>
 
@@ -367,6 +357,19 @@
         border: 1px solid rgba(255, 255, 255, 0.12);
         background: rgba(255, 255, 255, 0.04);
         color: var(--text-light);
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .input-with-icon select {
+        cursor: pointer;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: left 1rem center;
+        padding-left: 2.5rem;
     }
 
     .input-with-icon input:focus,
@@ -374,6 +377,21 @@
         outline: none;
         border-color: var(--yellow);
         box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .input-with-icon select option {
+        background: rgba(10, 14, 39, 0.98);
+        color: var(--text-light);
+        padding: 0.75rem;
+        border: none;
+    }
+
+    .input-with-icon select option:hover,
+    .input-with-icon select option:checked,
+    .input-with-icon select option:focus {
+        background: rgba(212, 175, 55, 0.2);
+        color: var(--yellow);
     }
 
     textarea {

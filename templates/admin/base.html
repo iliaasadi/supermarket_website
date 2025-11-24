@@ -10,74 +10,6 @@
     <div class="admin-glow admin-glow-2"></div>
 
     <div class="container admin-shell-container">
-        <header class="admin-hero">
-            <a href="{{ request.referrer or url_for('index') }}" class="back-chip">
-                <i class="fas fa-arrow-right"></i>
-                <span>{{ get_translation('back') }}</span>
-            </a>
-            <div class="hero-text">
-                <p class="muted-label">{{ get_translation('admin_panel') or 'پنل مدیریت' }}</p>
-                <h1>{{ get_translation('admin_dashboard') }}</h1>
-                <p>{{ get_translation('admin_subtitle') or 'سفارش‌ها، کاربران و فروشگاه‌ها را از اینجا مدیریت کنید.' }}</p>
-            </div>
-            <div class="hero-actions">
-                <a href="{{ url_for('logout') }}" class="ghost-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>{{ get_translation('logout') }}</span>
-                </a>
-            </div>
-        </header>
-
-        <nav class="admin-nav">
-            <button class="nav-toggle" type="button" aria-label="Toggle navigation">
-                <i class="fas fa-bars"></i>
-            </button>
-            <ul class="nav-links">
-                <li>
-                    <a href="{{ url_for('admin_dashboard') }}"
-                       class="{% if current_endpoint == 'admin_dashboard' %}active{% endif %}">
-                        <i class="fas fa-home"></i>
-                        <span>{{ get_translation('dashboard') }}</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin_orders') }}"
-                       class="{% if current_endpoint in ['admin_orders', 'admin_order_details'] %}active{% endif %}">
-                        <i class="fas fa-shopping-bag"></i>
-                        <span>{{ get_translation('manage_orders') }}</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin_order_comments') }}"
-                       class="{% if current_endpoint == 'admin_order_comments' %}active{% endif %}">
-                        <i class="fas fa-comments"></i>
-                        <span>{{ get_translation('order_comments') }}</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin_users') }}"
-                       class="{% if current_endpoint == 'admin_users' %}active{% endif %}">
-                        <i class="fas fa-users"></i>
-                        <span>{{ get_translation('users') }}</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin_locations') }}"
-                       class="{% if current_endpoint == 'admin_locations' %}active{% endif %}">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>{{ get_translation('store_locations') }}</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('admin_add_product') }}"
-                       class="{% if current_endpoint in ['admin_add_product', 'admin_edit_product'] %}active{% endif %}">
-                        <i class="fas fa-box"></i>
-                        <span>{{ get_translation('manage_products') or get_translation('products') }}</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
         <div class="admin-content glass-panel">
             {% block admin_content %}{% endblock %}
         </div>
@@ -236,6 +168,45 @@
 
     .glass-panel {
         backdrop-filter: blur(18px);
+    }
+
+    /* Global select styling for all admin pages */
+    select {
+        padding: 0.85rem 2.5rem 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: left 1rem center;
+        color: var(--text-light);
+        font-size: 0.95rem;
+        cursor: pointer;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        transition: all 0.3s ease;
+    }
+
+    select:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    select option {
+        background: rgba(10, 14, 39, 0.98) !important;
+        color: var(--text-light) !important;
+        padding: 0.75rem;
+        border: none;
+    }
+
+    select option:hover,
+    select option:checked,
+    select option:focus {
+        background: rgba(212, 175, 55, 0.2) !important;
+        color: var(--yellow) !important;
     }
 
     @media (max-width: 991.98px) {
