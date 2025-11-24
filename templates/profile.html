@@ -3,166 +3,194 @@
 {% block title %}{{ get_translation('profile') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row">
-        <!-- Profile Information -->
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-body text-center">
-                        <div class="rounded-circle bg-light mb-3 d-flex align-items-center justify-content-center mx-auto" 
-                             style="width: 150px; height: 150px;">
-                            <i class="fas fa-user fa-4x text-muted"></i>
-                        </div>
-                    
-                    <h4>{{ user.username }}</h4>
-                    <p class="text-muted" dir="ltr" style="text-align: left; direction: ltr;">{{ user.phone_number }}</p>
-                    
-                    <!-- {% if not user.is_verified %}
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> {{ get_translation('account_not_verified') }}
-                        </div>
-                    {% else %}
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i> {{ get_translation('account_verified') }}
-                        </div>
-                    {% endif %} -->
-                </div>
+<div class="profile-page">
+    <div class="profile-glow glow-1"></div>
+    <div class="profile-glow glow-2"></div>
+    <div class="profile-glow glow-3"></div>
+
+    <div class="profile-particles">
+        <span class="particle p1"></span>
+        <span class="particle p2"></span>
+        <span class="particle p3"></span>
+        <span class="particle p4"></span>
+        <span class="particle p5"></span>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="profile-back-button">
+        <i class="fas fa-arrow-right"></i>
+        <span>{{ get_translation('back') }}</span>
+    </a>
+
+    <div class="profile-container">
+        <div class="profile-hero-card">
+            <div class="avatar-shell">
+                <div class="avatar-ring ring-1"></div>
+                <div class="avatar-ring ring-2"></div>
+                <i class="fas fa-user"></i>
             </div>
-
-            <!-- Profile Form -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">{{ get_translation('edit_profile') }}</h5>
-                </div>
-                <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data">
-                        {{ form.csrf_token }}
-                        
-                        <div class="mb-3">
-                            <label for="username" class="form-label">
-                                {{ get_translation('username') }} <span class="optional">({{ get_translation('optional') }})</span>
-                            </label>
-                            {{ form.username(class="form-control") }}
-                            {% if form.username.errors %}
-                                {% for error in form.username.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form.phone_number.label(class="form-label") }}
-                            {{ form.phone_number(class="form-control", dir="ltr", style="direction: ltr; text-align: left;") }}
-                            {% if form.phone_number.errors %}
-                                {% for error in form.phone_number.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-
-                        <div class="profile-actions">
-                            {# Password and wallet features removed #}
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100">{{ get_translation('update_profile') }}</button>
-                    </form>
+            <div class="hero-text">
+                <p class="muted-label">{{ get_translation('hello') }}</p>
+                <h1>{{ user.username or get_translation('guest_user') }}</h1>
+                <p class="phone" dir="ltr" style="direction:ltr;">{{ user.phone_number }}</p>
+                <div class="hero-badges">
+                    <span class="status-chip">
+                        <i class="fas fa-shopping-bag"></i>
+                        {{ recent_orders|length }} {{ get_translation('recent_orders') }}
+                    </span>
                 </div>
             </div>
         </div>
 
-        <!-- Orders and Addresses -->
-        <div class="col-md-8">
-            <!-- Recent Orders -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">{{ get_translation('recent_orders') }}</h5>
+        <div class="profile-grid">
+            <div class="profile-column">
+                <div class="profile-panel glass-card">
+                    <div class="panel-heading">
+                        <div>
+                            <p class="muted-label">{{ get_translation('profile_details') }}</p>
+                            <h3>{{ get_translation('edit_profile') }}</h3>
+                        </div>
+                        <i class="fas fa-user-edit panel-icon"></i>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" class="profile-form">
+                        {{ form.csrf_token }}
+                        <div class="form-group">
+                            <label for="username">
+                                <i class="fas fa-id-badge"></i>
+                                {{ get_translation('username') }}
+                                <span class="optional">({{ get_translation('optional') }})</span>
+                            </label>
+                            <div class="input-shell">
+                                {{ form.username(class="form-control") }}
+                                <div class="focus-line"></div>
+                            </div>
+                            {% if form.username.errors %}
+                                <div class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {% for error in form.username.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone_number">
+                                <i class="fas fa-phone-alt"></i>
+                                {{ get_translation('phone_number') }}
+                            </label>
+                            <div class="input-shell">
+                                {{ form.phone_number(class="form-control phone-field", dir="ltr", style="direction: ltr; text-align: left;") }}
+                                <div class="focus-line"></div>
+                            </div>
+                            {% if form.phone_number.errors %}
+                                <div class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {% for error in form.phone_number.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="primary-btn">
+                            <span>{{ get_translation('update_profile') }}</span>
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                    </form>
                 </div>
-                <div class="card-body">
+            </div>
+
+            <div class="profile-column">
+                <div class="profile-panel glass-card orders-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <p class="muted-label">{{ get_translation('latest_activity') }}</p>
+                            <h3>{{ get_translation('recent_orders') }}</h3>
+                        </div>
+                        <i class="fas fa-receipt panel-icon"></i>
+                    </div>
+
                     {% if recent_orders %}
-                    <div class="list-group">
-                        {% for order in recent_orders %}
-                        <a href="{{ url_for('order_status', order_id=order.id) }}" 
-                           class="list-group-item list-group-item-action {% if highlighted_order_id and highlighted_order_id|int == order.id %}active{% endif %}"
-                           id="order-{{ order.id }}">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1">{{ get_translation('order') }} #{{ order.id }}</h6>
-                                    <p class="mb-1">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-                                    <small class="text-muted">
+                        <div class="orders-list">
+                            {% for order in recent_orders %}
+                            <a href="{{ url_for('order_status', order_id=order.id) }}" class="order-card {% if highlighted_order_id and highlighted_order_id|int == order.id %}highlighted{% endif %}" id="order-{{ order.id }}">
+                                <div class="order-icon">
+                                    <i class="fas fa-box-open"></i>
+                                </div>
+                                <div class="order-info">
+                                    <div class="order-top">
+                                        <h4>{{ get_translation('order') }} #{{ order.id }}</h4>
+                                        <span class="order-status status-{{ order.status|replace(' ', '-') }}">{{ get_translation(order.status) }}</span>
+                                    </div>
+                                    <p class="order-date">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    <p class="order-meta">
                                         {{ order.items|length }} {{ get_translation('items') }}
                                         {% if order.delivery_type == 'pickup' %}
                                             • {{ get_translation('pickup_from') }} {{ order.store_location.name }}
                                         {% else %}
                                             • {{ get_translation('delivery_to') }} {{ order.address.street }}
                                         {% endif %}
-                                    </small>
+                                    </p>
                                 </div>
-                                <div>
-                                    <span class="badge {% if order.status == 'pending_approval' %}bg-warning
-                                                      {% elif order.status == 'preparing' %}bg-info
-                                                      {% elif order.status == 'completed' %}bg-success
-                                                      {% elif order.status == 'cancelled' %}bg-secondary
-                                                      {% else %}bg-danger{% endif %}">
-                                        {{ get_translation(order.status) }}
-                                    </span>
-                                </div>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
+                            </a>
+                            {% endfor %}
+                        </div>
                     {% else %}
-                    <p class="text-muted mb-0">{{ get_translation('no_recent_orders') }}</p>
+                        <div class="empty-state">
+                            <i class="fas fa-shopping-basket"></i>
+                            <p>{{ get_translation('no_recent_orders') }}</p>
+                        </div>
                     {% endif %}
                 </div>
-            </div>
 
-            <!-- Addresses -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">{{ get_translation('saved_addresses') }}</h5>
-                    <a href="{{ url_for('add_address') }}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus"></i> {{ get_translation('add_address') }}
-                    </a>
-                </div>
-                <div class="card-body">
+                <div class="profile-panel glass-card address-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <p class="muted-label">{{ get_translation('delivery_spots') }}</p>
+                            <h3>{{ get_translation('saved_addresses') }}</h3>
+                        </div>
+                        <a href="{{ url_for('add_address') }}" class="ghost-btn">
+                            <i class="fas fa-plus"></i>
+                            <span>{{ get_translation('add_address') }}</span>
+                        </a>
+                    </div>
+
                     {% if addresses %}
-                    <div class="row">
+                    <div class="address-grid">
                         {% for address in addresses %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="card-title mb-2">
-                                                {% if address.is_default %}
-                                                <span class="badge bg-success me-2">{{ get_translation('default') }}</span>
-                                                {% endif %}
-                                                {{ address.tag }} - {{ address.street }}
-                                            </h6>
-                                            <p class="card-text mb-1">{{ get_translation('unit') }} {{ address.building_unit_number }}</p>
-                                            {% if address.description %}
-                                            <p class="card-text mb-1 text-muted">{{ address.description }}</p>
-                                            {% endif %}
-                                        </div>
-                                        <div class="btn-group">
-                                            <a href="{{ url_for('edit_address', address_id=address.id) }}" 
-                                               class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{{ url_for('delete_address', address_id=address.id) }}" 
-                                               class="btn btn-sm btn-outline-danger"
-                                               onclick="return confirm('{{ get_translation('confirm_delete_address') }}')">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </div>
-                                    </div>
+                        <div class="address-card glass-card">
+                            <div class="address-header">
+                                <div class="tag">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>{{ address.tag }}</span>
                                 </div>
+                                {% if address.is_default %}
+                                <span class="default-chip">{{ get_translation('default') }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="address-line">{{ address.street }}</p>
+                            <p class="address-meta">{{ get_translation('unit') }} {{ address.building_unit_number }}</p>
+                            {% if address.description %}
+                            <p class="address-description">{{ address.description }}</p>
+                            {% endif %}
+                            <div class="address-actions">
+                                <a href="{{ url_for('edit_address', address_id=address.id) }}" class="action-btn">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('delete_address', address_id=address.id) }}" class="action-btn danger"
+                                   data-confirm="{{ get_translation('confirm_delete_address') }}">
+                                    <i class="fas fa-trash"></i>
+                                </a>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted mb-0">{{ get_translation('no_saved_addresses') }}</p>
+                    <div class="empty-state">
+                        <i class="fas fa-map-pin"></i>
+                        <p>{{ get_translation('no_saved_addresses') }}</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -176,86 +204,627 @@ document.addEventListener('DOMContentLoaded', function() {
     const orderElement = document.getElementById('order-{{ highlighted_order_id }}');
     if (orderElement) {
         orderElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        orderElement.classList.add('highlighted');
     }
 });
 </script>
 {% endif %}
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.action-btn[data-confirm]').forEach(function(button) {
+        button.addEventListener('click', function(event) {
+            const message = this.getAttribute('data-confirm');
+            if (!confirm(message)) {
+                event.preventDefault();
+            }
+        });
+    });
+});
+</script>
+
 <style>
-    .profile-actions {
-        margin: 1.5rem 0;
+    :root {
+        --dark-blue-night: #050818;
+        --dark-blue-night-light: #0f1635;
+        --dark-blue-night-lighter: #1a2450;
+        --yellow: #d4af37;
+        --yellow-bright: #f6d878;
+        --yellow-dark: #b68d23;
+        --text-light: #f5f5f5;
+        --text-muted: #9ea4c3;
+        --card-bg: rgba(8, 12, 32, 0.75);
     }
 
-    .profile-actions .btn {
+    .profile-page {
         position: relative;
+        min-height: 100vh;
+        padding: 3rem 1.5rem 4rem;
+        display: flex;
+        justify-content: center;
+        background: var(--dark-blue-night);
         overflow: hidden;
-        border: none;
-        padding: 1rem;
+    }
+
+    .profile-glow {
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(120px);
+        opacity: 0.45;
+        animation: floatGlow 12s infinite ease-in-out;
+    }
+
+    .glow-1 { width: 420px; height: 420px; top: -10%; left: -5%; background: rgba(212, 175, 55, 0.35); }
+    .glow-2 { width: 360px; height: 360px; bottom: -15%; right: 5%; background: rgba(20, 40, 120, 0.55); animation-delay: 2s; }
+    .glow-3 { width: 300px; height: 300px; top: 45%; left: 55%; background: rgba(212, 175, 55, 0.2); animation-delay: 4s; }
+
+    @keyframes floatGlow {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(25px, -25px) scale(1.05); }
+    }
+
+    .profile-particles {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--yellow);
+        opacity: 0.6;
+        animation: drift 14s linear infinite;
+    }
+
+    .p1 { top: 75%; left: 20%; animation-delay: 0s; }
+    .p2 { top: 50%; right: 25%; animation-delay: 3s; }
+    .p3 { top: 30%; left: 35%; animation-delay: 6s; }
+    .p4 { bottom: 15%; right: 30%; animation-delay: 9s; }
+    .p5 { bottom: 5%; left: 45%; animation-delay: 12s; }
+
+    @keyframes drift {
+        0% { transform: translateY(0) translateX(0); opacity: 0; }
+        20% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { transform: translateY(-90vh) translateX(40px); opacity: 0; }
+    }
+
+    .profile-back-button {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.25rem;
         border-radius: 12px;
-        font-weight: 500;
-        transition: all 0.3s ease;
+        border: 1px solid rgba(212, 175, 55, 0.35);
+        color: var(--text-light);
         text-decoration: none;
+        font-weight: 600;
+        background: rgba(5, 8, 24, 0.7);
+        backdrop-filter: blur(12px);
+        transition: all 0.3s ease;
+        z-index: 10;
+    }
+
+    .profile-back-button:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        transform: translateX(-4px);
+    }
+
+    .profile-container {
+        width: 100%;
+        max-width: 1160px;
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .profile-hero-card {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+        padding: 2rem;
+        border-radius: 28px;
+        background: linear-gradient(120deg, rgba(12, 17, 42, 0.85), rgba(22, 27, 62, 0.9));
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(15px);
+    }
+
+    .avatar-shell {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
+        background: rgba(5, 8, 24, 0.65);
+        border: 1px solid rgba(212, 175, 55, 0.35);
     }
 
-    .profile-actions .btn-content {
-        position: relative;
-        z-index: 1;
+    .avatar-shell i {
+        font-size: 2.5rem;
+        color: var(--yellow);
+    }
+
+    .avatar-ring {
+        position: absolute;
+        border-radius: 50%;
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        animation: rotateRing 12s linear infinite;
+    }
+
+    .ring-1 {
+        width: 135px;
+        height: 135px;
+        animation-duration: 15s;
+    }
+
+    .ring-2 {
+        width: 155px;
+        height: 155px;
+        animation-duration: 20s;
+        animation-direction: reverse;
+    }
+
+    @keyframes rotateRing {
+        from { transform: rotate(0); }
+        to { transform: rotate(360deg); }
+    }
+
+    .hero-text .muted-label {
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 2px;
+        margin-bottom: 0.25rem;
+    }
+
+    .hero-text h1 {
+        font-size: 2rem;
+        color: var(--text-light);
+        margin-bottom: 0.2rem;
+    }
+
+    .hero-text .phone {
+        color: var(--yellow);
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: var(--text-light);
+        font-size: 0.9rem;
+    }
+
+    .status-chip.pending {
+        background: rgba(255, 193, 7, 0.15);
+        border-color: rgba(255, 193, 7, 0.4);
+        color: #ffc857;
+    }
+
+    .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .profile-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        background: var(--card-bg);
+        border-radius: 24px;
+        padding: 1.75rem;
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    .panel-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .panel-heading .muted-label {
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1.5px;
+        margin-bottom: 0.2rem;
+    }
+
+    .panel-heading h3 {
+        color: var(--text-light);
+        margin: 0;
+        font-size: 1.4rem;
+    }
+
+    .panel-icon {
+        color: var(--yellow);
+        font-size: 1.5rem;
+    }
+
+    .profile-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .form-group label {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
     }
 
-    .profile-actions .btn i {
-        font-size: 1.2rem;
+    .form-group label i {
+        color: var(--yellow);
     }
 
-    .profile-actions .btn-hover-effect {
-        position: absolute;
-        top: 0;
-        left: 0;
+    .optional {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    .input-shell {
+        position: relative;
+    }
+
+    .form-control {
         width: 100%;
-        height: 100%;
-        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transform: translateX(-100%);
-        transition: transform 0.6s ease;
+        padding: 0.95rem 1.1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        background: rgba(12, 17, 42, 0.7);
+        color: var(--text-light);
+        transition: border-color 0.3s ease, background 0.3s ease;
     }
 
-    .profile-actions .btn:hover .btn-hover-effect {
-        transform: translateX(100%);
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.35);
     }
 
-    .profile-actions .btn-password {
-        background: linear-gradient(135deg, #4CAF50, #45a049);
-        color: white;
-        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+    .form-control:focus {
+        outline: none;
+        border-color: var(--yellow);
+        background: rgba(12, 17, 42, 0.9);
     }
 
-    .profile-actions .btn-password:hover {
+    .form-control:-webkit-autofill,
+    .form-control:-webkit-autofill:hover,
+    .form-control:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--text-light);
+        -webkit-box-shadow: 0 0 0px 1000px rgba(12, 17, 42, 0.9) inset;
+        box-shadow: 0 0 0px 1000px rgba(12, 17, 42, 0.9) inset;
+        border-color: var(--yellow);
+        transition: background-color 9999s ease-in-out 0s;
+    }
+
+    .phone-field {
+        background: linear-gradient(120deg, rgba(6, 16, 48, 0.95), rgba(9, 26, 78, 0.95));
+        color: var(--yellow);
+        border-color: rgba(246, 216, 120, 0.6);
+    }
+
+    .phone-field:focus {
+        background: linear-gradient(120deg, rgba(9, 26, 78, 1), rgba(14, 42, 110, 1));
+        color: var(--yellow-bright);
+        border-color: var(--yellow-bright);
+    }
+
+    .phone-field::placeholder {
+        color: rgba(246, 216, 120, 0.65);
+    }
+
+    .focus-line {
+        position: absolute;
+        bottom: 0.25rem;
+        left: 1.1rem;
+        right: 1.1rem;
+        height: 2px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .form-control:focus + .focus-line {
+        opacity: 1;
+    }
+
+    .error-message {
+        margin-top: 0.5rem;
+        padding: 0.6rem 0.8rem;
+        border-radius: 10px;
+        background: rgba(255, 107, 129, 0.12);
+        border: 1px solid rgba(255, 107, 129, 0.35);
+        color: #ff8fa3;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .primary-btn {
+        width: 100%;
+        border: none;
+        border-radius: 16px;
+        background: linear-gradient(130deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        font-weight: 700;
+        padding: 1rem 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        box-shadow: 0 15px 40px rgba(212, 175, 55, 0.35);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .primary-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
-        color: white;
+        box-shadow: 0 20px 55px rgba(212, 175, 55, 0.4);
     }
 
-    .profile-actions .btn-logout {
-        background: linear-gradient(135deg, #f44336, #d32f2f);
-        color: white;
-        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.2);
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-height: 420px;
+        overflow-y: auto;
+        padding-right: 0.25rem;
     }
 
-    .profile-actions .btn-logout:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(244, 67, 54, 0.3);
-        color: white;
+    .order-card {
+        display: flex;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(8, 12, 32, 0.7);
+        text-decoration: none;
+        color: var(--text-light);
+        transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* Wallet feature removed */
+    .order-card:hover {
+        border-color: rgba(212, 175, 55, 0.4);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+    }
 
-    @media (max-width: 576px) {
-        .profile-actions .btn {
-            padding: 0.8rem;
+    .order-card.highlighted {
+        border-color: var(--yellow);
+        box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
+    }
+
+    .order-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: rgba(212, 175, 55, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--yellow);
+        flex-shrink: 0;
+    }
+
+    .order-info h4 {
+        margin: 0;
+        font-size: 1.05rem;
+    }
+
+    .order-status {
+        border-radius: 999px;
+        padding: 0.35rem 0.85rem;
+        font-size: 0.8rem;
+        text-transform: capitalize;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .status-pending_approval,
+    .status-pending,
+    .status-preparing { background: rgba(255, 193, 7, 0.2); border-color: rgba(255, 193, 7, 0.35); color: #ffd66b; }
+    .status-completed { background: rgba(46, 204, 113, 0.18); border-color: rgba(46, 204, 113, 0.4); color: #47ffb5; }
+    .status-cancelled { background: rgba(231, 76, 60, 0.18); border-color: rgba(231, 76, 60, 0.35); color: #ff9690; }
+    .status-default { background: rgba(155, 89, 182, 0.18); border-color: rgba(155, 89, 182, 0.35); color: #ddb0ff; }
+
+    .order-date {
+        color: var(--text-muted);
+        margin: 0.15rem 0;
+    }
+
+    .order-meta {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 0.95rem;
+    }
+
+    .address-panel .ghost-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 1rem;
+        border-radius: 12px;
+        border: 1px dashed rgba(212, 175, 55, 0.5);
+        color: var(--yellow);
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .address-panel .ghost-btn:hover {
+        background: rgba(212, 175, 55, 0.15);
+    }
+
+    .address-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+    }
+
+    .address-card {
+        padding: 1.25rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(8, 12, 32, 0.7);
+    }
+
+    .address-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .address-header .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--yellow);
+        font-weight: 600;
+    }
+
+    .default-chip {
+        padding: 0.25rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid rgba(46, 204, 113, 0.4);
+        color: #48ffb3;
+        font-size: 0.8rem;
+    }
+
+    .address-line {
+        margin: 0.4rem 0;
+        font-weight: 600;
+    }
+
+    .address-meta {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .address-description {
+        margin: 0.5rem 0;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+    }
+
+    .address-actions {
+        display: flex;
+        gap: 0.65rem;
+        margin-top: 0.8rem;
+    }
+
+    .action-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: var(--yellow);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .action-btn:hover {
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    .action-btn.danger {
+        border-color: rgba(231, 76, 60, 0.35);
+        color: #ff9a97;
+    }
+
+    .action-btn.danger:hover {
+        background: rgba(231, 76, 60, 0.15);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: var(--text-muted);
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+    }
+
+    .empty-state i {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+        color: var(--yellow);
+    }
+
+    @media (max-width: 767.98px) {
+        .profile-page {
+            padding: 2.5rem 1rem 3rem;
+        }
+
+        .profile-back-button span {
+            display: none;
+        }
+
+        .profile-hero-card {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .hero-badges {
+            justify-content: center;
+        }
+
+        .profile-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .profile-back-button {
+            top: 0.8rem;
+            right: 0.8rem;
+        }
+
+        .glass-card {
+            padding: 1.5rem;
+        }
+
+        .order-card {
+            flex-direction: column;
+        }
+
+        .orders-list {
+            max-height: none;
         }
     }
 </style>

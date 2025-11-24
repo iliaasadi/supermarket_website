@@ -1,108 +1,225 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div class="container">
-    <h2 class="mb-4">{{ get_translation('order_comments') }}</h2>
-    
-    <!-- Date Filter -->
-    <div class="mb-4">
-        <form method="GET" class="row g-3 align-items-center">
-            <div class="col-auto">
-                <label for="date" class="form-label">{{ get_translation('select_date') }}</label>
-                <input type="date" class="form-control" id="date" name="date" value="{{ selected_date }}" 
-                       min="1400-01-01" max="1500-12-29">
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary mt-4">{{ get_translation('filter') }}</button>
-            </div>
-        </form>
-    </div>
+{% set waiting_entries = entries|selectattr('is_waiting', 'equalto', True)|list %}
+{% set completed_entries = entries|selectattr('is_waiting', 'equalto', False)|list %}
 
-    <!-- Order Summary Section -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">{{ get_translation('order_summary') }}</h5>
+<section class="comments-admin-page">
+    <div class="comments-backdrop"></div>
+    <div class="comments-backdrop comments-backdrop-2"></div>
+
+    <div class="container comments-container">
+        <header class="comments-header">
+            <a href="{{ request.referrer or url_for('admin_dashboard') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back_to_dashboard') or get_translation('back') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('order_comments') }}</p>
+                <h1>{{ get_translation('order_feedback_center') or get_translation('order_comments') }}</h1>
+                <p>{{ get_translation('order_comments_subtitle') or 'نظرات مشتریان و سفارش‌های در انتظار بازخورد را در یک نگاه بررسی کنید.' }}</p>
+            </div>
+            <div class="header-badge">
+                <i class="fas fa-star"></i>
+                <span>{{ entries|length }} {{ get_translation('orders') }}</span>
+            </div>
+        </header>
+
+        <div class="filter-card glass-card">
+            <form method="GET" class="filter-grid">
+                <div class="form-group">
+                    <label for="date">{{ get_translation('select_date') }}</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-calendar"></i>
+                        <input type="date" id="date" name="date" value="{{ selected_date }}" min="1400-01-01" max="1500-12-29">
+                    </div>
+                </div>
+                <button type="submit" class="primary-btn">
+                    <span>{{ get_translation('filter') }}</span>
+                    <i class="fas fa-filter"></i>
+                </button>
+            </form>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    <h6>{{ get_translation('total_orders') }}</h6>
-                    <p class="h3">{{ entries|length }}</p>
+
+        <div class="comments-summary">
+            <div class="summary-card neutral-card">
+                <div class="summary-top">
+                    <span>{{ get_translation('total_orders') }}</span>
+                    <i class="fas fa-layer-group"></i>
                 </div>
-                <div class="col-md-4">
-                    <h6>{{ get_translation('orders_with_comments') }}</h6>
-                    <p class="h3">{{ entries|selectattr('is_waiting', 'equalto', false)|list|length }}</p>
+                <strong>{{ entries|length }}</strong>
+                <small>{{ get_translation('orders_with_feedback') or 'شامل بازخورد و انتظار' }}</small>
+            </div>
+            <div class="summary-card success-card">
+                <div class="summary-top">
+                    <span>{{ get_translation('orders_with_comments') }}</span>
+                    <i class="fas fa-comments"></i>
                 </div>
-                <div class="col-md-4">
-                    <h6>{{ get_translation('orders_waiting_for_comments') }}</h6>
-                    <p class="h3">{{ entries|selectattr('is_waiting', 'equalto', true)|list|length }}</p>
+                <strong>{{ completed_entries|length }}</strong>
+                <small>{{ get_translation('published_reviews') or 'نظرات ثبت شده' }}</small>
+            </div>
+            <div class="summary-card warning-card">
+                <div class="summary-top">
+                    <span>{{ get_translation('orders_waiting_for_comments') }}</span>
+                    <i class="fas fa-hourglass-half"></i>
                 </div>
+                <strong>{{ waiting_entries|length }}</strong>
+                <small>{{ get_translation('awaiting_customer_feedback') or 'منتظر پاسخ مشتری' }}</small>
             </div>
         </div>
-    </div>
 
-    <!-- Comments Table -->
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>{{ get_translation('order_id') }}</th>
-                    <th>{{ get_translation('phone') }}</th>
-                    <th>{{ get_translation('overall_experience') }}</th>
-                    <th>{{ get_translation('value_for_money') }}</th>
-                    <th>{{ get_translation('packaging') }}</th>
-                    <th>{{ get_translation('delivery_service') }}</th>
-                    <th>{{ get_translation('food_quality') }}</th>
-                    <th>{{ get_translation('comment') }}</th>
-                    <th>{{ get_translation('date') }}</th>
-                    <th>{{ get_translation('actions') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for entry in entries %}
-                    {% if entry.is_waiting %}
-                        <tr class="table-warning">
-                            <td>#{{ entry.order.id }}</td>
-                            <td><span dir="ltr" style="display: inline-block; direction: ltr;">{{ entry.order.user.phone_number }}</span></td>
-                            <td colspan="6" class="text-center">
-                                <span class="badge bg-warning">{{ get_translation('waiting_for_user_comment') }}</span>
-                            </td>
-                            <td>{{ to_tehran_time(entry.order.completed_at).strftime('%Y/%m/%d %H:%M') }}</td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#orderModal{{ entry.order.id }}">
-                                    {{ get_translation('view_details') }}
-                                </button>
-                            </td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td>#{{ entry.order.id }}</td>
-                            <td><span dir="ltr" style="display: inline-block; direction: ltr;">{{ entry.order.user.phone_number }}</span></td>
-                            <td>{{ entry.overall_experience }}/5</td>
-                            <td>{{ entry.value_for_money }}/5</td>
-                            <td>{{ entry.packaging }}/5</td>
-                            <td>{{ entry.delivery_service }}/5</td>
-                            <td>{{ entry.food_quality }}/5</td>
-                            <td>{{ entry.comment }}</td>
-                            <td>{{ to_tehran_time(entry.created_at).strftime('%Y/%m/%d %H:%M') }}</td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#orderModal{{ entry.order.id }}">
-                                    {{ get_translation('view_details') }}
-                                </button>
-                            </td>
-                        </tr>
-                    {% endif %}
+        <div class="comments-grid">
+            <section class="comments-block glass-card">
+                <div class="block-header">
+                    <div>
+                        <p class="muted-label">{{ get_translation('status') }}</p>
+                        <h2>{{ get_translation('orders_waiting_for_comments') }}</h2>
+                    </div>
+                    <span class="status-chip status-waiting">{{ waiting_entries|length }} {{ get_translation('orders') }}</span>
+                </div>
+
+                {% if waiting_entries %}
+                <div class="comment-list">
+                    {% for entry in waiting_entries %}
+                    <article class="comment-card waiting">
+                        <div class="card-top">
+                            <div>
+                                <span class="order-id">#{{ entry.order.id }}</span>
+                                <p class="order-date">{{ to_tehran_time(entry.order.completed_at).strftime('%Y/%m/%d %H:%M') }}</p>
+                            </div>
+                            <span class="status-badge waiting">{{ get_translation('waiting_for_user_comment') }}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-row">
+                                <div>
+                                    <p class="muted-label">{{ get_translation('customer') }}</p>
+                                    <p class="value">
+                                        <i class="fas fa-phone"></i>
+                                        <span dir="ltr" style="display:inline-block;direction:ltr;">{{ entry.order.user.phone_number }}</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="muted-label">{{ get_translation('total') }}</p>
+                                    <p class="value">{{ "{:,.0f}".format(entry.order.total_amount|default(0)) }} {{ get_translation('currency_toman') or 'تومان' }}</p>
+                                </div>
+                            </div>
+                            <p class="muted-label">{{ get_translation('reminder') or 'یادآوری' }}</p>
+                            <p class="reminder-text">{{ get_translation('waiting_for_comment_hint') or 'پس از تکمیل سفارش، لینک نظرسنجی برای مشتری ارسال شده است.' }}</p>
+                        </div>
+                        <div class="card-actions">
+                            <button type="button" class="ghost-btn info" data-bs-toggle="modal" data-bs-target="#orderModal{{ entry.order.id }}">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ get_translation('view_details') }}</span>
+                            </button>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
                 {% else %}
-                    <tr>
-                        <td colspan="10" class="text-center">{{ get_translation('no_comments_found') }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+                <div class="empty-state">
+                    <i class="fas fa-check-double"></i>
+                    <h4>{{ get_translation('no_pending_items') or 'موردی در انتظار نیست' }}</h4>
+                    <p>{{ get_translation('all_feedback_collected') or 'تمام سفارش‌ها بازخورد خود را دریافت کرده‌اند.' }}</p>
+                </div>
+                {% endif %}
+            </section>
 
-<!-- Order Details Modals -->
+            <section class="comments-block glass-card">
+                <div class="block-header">
+                    <div>
+                        <p class="muted-label">{{ get_translation('feedback') }}</p>
+                        <h2>{{ get_translation('orders_with_comments') }}</h2>
+                    </div>
+                    <span class="status-chip status-complete">{{ completed_entries|length }} {{ get_translation('orders') }}</span>
+                </div>
+
+                {% if completed_entries %}
+                <div class="comment-list">
+                    {% for entry in completed_entries %}
+                    <article class="comment-card completed">
+                        <div class="card-top">
+                            <div>
+                                <span class="order-id">#{{ entry.order.id }}</span>
+                                <p class="order-date">{{ to_tehran_time(entry.created_at).strftime('%Y/%m/%d %H:%M') }}</p>
+                            </div>
+                            <div class="rating-pill">
+                                <i class="fas fa-star"></i>
+                                <span>{{ entry.overall_experience }}/5</span>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="info-row">
+                                <div>
+                                    <p class="muted-label">{{ get_translation('customer') }}</p>
+                                    <p class="value">
+                                        <i class="fas fa-phone"></i>
+                                        <span dir="ltr" style="display:inline-block;direction:ltr;">{{ entry.order.user.phone_number }}</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="muted-label">{{ get_translation('total') }}</p>
+                                    <p class="value">{{ "{:,.0f}".format(entry.order.total_amount|default(0)) }} {{ get_translation('currency_toman') or 'تومان' }}</p>
+                                </div>
+                            </div>
+                            <div class="ratings-grid">
+                                <div>
+                                    <p class="muted-label">{{ get_translation('value_for_money') }}</p>
+                                    <p class="rating-value">
+                                        <i class="fas fa-balance-scale"></i>
+                                        <span>{{ entry.value_for_money }}/5</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="muted-label">{{ get_translation('packaging') }}</p>
+                                    <p class="rating-value">
+                                        <i class="fas fa-box-open"></i>
+                                        <span>{{ entry.packaging }}/5</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="muted-label">{{ get_translation('delivery_service') }}</p>
+                                    <p class="rating-value">
+                                        <i class="fas fa-truck"></i>
+                                        <span>{{ entry.delivery_service }}/5</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="muted-label">{{ get_translation('food_quality') }}</p>
+                                    <p class="rating-value">
+                                        <i class="fas fa-utensils"></i>
+                                        <span>{{ entry.food_quality }}/5</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            {% if entry.comment %}
+                            <div class="note-preview">
+                                <p>{{ entry.comment }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-actions">
+                            <button type="button" class="ghost-btn info" data-bs-toggle="modal" data-bs-target="#orderModal{{ entry.order.id }}">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ get_translation('view_details') }}</span>
+                            </button>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-comment-slash"></i>
+                    <h4>{{ get_translation('no_comments_found') }}</h4>
+                    <p>{{ get_translation('no_comments_hint') or 'هنوز هیچ نظری ثبت نشده است.' }}</p>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</section>
+
 {% for entry in entries %}
 <div class="modal fade" id="orderModal{{ entry.order.id }}" tabindex="-1" aria-labelledby="orderModalLabel{{ entry.order.id }}" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -112,16 +229,16 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Customer Information -->
-                <div class="mb-4">
+                <div class="modal-section">
                     <h6>{{ get_translation('customer_information') }}</h6>
                     <p><strong>{{ get_translation('name') }}:</strong> {{ entry.order.user.username }}</p>
-                    <p><strong>{{ get_translation('phone') }}:</strong> <span dir="ltr" style="display: inline-block; direction: ltr;">{{ entry.order.user.phone_number }}</span></p>
+                    <p><strong>{{ get_translation('phone') }}:</strong> <span dir="ltr" style="display:inline-block;direction:ltr;">{{ entry.order.user.phone_number }}</span></p>
+                    {% if entry.order.address %}
                     <p><strong>{{ get_translation('address') }}:</strong> {{ entry.order.address }}</p>
+                    {% endif %}
                 </div>
 
-                <!-- Order Items -->
-                <div class="mb-4">
+                <div class="modal-section">
                     <h6>{{ get_translation('order_items') }}</h6>
                     <div class="table-responsive">
                         <table class="table table-sm">
@@ -138,31 +255,16 @@
                                 <tr>
                                     <td>{{ item.product.name }}</td>
                                     <td>{{ item.quantity }}</td>
-                                    <td>{{ "{:,.0f}".format(item.price|default(0)) }} {{ get_translation('tooman') }}</td>
-                                    <td>{{ "{:,.0f}".format((item.price|default(0)) * (item.quantity|default(0))) }} {{ get_translation('tooman') }}</td>
+                                    <td>{{ "{:,.0f}".format(item.price|default(0)) }} {{ get_translation('currency_toman') or 'تومان' }}</td>
+                                    <td>{{ "{:,.0f}".format((item.price|default(0)) * (item.quantity|default(0))) }} {{ get_translation('currency_toman') or 'تومان' }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="3" class="text-end"><strong>{{ get_translation('subtotal') }}:</strong></td>
-                                    <td>{{ "{:,.0f}".format(entry.order.subtotal|default(0)) }} {{ get_translation('tooman') }}</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3" class="text-end"><strong>{{ get_translation('delivery_fee') }}:</strong></td>
-                                    <td>{{ "{:,.0f}".format(entry.order.delivery_fee|default(0)) }} {{ get_translation('tooman') }}</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3" class="text-end"><strong>{{ get_translation('total') }}:</strong></td>
-                                    <td><strong>{{ "{:,.0f}".format(entry.order.total_amount|default(0)) }} {{ get_translation('tooman') }}</strong></td>
-                                </tr>
-                            </tfoot>
                         </table>
                     </div>
                 </div>
 
-                <!-- Order Details -->
-                <div class="mb-4">
+                <div class="modal-section">
                     <h6>{{ get_translation('order_details') }}</h6>
                     <p><strong>{{ get_translation('order_date') }}:</strong> {{ to_tehran_time(entry.order.created_at).strftime('%Y/%m/%d %H:%M') }}</p>
                     <p><strong>{{ get_translation('payment_method') }}:</strong> {{ get_translation(entry.order.payment_method) }}</p>
@@ -173,62 +275,23 @@
                 </div>
 
                 {% if not entry.is_waiting %}
-                <!-- Ratings -->
-                <div class="mb-4">
+                <div class="modal-section">
                     <h6>{{ get_translation('ratings') }}</h6>
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <small class="text-muted d-block">{{ get_translation('overall_experience') }}</small>
-                            <div class="rating-stars">
-                                {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < entry.overall_experience %}text-warning{% else %}text-muted{% endif %}"></i>
-                                {% endfor %}
-                            </div>
-                            <small class="text-muted">{{ entry.overall_experience }}/5</small>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">{{ get_translation('value_for_money') }}</small>
-                            <div class="rating-stars">
-                                {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < entry.value_for_money %}text-warning{% else %}text-muted{% endif %}"></i>
-                                {% endfor %}
-                            </div>
-                            <small class="text-muted">{{ entry.value_for_money }}/5</small>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">{{ get_translation('packaging') }}</small>
-                            <div class="rating-stars">
-                                {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < entry.packaging %}text-warning{% else %}text-muted{% endif %}"></i>
-                                {% endfor %}
-                            </div>
-                            <small class="text-muted">{{ entry.packaging }}/5</small>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">{{ get_translation('delivery_service') }}</small>
-                            <div class="rating-stars">
-                                {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < entry.delivery_service %}text-warning{% else %}text-muted{% endif %}"></i>
-                                {% endfor %}
-                            </div>
-                            <small class="text-muted">{{ entry.delivery_service }}/5</small>
-                        </div>
-                        <div class="col-12">
-                            <small class="text-muted d-block">{{ get_translation('food_quality') }}</small>
-                            <div class="rating-stars">
-                                {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < entry.food_quality %}text-warning{% else %}text-muted{% endif %}"></i>
-                                {% endfor %}
-                            </div>
-                            <small class="text-muted">{{ entry.food_quality }}/5</small>
-                        </div>
-                        {% if entry.comment %}
-                        <div class="col-12">
-                            <small class="text-muted d-block">{{ get_translation('comment') }}</small>
-                            <p class="mb-0">{{ entry.comment }}</p>
-                        </div>
-                        {% endif %}
+                    <div class="rating-stars">
+                        {% for i in range(5) %}
+                            <i class="fas fa-star {% if i < entry.overall_experience %}text-warning{% else %}text-muted{% endif %}"></i>
+                        {% endfor %}
+                        <span>{{ entry.overall_experience }}/5</span>
                     </div>
+                    <p class="mb-1">{{ get_translation('value_for_money') }}: {{ entry.value_for_money }}/5</p>
+                    <p class="mb-1">{{ get_translation('packaging') }}: {{ entry.packaging }}/5</p>
+                    <p class="mb-1">{{ get_translation('delivery_service') }}: {{ entry.delivery_service }}/5</p>
+                    <p class="mb-1">{{ get_translation('food_quality') }}: {{ entry.food_quality }}/5</p>
+                    {% if entry.comment %}
+                    <div class="note-preview mt-3">
+                        <p>{{ entry.comment }}</p>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -241,8 +304,431 @@
 {% endfor %}
 
 <style>
-.rating-stars {
-    font-size: 1.2rem;
-}
+    .comments-admin-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
+    }
+
+    .comments-backdrop {
+        position: absolute;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
+
+    .comments-backdrop:first-of-type {
+        left: -140px;
+        bottom: 8%;
+    }
+
+    .comments-backdrop-2 {
+        right: -120px;
+        top: 12%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 3s;
+    }
+
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .comments-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .comments-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.6rem);
+    }
+
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .header-badge {
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .back-chip:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    .filter-card {
+        padding: 1.2rem 1.5rem;
+    }
+
+    .filter-grid {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        min-width: 220px;
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon i {
+        position: absolute;
+        top: 50%;
+        right: 1rem;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+    }
+
+    .input-with-icon input {
+        width: 100%;
+        padding: 0.85rem 3rem 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+    }
+
+    .comments-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .summary-card {
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.75);
+        padding: 1.4rem;
+        backdrop-filter: blur(18px);
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .summary-card strong {
+        font-size: 2rem;
+    }
+
+    .summary-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .summary-card.neutral-card {
+        border-color: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .summary-card.success-card {
+        border-color: rgba(40, 167, 69, 0.35);
+        background: rgba(40, 167, 69, 0.12);
+    }
+
+    .summary-card.warning-card {
+        border-color: rgba(255, 193, 7, 0.35);
+        background: rgba(255, 193, 7, 0.12);
+    }
+
+    .comments-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.75rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .block-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+    .status-chip {
+        border-radius: 999px;
+        padding: 0.45rem 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .status-chip.status-waiting {
+        background: rgba(255, 193, 7, 0.15);
+        border: 1px solid rgba(255, 193, 7, 0.4);
+        color: #ffda6a;
+    }
+
+    .status-chip.status-complete {
+        background: rgba(13, 110, 253, 0.12);
+        border: 1px solid rgba(13, 110, 253, 0.35);
+        color: #9ec5ff;
+    }
+
+    .comment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .comment-card {
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .comment-card.waiting {
+        border-color: rgba(255, 193, 7, 0.35);
+    }
+
+    .comment-card.completed {
+        border-color: rgba(13, 110, 253, 0.35);
+    }
+
+    .card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .order-id {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .order-date {
+        margin: 0;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .status-badge {
+        border-radius: 999px;
+        padding: 0.4rem 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-badge.waiting {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffda6a;
+    }
+
+    .status-badge.preparing {
+        background: rgba(13, 110, 253, 0.15);
+        color: #9ec5ff;
+    }
+
+    .rating-pill {
+        border-radius: 999px;
+        padding: 0.4rem 0.85rem;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .order-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .info-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .muted-label {
+        color: var(--text-gray);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.75rem;
+        margin: 0;
+    }
+
+    .value {
+        margin: 0;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .reminder-text {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .ratings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .rating-value {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin: 0;
+    }
+
+    .note-preview {
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 0.85rem 1rem;
+    }
+
+    .card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .ghost-btn {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 0.6rem 1.2rem;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-light);
+        display: inline-flex;
+        gap: 0.4rem;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .ghost-btn.info {
+        border-color: rgba(13, 110, 253, 0.35);
+        color: #9ec5ff;
+    }
+
+    .primary-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 18px;
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+    }
+
+    .empty-state {
+        border-radius: 22px;
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        padding: 2rem;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .empty-state i {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+        display: inline-block;
+        color: var(--yellow);
+    }
+
+    .modal-section {
+        margin-bottom: 1.25rem;
+    }
+
+    .rating-stars {
+        font-size: 1.1rem;
+        display: flex;
+        gap: 0.2rem;
+        align-items: center;
+    }
+
+    @media (max-width: 991.98px) {
+        .comments-header {
+            grid-template-columns: 1fr;
+        }
+
+        .comments-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .comments-admin-page {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .glass-card {
+            padding: 1.4rem;
+        }
+    }
 </style>
 {% endblock %} 

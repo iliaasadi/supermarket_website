@@ -4,9 +4,9 @@
 <div class="search-page">
     <!-- Back Button -->
     <div class="back-button-container">
-        <a href="{{ url_for('index') }}" class="back-button">
+        <a href="{{ request.referrer or url_for('index') }}" class="back-button">
             <i class="fas fa-arrow-right"></i>
-            <span>بازگشت به صفحه اصلی</span>
+            <span>{{ get_translation('back_to_home') or 'بازگشت' }}</span>
         </a>
     </div>
     <!-- Search Header -->
@@ -130,6 +130,14 @@
                                     {{ get_translation('featured_only') }}
                                 </label>
                             </div>
+                            <div class="filter-checkbox">
+                                <input class="filter-check" type="checkbox" name="discounted" id="discount-check"
+                                       {% if discounted_only %}checked{% endif %}
+                                       onchange="document.getElementById('filter-form').submit()">
+                                <label class="filter-check-label" for="discount-check">
+                                    {{ get_translation('discount_only') or 'فقط تخفیف‌دار' }}
+                                </label>
+                            </div>
                         </div>
                     </div>
                     
@@ -144,6 +152,24 @@
 
         <!-- Products List -->
         {% if products %}
+            {% set has_featured = products|selectattr('is_featured')|list %}
+            {% set has_discount = products|selectattr('discount', 'gt', 0)|list %}
+
+            <div class="quick-filters">
+                {% if has_featured %}
+                <button type="button" class="quick-filter-pill {% if featured_only %}active{% endif %}" data-target="featured">
+                    <i class="fas fa-star"></i>
+                    <span>{{ get_translation('featured_only') }}</span>
+                </button>
+                {% endif %}
+                {% if has_discount %}
+                <button type="button" class="quick-filter-pill {% if discounted_only %}active{% endif %}" data-target="discount">
+                    <i class="fas fa-badge-percent"></i>
+                    <span>{{ get_translation('discount_only') or 'تخفیف‌دار' }}</span>
+                </button>
+                {% endif %}
+            </div>
+
             <div class="products-list">
                 {% for product in products %}
                     <div class="product-list-item">
@@ -568,6 +594,40 @@
         justify-content: flex-end;
         padding-top: 1rem;
         border-top: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .quick-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .quick-filter-pill {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+        border-radius: 999px;
+        padding: 0.45rem 1.2rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .quick-filter-pill:hover {
+        border-color: var(--yellow);
+        color: var(--yellow);
+    }
+
+    .quick-filter-pill.active {
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.18);
+        color: var(--yellow);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.2);
     }
 
     .clear-filters-btn {
@@ -1183,5 +1243,20 @@ function updateQuantity(button, change) {
         input.value = newValue;
     }
 }
+
+document.querySelectorAll('.quick-filter-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+        const target = pill.dataset.target;
+        const featuredCheck = document.getElementById('featured-check');
+        const discountCheck = document.getElementById('discount-check');
+        if (target === 'featured' && featuredCheck) {
+            featuredCheck.checked = !featuredCheck.checked;
+        }
+        if (target === 'discount' && discountCheck) {
+            discountCheck.checked = !discountCheck.checked;
+        }
+        document.getElementById('filter-form').submit();
+    });
+});
 </script>
 {% endblock %}

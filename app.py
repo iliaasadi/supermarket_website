@@ -469,29 +469,32 @@ def admin_delete_product(product_id):
     flash_translated('item_deleted', 'success')
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/category/add', methods=['POST'])
+@app.route('/admin/category/add', methods=['GET', 'POST'])
 @admin_required
 def admin_add_category():
-    category_name = request.form.get('category_name')
-    if category_name:
-        # Check if category already exists
-        existing_category = Category.query.filter_by(name=category_name).first()
-        if not existing_category:
-            # Handle image - either file upload or URL
-            image_url = handle_image_input(
-                image_file=request.files.get('image') if 'image' in request.files else None,
-                image_url=request.form.get('image_url'),
-                folder='categories'
-            )
-            
-            # Create category
-            category = Category(name=category_name, image_url=get_image_or_default(image_url))
-            db.session.add(category)
-            db.session.commit()
-            flash_translated('category_added', 'success')
-        else:
-            flash_translated('category_exists', 'error')
-    return redirect(url_for('admin_dashboard'))
+    if request.method == 'POST':
+        category_name = request.form.get('category_name')
+        if category_name:
+            # Check if category already exists
+            existing_category = Category.query.filter_by(name=category_name).first()
+            if not existing_category:
+                # Handle image - either file upload or URL
+                image_url = handle_image_input(
+                    image_file=request.files.get('image') if 'image' in request.files else None,
+                    image_url=request.form.get('image_url'),
+                    folder='categories'
+                )
+                
+                # Create category
+                category = Category(name=category_name, image_url=get_image_or_default(image_url))
+                db.session.add(category)
+                db.session.commit()
+                flash_translated('category_added', 'success')
+            else:
+                flash_translated('category_exists', 'error')
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('admin/add_category.html')
 
 @app.route('/admin/category/edit/<category>', methods=['GET', 'POST'])
 @admin_required
@@ -1273,6 +1276,7 @@ def search():
     min_price = request.args.get('min_price', '')
     max_price = request.args.get('max_price', '')
     featured_only = request.args.get('featured', '') == 'on'
+    discounted_only = request.args.get('discounted', '') == 'on'
     
     # Base query
     if query:
@@ -1298,6 +1302,9 @@ def search():
     
     if featured_only:
         products_query = products_query.filter(Product.is_featured == True)
+    
+    if discounted_only:
+        products_query = products_query.filter(Product.discount > 0)
     
     if min_price:
         try:
@@ -1344,6 +1351,7 @@ def search():
                          min_price=min_price,
                          max_price=max_price,
                          featured_only=featured_only,
+                         discounted_only=discounted_only,
                          all_brands=all_brands,
                          all_categories=all_categories)
 
@@ -2049,25 +2057,6 @@ def get_order_status(order_id):
         'completed_at': order.completed_at.strftime('%Y-%m-%d %H:%M') if order.completed_at else None
     })
 
-@app.route('/payment_temp')
-@login_required
-def payment_temp():
-    payment_type = request.args.get('type', 'order')
-    amount = request.args.get('amount', type=float)
-    
-    if not amount or amount < 1000:
-        flash_translated('invalid_amount', 'error')
-        return redirect(url_for('cart'))
-    
-    # Store the amount in session for payment success
-    session['payment_amount'] = amount
-    session['payment_type'] = payment_type
-    
-    return render_template('payment_temp.html',
-                         payment_type=payment_type,
-                         amount=amount,
-                         success_url=url_for('payment_success', type=payment_type, amount=amount),
-                         failure_url=url_for('payment_failure', type=payment_type, amount=amount))
 
 # Payment success route - Note: This route should verify payment before clearing cart
 # Currently, ZarinPal redirects to /zarinpal/verify which handles payment verification
@@ -2276,4 +2265,4 @@ def zarinpal_verify():
 if __name__ == '__main__':
     with app.app_context():
         init_db()  # Initialize the database
-    app.run(debug=True, port=8080, host='0.0.0.0') 
+    app.run(debug=True, port=80, host='0.0.0.0') 

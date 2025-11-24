@@ -3,220 +3,688 @@
 {% block title %}{{ get_translation('edit_product') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h2>{{ get_translation('edit_product') }}</h2>
-        </div>
-        <div class="col-auto">
-            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-success">
-                <i class="fas fa-arrow-left me-2"></i>{{ get_translation('back_to_dashboard') }}
-            </a>
-        </div>
-    </div>
+<section class="product-form-page">
+    <div class="product-backdrop"></div>
+    <div class="product-backdrop product-backdrop-2"></div>
 
-    <div class="card shadow">
-        <div class="card-body">
-            <form method="POST" enctype="multipart/form-data">
+    <div class="container product-form-container">
+        <header class="product-form-header">
+            <a href="{{ request.referrer or url_for('admin_dashboard') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back_to_dashboard') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('product_management') }}</p>
+                <h1>{{ get_translation('edit_product') }}</h1>
+                <p>{{ get_translation('edit_product_subtitle') or 'مشخصات محصول فعلی را با همان تم لوکس بروزرسانی کنید.' }}</p>
+            </div>
+            <div class="header-badge">
+                <i class="fas fa-box-open"></i>
+                <span>{{ get_translation('inventory') or get_translation('stock') }}</span>
+            </div>
+        </header>
+
+        <div class="product-form-layout">
+            <form method="POST" enctype="multipart/form-data" class="glass-card primary-form" novalidate>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="name" class="form-label">{{ get_translation('product_name') }}</label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ product.name }}" required>
+
+                <div class="card-heading">
+                    <p class="muted-label">{{ get_translation('product_details') }}</p>
+                    <h3>{{ get_translation('product_information') or get_translation('product_details') }}</h3>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">{{ get_translation('product_name') }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-tag"></i>
+                            <input type="text" id="name" name="name" placeholder="{{ get_translation('enter_product_name') or get_translation('product_name') }}" value="{{ product.name }}" required>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="category" class="form-label">{{ get_translation('category') }}</label>
-                            <select class="form-select" id="category" name="category" required>
+
+                    <div class="form-group">
+                        <label for="category">{{ get_translation('category') }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-layer-group"></i>
+                            <select id="category" name="category" required>
                                 <option value="">{{ get_translation('select_category') }}</option>
                                 {% for category in categories %}
-                                <option value="{{ category }}" {% if category == product.category %}selected{% endif %}>
-                                    {{ category }}
-                                </option>
+                                <option value="{{ category }}" {% if category == product.category %}selected{% endif %}>{{ category }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
-                </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="brand_id" class="form-label">{{ get_translation('brand') }} ({{ get_translation('optional') }})</label>
-                            <select class="form-select" id="brand_id" name="brand_id">
+                    <div class="form-group">
+                        <label for="brand_id">{{ get_translation('brand') }} ({{ get_translation('optional') }})</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-certificate"></i>
+                            <select id="brand_id" name="brand_id">
                                 <option value="">{{ get_translation('no_brand') }}</option>
                                 {% for brand in brands %}
-                                <option value="{{ brand.id }}" {% if product.brand_id == brand.id %}selected{% endif %}>
-                                    {{ brand.name }}
-                                </option>
+                                <option value="{{ brand.id }}" {% if product.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
-                </div>
 
-                <div class="mb-3">
-                    <label for="description" class="form-label">{{ get_translation('description') }}</label>
-                    <textarea class="form-control" id="description" name="description" rows="3">{{ product.description }}</textarea>
-                </div>
+                    <div class="form-group full-width">
+                        <label for="description">{{ get_translation('description') }}</label>
+                        <textarea id="description" name="description" rows="3" placeholder="{{ get_translation('describe_product') or get_translation('description') }}">{{ product.description }}</textarea>
+                    </div>
 
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="price" class="form-label">{{ get_translation('price') }} (تومان)</label>
-                            <input type="number" class="form-control" id="price" name="price" step="0.01" value="{{ product.price }}" required>
+                    <div class="form-group">
+                        <label for="price">{{ get_translation('price') }} ({{ get_translation('currency_toman') or 'تومان' }})</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-money-bill"></i>
+                            <input type="number" id="price" name="price" step="0.01" value="{{ product.price }}" required>
+                        </div>
+                        <div class="gradient-card metrics-card">
+                            <p>{{ get_translation('pricing_tip') or 'قیمت‌گذاری مناسب' }}</p>
+                            <small>{{ get_translation('pricing_hint') or 'با توجه به تخفیف‌ها و رقبا قیمت را تنظیم کنید.' }}</small>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="stock" class="form-label">{{ get_translation('stock') }}</label>
-                            <input type="number" class="form-control" id="stock" name="stock" value="{{ product.stock }}" required>
+
+                    <div class="form-group">
+                        <label for="stock">{{ get_translation('stock') }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-boxes"></i>
+                            <input type="number" id="stock" name="stock" value="{{ product.stock }}" required>
+                        </div>
+                        <div class="status-chip stock-chip">
+                            <i class="fas fa-check-circle"></i>
+                            <span>{{ get_translation('inventory_status') or 'موجودی فعال' }}</span>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="discount" class="form-label">{{ get_translation('discount') }} (%)</label>
-                            <input type="number" class="form-control" id="discount" name="discount" min="0" max="100" value="{{ product.discount }}">
+
+                    <div class="form-group">
+                        <label for="discount">{{ get_translation('discount') }} (%)</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-percent"></i>
+                            <input type="number" id="discount" name="discount" min="0" max="100" value="{{ product.discount or 0 }}">
+                        </div>
+                        <div class="status-chip promo-chip">
+                            <i class="fas fa-bolt"></i>
+                            <span>{{ get_translation('promotion_tip') or 'پیشنهاد ویژه' }}</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label for="image_url" class="form-label">{{ get_translation('product_image') }} ({{ get_translation('optional') }}) - {{ get_translation('or_enter_url') }}</label>
-                    <input type="text" class="form-control" id="image_url" name="image_url" 
-                           placeholder="https://example.com/image.jpg"
-                           value="{{ product.image_url if product.image_url and (product.image_url.startswith('http://') or product.image_url.startswith('https://')) else '' }}">
-                    <small class="text-muted">{{ get_translation('image_url_help') }}</small>
+                <div class="form-group">
+                    <label for="image_url">{{ get_translation('product_image') }} ({{ get_translation('optional') }})</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-link"></i>
+                        <input type="text" id="image_url" name="image_url" placeholder="https://example.com/image.jpg" value="{{ product.image_url if product.image_url and (product.image_url.startswith('http://') or product.image_url.startswith('https://')) else '' }}">
+                    </div>
+                    <small>{{ get_translation('image_url_help') }}</small>
                 </div>
 
-                <div class="mb-3">
-                    <label for="image" class="form-label">{{ get_translation('or_upload_image') }} ({{ get_translation('optional') }})</label>
-                    <div class="mb-2">
-                        <img src="{{ get_image_or_default(product.image_url) }}" alt="{{ product.name }}" class="img-thumbnail" style="max-height: 200px;" loading="lazy">
+                <div class="form-group file-group">
+                    <label for="image">{{ get_translation('or_upload_image') }} ({{ get_translation('optional') }})</label>
+                    <div class="upload-area">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>{{ get_translation('drag_drop_hint') }}</span>
+                        <input type="file" id="image" name="image" accept="image/*">
                     </div>
-                    <input type="file" class="form-control" id="image" name="image" accept="image/*" onchange="previewImage(this)">
-                    <div id="imagePreview" class="mt-2" style="display: none;">
-                        <img src="" alt="Preview" class="img-thumbnail" style="max-height: 200px;" loading="lazy">
+                    <div class="current-image">
+                        <p class="muted-label">{{ get_translation('current_image') or 'تصویر فعلی' }}</p>
+                        <div class="image-frame">
+                            <img src="{{ get_image_or_default(product.image_url) }}" alt="{{ product.name }}" loading="lazy">
+                        </div>
                     </div>
-                    <small class="text-muted">{{ get_translation('image_upload_help') }}</small>
+                    <div id="imagePreview" class="image-preview d-none">
+                        <img src="" alt="preview" loading="lazy">
+                        <button type="button" class="ghost-btn remove-preview">
+                            <i class="fas fa-times"></i>
+                            <span>{{ get_translation('remove_image') or get_translation('remove') or 'حذف' }}</span>
+                        </button>
+                    </div>
+                    <small>{{ get_translation('image_upload_help') }}</small>
                 </div>
 
-                <div class="mb-3">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="is_featured" name="is_featured" {% if product.is_featured %}checked{% endif %}>
-                        <label class="form-check-label" for="is_featured">{{ get_translation('featured_product') }}</label>
-                    </div>
+                <div class="form-check full-width toggle-row">
+                    <label class="toggle-chip">
+                        <input type="checkbox" id="is_featured" name="is_featured" {% if product.is_featured %}checked{% endif %}>
+                        <span>{{ get_translation('featured_product') }}</span>
+                    </label>
                 </div>
 
-                <!-- <div class="mb-3">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="is_verified_only" name="is_verified_only" {% if product.is_verified_only %}checked{% endif %}>
-                        <label class="form-check-label" for="is_verified_only">{{ get_translation('verified_customers_only') }}</label>
-                        <small class="text-muted d-block">{{ get_translation('verified_customers_only_description') }}</small>
+                <div class="form-footer">
+                    <div class="helper-callout">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>{{ get_translation('product_guidelines_title') or get_translation('tips') }}</strong>
+                            <p>{{ get_translation('product_guidelines_hint') or 'جزئیات دقیق و تصویر شفاف اعتماد مشتری را بالا می‌برد.' }}</p>
+                        </div>
                     </div>
-                </div> -->
-
-                <div class="text-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>{{ get_translation('save_changes') }}
-                    </button>
+                    <div class="action-buttons">
+                        <button type="submit" class="primary-btn">
+                            <span>{{ get_translation('save_product') or get_translation('save_changes') }}</span>
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <a href="{{ url_for('admin_dashboard') }}" class="ghost-btn">
+                            <i class="fas fa-times"></i>
+                            <span>{{ get_translation('cancel') }}</span>
+                        </a>
+                    </div>
                 </div>
             </form>
+
+            <aside class="glass-card tips-card">
+                <div class="card-heading">
+                    <p class="muted-label">{{ get_translation('tips') if get_translation('tips') else 'راهنما' }}</p>
+                    <h3>{{ get_translation('product_showcase_title') or 'نمایش بهتر محصول' }}</h3>
+                </div>
+                <ul>
+                    <li>
+                        <i class="fas fa-star"></i>
+                        <div>
+                            <strong>{{ get_translation('product_tip_quality') or 'تصاویر با کیفیت' }}</strong>
+                            <p>{{ get_translation('product_tip_quality_hint') or 'از پس‌زمینه روشن و تصویر واضح برای هماهنگی با تم تاریک استفاده کنید.' }}</p>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-tags"></i>
+                        <div>
+                            <strong>{{ get_translation('product_tip_category') or 'دسته‌بندی درست' }}</strong>
+                            <p>{{ get_translation('product_tip_category_hint') or 'دسته صحیح باعث پیدا شدن سریع‌تر محصول می‌شود.' }}</p>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-balance-scale"></i>
+                        <div>
+                            <strong>{{ get_translation('product_tip_details') or 'جزئیات کامل' }}</strong>
+                            <p>{{ get_translation('product_tip_details_hint') or 'وزن، مواد و ویژگی‌های کلیدی را در توضیحات ذکر کنید.' }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </aside>
         </div>
     </div>
-</div>
-
-<script>
-function previewImage(input) {
-    const preview = document.getElementById('imagePreview');
-    const previewImg = preview.querySelector('img');
-    
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            previewImg.src = e.target.result;
-            preview.style.display = 'block';
-        }
-        
-        reader.readAsDataURL(input.files[0]);
-    } else {
-        preview.style.display = 'none';
-    }
-}
-</script>
+</section>
 
 <style>
-    .card {
-        border: none;
-        border-radius: 12px;
+    .product-form-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
     }
 
-    .card-title {
-        color: var(--dark-text);
-        font-weight: 600;
+    .product-backdrop {
+        position: absolute;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
     }
 
-    .form-label {
-        color: var(--dark-text);
-        font-weight: 500;
+    .product-backdrop:first-of-type {
+        left: -140px;
+        bottom: 8%;
     }
 
-    .form-control {
-        border: 2px solid var(--light-gray);
-        border-radius: 8px;
-        padding: 0.8rem 1rem;
+    .product-backdrop-2 {
+        right: -120px;
+        top: 12%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 3s;
     }
 
-    .form-control:focus {
-        border-color: var(--primary-red);
-        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
     }
 
-    .form-select {
-        border: 2px solid var(--light-gray);
-        border-radius: 8px;
-        padding: 0.8rem 1rem;
+    .product-form-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
     }
 
-    .form-select:focus {
-        border-color: var(--primary-red);
-        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    .product-form-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
     }
 
-    .form-check-input:checked {
-        background-color: var(--primary-red);
-        border-color: var(--primary-red);
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.6rem);
     }
 
-    .btn-outline-primary {
-        border-color: var(--primary-red);
-        color: var(--primary-red);
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
     }
 
-    .btn-outline-primary:hover {
-        background-color: var(--primary-red);
-        color: white;
+    .header-badge {
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
     }
 
-    .btn-primary {
-        background-color: var(--primary-red);
-        border-color: var(--primary-red);
-        color: white;
-        padding: 0.8rem 2rem;
-        font-weight: 500;
-        border-radius: 8px;
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
         transition: all 0.3s ease;
     }
 
-    .btn-primary:hover {
-        background-color: #c82333;
-        border-color: #bd2130;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    .back-chip:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    .product-form-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.75rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .card-heading {
+        margin-bottom: 1.5rem;
+    }
+
+    .card-heading h3 {
+        margin: 0.25rem 0 0;
+    }
+
+    .muted-label {
+        color: var(--text-gray);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: var(--text-light);
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon i {
+        position: absolute;
+        top: 50%;
+        right: 1rem;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+    }
+
+    .input-with-icon input,
+    .input-with-icon select {
+        width: 100%;
+        padding: 0.85rem 3rem 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+    }
+
+    .input-with-icon input:focus,
+    .input-with-icon select:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+    }
+
+    textarea {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+        resize: none;
+        min-height: 120px;
+    }
+
+    textarea:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+    }
+
+    .gradient-card.metrics-card {
+        margin-top: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 14px;
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .gradient-card.metrics-card p {
+        margin: 0 0 0.25rem;
+        font-weight: 600;
+        color: var(--yellow);
+        font-size: 0.9rem;
+    }
+
+    .gradient-card.metrics-card small {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+    }
+
+    .status-chip {
+        margin-top: 0.5rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-chip.stock-chip {
+        background: rgba(40, 167, 69, 0.15);
+        border: 1px solid rgba(40, 167, 69, 0.3);
+        color: #9dffbb;
+    }
+
+    .status-chip.promo-chip {
+        background: rgba(212, 175, 55, 0.15);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: var(--yellow);
+    }
+
+    .file-group .upload-area {
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        border-radius: 18px;
+        padding: 1.4rem;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .file-group .upload-area i {
+        font-size: 1.5rem;
+        color: var(--yellow);
+        display: block;
+        margin-bottom: 0.6rem;
+    }
+
+    .file-group input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .current-image {
+        margin-top: 1rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 0.9rem;
+    }
+
+    .image-frame {
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .image-frame img {
+        width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+    }
+
+    .image-preview {
+        margin-top: 0.9rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.02);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .image-preview img {
+        width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+        border-radius: 14px;
+    }
+
+    .toggle-row {
+        margin-top: 1rem;
+    }
+
+    .toggle-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.75rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .toggle-chip:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .toggle-chip input[type="checkbox"] {
+        width: auto;
+        accent-color: var(--yellow);
+    }
+
+    .form-footer {
+        margin-top: 1.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .helper-callout {
+        display: flex;
+        gap: 0.85rem;
+        align-items: flex-start;
+        padding: 1rem 1.2rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .helper-callout i {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        background: rgba(212, 175, 55, 0.15);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--yellow);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .primary-btn,
+    .ghost-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 18px;
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .primary-btn {
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+    }
+
+    .primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(212, 175, 55, 0.4);
+    }
+
+    .ghost-btn {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text-light);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .ghost-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .tips-card ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .tips-card li {
+        display: flex;
+        gap: 0.85rem;
+        align-items: flex-start;
+    }
+
+    .tips-card i {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--yellow);
+    }
+
+    .tips-card p {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0.15rem 0 0;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .product-form-header {
+            grid-template-columns: 1fr;
+        }
+
+        .product-form-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .product-form-page {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .glass-card {
+            padding: 1.4rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('image');
+    const previewWrapper = document.getElementById('imagePreview');
+    const previewImg = previewWrapper?.querySelector('img');
+    const removeBtn = previewWrapper?.querySelector('.remove-preview');
+
+    if (!fileInput || !previewWrapper || !previewImg || !removeBtn) {
+        return;
+    }
+
+    fileInput.addEventListener('change', function (event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) {
+            previewWrapper.classList.add('d-none');
+            previewImg.src = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            previewImg.src = e.target.result;
+            previewWrapper.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    removeBtn.addEventListener('click', function () {
+        fileInput.value = '';
+        previewWrapper.classList.add('d-none');
+        previewImg.src = '';
+    });
+});
+</script>
 {% endblock %} 

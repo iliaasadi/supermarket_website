@@ -3,103 +3,322 @@
 {% block title %}{{ get_translation('add_address') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <i class="fas fa-map-marker-alt"></i>
-            <h1>{{ get_translation('add_address') }}</h1>
-            <p>{{ get_translation('address_information_for_delivery_optional') }}</p>
-        </div>
-        <form method="POST" action="{{ url_for('register_address') }}" class="auth-form">
-            {{ form.hidden_tag() }}
-            <div class="form-group">
-                <label for="street">
-                    <i class="fas fa-road"></i>
-                    {{ get_translation('street_address') }}
-                </label>
-                {{ form.street(class="form-control", placeholder=get_translation('enter_street_address')) }}
-                {% if form.street.errors %}
-                <div class="error-message">
-                    {% for error in form.street.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
+<div class="address-page">
+    <!-- Animated Background Elements -->
+    <div class="address-glow glow-1"></div>
+    <div class="address-glow glow-2"></div>
+    <div class="address-glow glow-3"></div>
+    
+    <!-- Floating Particles -->
+    <div class="address-particles">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+    </div>
+
+    <!-- Back Button -->
+    <a href="{{ url_for('index') }}" class="back-button">
+        <i class="fas fa-arrow-right"></i>
+        <span>{{ get_translation('back') }}</span>
+    </a>
+
+    <div class="address-container">
+        <div class="address-card">
+            <!-- Card Glow Effect -->
+            <div class="card-glow"></div>
+            
+            <!-- Header Section -->
+            <div class="address-header">
+                <div class="address-icon-wrapper">
+                    <div class="icon-ring ring-1"></div>
+                    <div class="icon-ring ring-2"></div>
+                    <div class="icon-ring ring-3"></div>
+                    <i class="fas fa-map-marker-alt address-icon"></i>
                 </div>
-                {% endif %}
+                <h1 class="address-title">{{ get_translation('add_address') }}</h1>
+                <p class="address-subtitle">{{ get_translation('address_information_for_delivery_optional') }}</p>
             </div>
-            <div class="form-group">
-                <label for="tag">
-                    <i class="fas fa-tag"></i>
-                    {{ get_translation('tag') }}
-                </label>
-                {{ form.tag(class="form-control", placeholder=get_translation('enter_tag')) }}
-                {% if form.tag.errors %}
-                <div class="error-message">
-                    {% for error in form.tag.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
+
+            <!-- Form Section -->
+            <form method="POST" action="{{ url_for('register_address') }}" class="address-form">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group">
+                    <label for="street" class="form-label">
+                        <i class="fas fa-road label-icon"></i>
+                        <span>{{ get_translation('street_address') }}</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-road input-icon"></i>
+                        {{ form.street(class="form-control", placeholder=get_translation('enter_street_address')) }}
+                        <div class="input-focus-line"></div>
+                    </div>
+                    {% if form.street.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.street.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
-                {% endif %}
-            </div>
-            <div class="form-group">
-                <label for="building_unit_number">
-                    <i class="fas fa-building"></i>
-                    {{ get_translation('building_unit_number') }}
-                </label>
-                {{ form.building_unit_number(class="form-control", placeholder=get_translation('enter_building_unit_number')) }}
-                {% if form.building_unit_number.errors %}
-                <div class="error-message">
-                    {% for error in form.building_unit_number.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
+
+                <div class="form-group">
+                    <label for="tag" class="form-label">
+                        <i class="fas fa-tag label-icon"></i>
+                        <span>{{ get_translation('tag') }}</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-tag input-icon"></i>
+                        {{ form.tag(class="form-control", placeholder=get_translation('enter_tag')) }}
+                        <div class="input-focus-line"></div>
+                    </div>
+                    {% if form.tag.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.tag.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
-                {% endif %}
-            </div>
-            <div class="form-group">
-                <label for="description">
-                    <i class="fas fa-info-circle"></i>
-                    {{ get_translation('description') }}
-                </label>
-                {{ form.description(class="form-control", placeholder=get_translation('enter_description'), style="height: 100px; resize: none;") }}
-                {% if form.description.errors %}
-                <div class="error-message">
-                    {% for error in form.description.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
+
+                <div class="form-group">
+                    <label for="building_unit_number" class="form-label">
+                        <i class="fas fa-building label-icon"></i>
+                        <span>{{ get_translation('building_unit_number') }}</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-building input-icon"></i>
+                        {{ form.building_unit_number(class="form-control", placeholder=get_translation('enter_building_unit_number')) }}
+                        <div class="input-focus-line"></div>
+                    </div>
+                    {% if form.building_unit_number.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.building_unit_number.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
-                {% endif %}
+
+                <div class="form-group">
+                    <label for="description" class="form-label">
+                        <i class="fas fa-info-circle label-icon"></i>
+                        <span>{{ get_translation('description') }}</span>
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-info-circle input-icon textarea-icon"></i>
+                        {{ form.description(class="form-control textarea-control", placeholder=get_translation('enter_description'), rows="4") }}
+                        <div class="input-focus-line"></div>
+                    </div>
+                    {% if form.description.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.description.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="submit-wrapper">
+                    {{ form.submit(class="address-submit-btn", value=get_translation('save_address')) }}
+                </div>
+            </form>
+
+            <!-- Footer Section -->
+            <div class="address-footer">
+                <a href="{{ url_for('index') }}" class="skip-link">
+                    <i class="fas fa-forward"></i>
+                    <span>{{ get_translation('skip_now') }}</span>
+                </a>
             </div>
-            {{ form.submit(class="btn btn-primary", value=get_translation('save_address')) }}
-        </form>
-        <div class="auth-footer">
-            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">{{ get_translation('skip_now') }}</a>
         </div>
     </div>
 </div>
 
 <style>
-    .auth-container {
-        min-height: 80vh;
+    :root {
+        --dark-blue-night: #0a0e27;
+        --dark-blue-night-light: #141b3d;
+        --dark-blue-night-lighter: #1e2749;
+        --yellow: #d4af37;
+        --yellow-bright: #e6c866;
+        --yellow-dark: #b8941f;
+        --yellow-glow: rgba(212, 175, 55, 0.2);
+        --text-light: #ffffff;
+        --text-gray: #b0b0b0;
+        --text-dark: #666666;
+    }
+
+    /* Fix white background issue */
+    html, body {
+        background: var(--dark-blue-night) !important;
+        background-color: var(--dark-blue-night) !important;
+        margin: 0;
+        padding: 0;
+    }
+
+    .address-page {
+        position: relative;
+        min-height: 100vh;
+        width: 100vw;
+        margin: 0;
+        padding: 2rem 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
-        background: linear-gradient(135deg, #f5f5f7 0%, #ffffff 100%);
+        overflow-x: hidden;
+        background: var(--dark-blue-night) !important;
+        background-color: var(--dark-blue-night) !important;
     }
 
-    .auth-card {
-        background: white;
-        border-radius: 20px;
-        padding: 2.5rem;
+    /* Override any white backgrounds from base template or Bootstrap */
+    .container,
+    .content-wrapper,
+    #content,
+    main,
+    .main-content {
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    /* Back Button */
+    .back-button {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        background: rgba(10, 14, 39, 0.75);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        border-radius: 12px;
+        color: var(--text-light);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .back-button:hover {
+        background: rgba(10, 14, 39, 0.9);
+        border-color: var(--yellow);
+        color: var(--yellow);
+        transform: translateX(-5px);
+    }
+
+    .back-button i {
+        font-size: 1rem;
+    }
+
+    /* Animated Background Glows */
+    .address-glow {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.4;
+        z-index: 0;
+        animation: glowFloat 8s ease-in-out infinite;
+    }
+
+    .glow-1 {
+        width: 400px;
+        height: 400px;
+        top: -10%;
+        left: -5%;
+        background: radial-gradient(circle, var(--yellow-glow) 0%, transparent 70%);
+        animation-delay: 0s;
+    }
+
+    .glow-2 {
+        width: 350px;
+        height: 350px;
+        bottom: -5%;
+        right: -5%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
+        animation-delay: 2s;
+    }
+
+    .glow-3 {
+        width: 300px;
+        height: 300px;
+        top: 50%;
+        right: 10%;
+        background: radial-gradient(circle, rgba(20, 30, 80, 0.4) 0%, transparent 70%);
+        animation-delay: 4s;
+    }
+
+    @keyframes glowFloat {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(20px, -20px) scale(1.1); }
+    }
+
+    /* Floating Particles */
+    .address-particles {
+        position: absolute;
         width: 100%;
-        max-width: 400px;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-        animation: fadeIn 0.5s ease;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        pointer-events: none;
     }
 
-    @keyframes fadeIn {
+    .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: var(--yellow);
+        border-radius: 50%;
+        opacity: 0.6;
+        animation: particleFloat 15s linear infinite;
+    }
+
+    .particle-1 { top: 20%; left: 10%; animation-delay: 0s; }
+    .particle-2 { top: 60%; left: 20%; animation-delay: 3s; }
+    .particle-3 { top: 40%; right: 15%; animation-delay: 6s; }
+    .particle-4 { bottom: 30%; left: 30%; animation-delay: 9s; }
+    .particle-5 { top: 80%; right: 25%; animation-delay: 12s; }
+
+    @keyframes particleFloat {
+        0% {
+            transform: translateY(0) translateX(0);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.6;
+        }
+        90% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translateY(-100vh) translateX(50px);
+            opacity: 0;
+        }
+    }
+
+    /* Main Container */
+    .address-container {
+        width: 100%;
+        max-width: 520px;
+        position: relative;
+        z-index: 2;
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    @keyframes fadeInUp {
         from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(30px);
         }
         to {
             opacity: 1;
@@ -107,116 +326,419 @@
         }
     }
 
-    .auth-header {
+    /* Address Card */
+    .address-card {
+        position: relative;
+        background: rgba(10, 14, 39, 0.75);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 80px rgba(212, 175, 55, 0.1);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        overflow: hidden;
+    }
+
+    .card-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+        opacity: 0.6;
+        animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+    }
+
+    /* Header Section */
+    .address-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
     }
 
-    .auth-header i {
+    .address-icon-wrapper {
+        position: relative;
+        display: inline-flex;
+        width: 130px;
+        height: 130px;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .address-icon {
         font-size: 3rem;
-        color: var(--primary-red);
-        margin-bottom: 1rem;
+        color: var(--yellow);
+        filter: drop-shadow(0 0 30px var(--yellow-glow));
+        z-index: 3;
+        position: relative;
+        animation: iconPulse 2s ease-in-out infinite;
     }
 
-    .auth-header h1 {
-        font-size: 1.8rem;
-        color: var(--dark-text);
-        margin-bottom: 0.5rem;
+    @keyframes iconPulse {
+        0%, 100% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 30px var(--yellow-glow));
+        }
+        50% {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.5));
+        }
     }
 
-    .auth-header p {
-        color: var(--gray-text);
-        font-size: 0.9rem;
+    .icon-ring {
+        position: absolute;
+        border: 2px solid rgba(212, 175, 55, 0.3);
+        border-radius: 50%;
+        animation: ringRotate 10s linear infinite;
     }
 
-    .auth-form {
+    .ring-1 {
+        width: 120px;
+        height: 120px;
+    }
+
+    .ring-2 {
+        width: 140px;
+        height: 140px;
+        border-color: rgba(212, 175, 55, 0.2);
+        animation-duration: 12s;
+        animation-direction: reverse;
+    }
+
+    .ring-3 {
+        width: 160px;
+        height: 160px;
+        border-color: rgba(212, 175, 55, 0.15);
+        animation-duration: 15s;
+    }
+
+    @keyframes ringRotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .address-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--yellow);
+        margin-bottom: 0.75rem;
+        text-shadow: 0 0 30px var(--yellow-glow), 0 0 60px rgba(212, 175, 55, 0.3);
+        background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-bright) 50%, var(--yellow) 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: 0% center; }
+        100% { background-position: 200% center; }
+    }
+
+    .address-subtitle {
+        font-size: 1.05rem;
+        color: var(--text-gray);
+        margin: 0;
+    }
+
+    /* Form Section */
+    .address-form {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.75rem;
     }
 
     .form-group {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.75rem;
     }
 
-    .form-group label {
-        color: var(--dark-text);
-        font-weight: 500;
+    .form-label {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.6rem;
+        color: var(--text-light);
+        font-weight: 600;
+        font-size: 0.95rem;
     }
 
-    .form-group label i {
-        color: var(--gray-text);
+    .label-icon {
+        color: var(--yellow);
+        font-size: 1rem;
+    }
+
+    .input-wrapper,
+    .textarea-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        right: 1rem;
+        color: var(--yellow);
+        font-size: 1.1rem;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .textarea-icon {
+        top: 1rem;
+        right: 1rem;
+        align-self: flex-start;
     }
 
     .form-control {
-        padding: 0.8rem 1rem;
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
+        width: 100%;
+        padding: 1rem 3rem 1rem 1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        background: rgba(10, 14, 39, 0.7);
+        color: var(--text-light);
         font-size: 1rem;
         transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .textarea-control {
+        padding: 1rem 3rem 1rem 1rem;
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.4);
     }
 
     .form-control:focus {
         outline: none;
-        border-color: var(--primary-red);
-        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+        border-color: var(--yellow);
+        background: rgba(10, 14, 39, 0.9);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2), 0 8px 25px rgba(212, 175, 55, 0.15);
+    }
+
+    .input-focus-line {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--yellow), var(--yellow-bright));
+        transition: width 0.3s ease;
+        border-radius: 2px;
+    }
+
+    .form-control:focus ~ .input-focus-line {
+        width: 100%;
     }
 
     .error-message {
-        color: var(--primary-red);
-        font-size: 0.8rem;
-        margin-top: 0.3rem;
-    }
-
-    .btn-primary {
-        background: var(--primary-red);
-        color: white;
-        padding: 1rem;
-        border: none;
-        border-radius: 12px;
-        font-size: 1rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
         display: flex;
         align-items: center;
-        justify-content: center;
         gap: 0.5rem;
-        margin-top: 1rem;
+        color: #ff6b81;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        background: rgba(255, 107, 129, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 107, 129, 0.2);
     }
 
-    .btn-primary:hover {
-        background: var(--secondary-red);
-        transform: translateY(-2px);
+    .error-message i {
+        font-size: 0.9rem;
     }
 
-    .btn-outline-secondary {
-        background: transparent;
-        color: var(--gray-text);
-        padding: 0.8rem 2rem;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        font-size: 1rem;
-        font-weight: 500;
+    /* Submit Button */
+    .submit-wrapper {
+        margin-top: 0.5rem;
+    }
+
+    .address-submit-btn {
+        width: 100%;
+        padding: 1.1rem 2rem;
+        border-radius: 14px;
+        border: none;
+        background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        font-weight: 700;
+        font-size: 1.05rem;
         cursor: pointer;
         transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-block;
+        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3), 0 0 20px rgba(212, 175, 55, 0.2);
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .btn-outline-secondary:hover {
-        background: #f5f5f7;
-        transform: translateY(-2px);
+    .address-submit-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s ease;
     }
 
-    .auth-footer {
+    .address-submit-btn:hover::before {
+        left: 100%;
+    }
+
+    .address-submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4), 0 0 30px rgba(212, 175, 55, 0.3);
+        background: linear-gradient(135deg, var(--yellow-bright) 0%, var(--yellow) 100%);
+    }
+
+    .address-submit-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* Footer Section */
+    .address-footer {
+        margin-top: 2.5rem;
         text-align: center;
-        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .skip-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-gray);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+    }
+
+    .skip-link:hover {
+        color: var(--yellow);
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    .skip-link i {
+        font-size: 0.9rem;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 767.98px) {
+        .address-page {
+            padding: 1.5rem 1rem;
+            min-height: 85vh;
+        }
+
+        .back-button {
+            top: 1rem;
+            right: 1rem;
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .address-card {
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+        }
+
+        .address-icon-wrapper {
+            width: 110px;
+            height: 110px;
+        }
+
+        .address-icon {
+            font-size: 2.5rem;
+        }
+
+        .ring-1 { width: 100px; height: 100px; }
+        .ring-2 { width: 120px; height: 120px; }
+        .ring-3 { width: 140px; height: 140px; }
+
+        .address-title {
+            font-size: 1.85rem;
+        }
+
+        .address-subtitle {
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            padding: 0.9rem 2.5rem 0.9rem 0.9rem;
+            font-size: 0.95rem;
+        }
+
+        .address-submit-btn {
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .address-card {
+            padding: 2rem 1.5rem;
+            border-radius: 18px;
+        }
+
+        .back-button {
+            top: 0.75rem;
+            right: 0.75rem;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.8rem;
+        }
+
+        .back-button span {
+            display: none;
+        }
+
+        .address-icon-wrapper {
+            width: 90px;
+            height: 90px;
+            margin-bottom: 1.25rem;
+        }
+
+        .address-icon {
+            font-size: 2rem;
+        }
+
+        .ring-1 { width: 85px; height: 85px; }
+        .ring-2 { width: 100px; height: 100px; }
+        .ring-3 { width: 115px; height: 115px; }
+
+        .address-title {
+            font-size: 1.6rem;
+        }
+
+        .address-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .address-form {
+            gap: 1.5rem;
+        }
+
+        .form-control {
+            padding: 0.85rem 2.25rem 0.85rem 0.85rem;
+            font-size: 0.9rem;
+        }
+
+        .address-submit-btn {
+            padding: 0.95rem 1.25rem;
+            font-size: 0.95rem;
+        }
     }
 </style>
 {% endblock %} 

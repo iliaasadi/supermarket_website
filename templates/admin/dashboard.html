@@ -3,125 +3,165 @@
 {% block title %}{{ get_translation('admin_dashboard') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h2>{{ get_translation('admin_dashboard') }}</h2>
-        </div>
-        <div class="col-auto">
-            <a href="{{ url_for('admin_add_product') }}" class="btn" style="background-color: var(--primary-red); color: white;">
-                <i class="fas fa-plus me-2"></i>{{ get_translation('add_new_product') }}
-            </a>
-        </div>
-    </div>
-    
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ get_translation('total_products') }}</h5>
-                    <p class="card-text display-4">{{ total_products }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ get_translation('categories') }}</h5>
-                    <p class="card-text display-4">{{ categories|length }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ get_translation('users') }}</h5>
-                    <p class="card-text display-4">{{ total_users }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ get_translation('total_orders') }}</h5>
-                    <p class="card-text display-4">{{ total_orders }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
+<section class="admin-dashboard-page">
+    <div class="admin-backdrop"></div>
+    <div class="admin-backdrop admin-backdrop-2"></div>
 
-    <!-- Global Search -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="GET" action="{{ url_for('admin_dashboard') }}" class="row gy-3 gx-3 admin-search-form align-items-end">
-                <div class="col-12 col-lg-6 position-relative">
-                    <label class="form-label text-muted small mb-1">{{ get_translation('search') }}</label>
-                    <input type="text"
-                           name="search"
-                           id="admin-search-input"
-                           class="form-control"
-                           placeholder="{{ get_translation('search_placeholder') }}"
-                           value="{{ search_query }}"
-                           autocomplete="off">
-                    <div id="admin-autocomplete-results" class="autocomplete-dropdown"></div>
+    <div class="container admin-container">
+        <div class="admin-header">
+            <a href="{{ request.referrer or url_for('index') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('admin_panel') or 'پنل مدیریت' }}</p>
+                <h1>{{ get_translation('admin_dashboard') }}</h1>
+                <p>{{ get_translation('admin_subtitle') or 'مدیریت محصولات، سفارشات و کاربران' }}</p>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('admin_add_product') }}" class="primary-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>{{ get_translation('add_new_product') }}</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card glass-card">
+                <div class="stat-icon">
+                    <i class="fas fa-box"></i>
                 </div>
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <label class="form-label text-muted small mb-1">{{ get_translation('filter') if get_translation('filter') else 'Filter' }}</label>
-                    <select name="scope" id="admin-search-scope" class="form-select">
+                <div class="stat-content">
+                    <p class="stat-label">{{ get_translation('total_products') }}</p>
+                    <h2>{{ total_products }}</h2>
+                </div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-icon">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <div class="stat-content">
+                    <p class="stat-label">{{ get_translation('categories') }}</p>
+                    <h2>{{ categories|length }}</h2>
+                </div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <p class="stat-label">{{ get_translation('users') }}</p>
+                    <h2>{{ total_users }}</h2>
+                </div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-icon">
+                    <i class="fas fa-shopping-bag"></i>
+                </div>
+                <div class="stat-content">
+                    <p class="stat-label">{{ get_translation('total_orders') }}</p>
+                    <h2>{{ total_orders }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Search -->
+        <div class="glass-card search-card">
+            <div class="card-heading">
+                <p class="muted-label">{{ get_translation('search') }}</p>
+                <h3>{{ get_translation('global_search') or 'جستجوی جامع' }}</h3>
+            </div>
+            <form method="GET" action="{{ url_for('admin_dashboard') }}" class="admin-search-form">
+                <div class="search-row">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text"
+                               name="search"
+                               id="admin-search-input"
+                               class="search-input"
+                               placeholder="{{ get_translation('search_placeholder') }}"
+                               value="{{ search_query }}"
+                               autocomplete="off">
+                        <div id="admin-autocomplete-results" class="autocomplete-dropdown"></div>
+                    </div>
+                    <select name="scope" id="admin-search-scope" class="scope-select">
                         <option value="all" {% if search_scope == 'all' %}selected{% endif %}>{{ get_translation('all') }}</option>
                         <option value="products" {% if search_scope == 'products' %}selected{% endif %}>{{ get_translation('products') }}</option>
                         <option value="brands" {% if search_scope == 'brands' %}selected{% endif %}>{{ get_translation('brands') }}</option>
                         <option value="categories" {% if search_scope == 'categories' %}selected{% endif %}>{{ get_translation('categories') }}</option>
                     </select>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-3 d-flex flex-column flex-sm-row gap-2 search-buttons">
-                    <button type="submit" class="btn btn-primary flex-fill">
-                        <i class="fas fa-search me-2"></i>{{ get_translation('search') }}
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i>
+                        <span>{{ get_translation('search') }}</span>
                     </button>
-                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary flex-fill">
-                        <i class="fas fa-undo me-2"></i>{{ get_translation('reset') if get_translation('reset') else 'Reset' }}
+                    <a href="{{ url_for('admin_dashboard') }}" class="reset-btn">
+                        <i class="fas fa-undo"></i>
+                        <span>{{ get_translation('reset') if get_translation('reset') else 'Reset' }}</span>
                     </a>
                 </div>
-            </form>
-            {% if search_query %}
-            <div class="search-summary mt-3">
-                <span class="text-muted small">
-                    {{ get_translation('showing_results_for') if get_translation('showing_results_for') else 'Showing results for' }}
-                    "<strong>{{ search_query }}</strong>"
+                {% if search_query %}
+                <div class="search-summary">
+                    <span>{{ get_translation('showing_results_for') if get_translation('showing_results_for') else 'Showing results for' }} "<strong>{{ search_query }}</strong>"</span>
                     {% if search_scope != 'all' %}
-                        — {{ get_translation(search_scope) }}
+                        <span class="scope-badge">{{ get_translation(search_scope) }}</span>
                     {% endif %}
-                </span>
-                <div class="d-flex flex-wrap gap-2 mt-2">
                     {% if search_summary %}
-                        {% for item in search_summary %}
-                            <span class="badge bg-light text-dark">
-                                {{ item.count }} {{ get_translation(item.key) }}
-                            </span>
-                        {% endfor %}
+                        <div class="summary-badges">
+                            {% for item in search_summary %}
+                                <span class="summary-chip">{{ item.count }} {{ get_translation(item.key) }}</span>
+                            {% endfor %}
+                        </div>
                     {% else %}
-                        <span class="text-danger small">
-                            {{ get_translation('no_results_found') if get_translation('no_results_found') else 'No matches found' }}
-                        </span>
+                        <span class="no-results">{{ get_translation('no_results_found') if get_translation('no_results_found') else 'No matches found' }}</span>
                     {% endif %}
                 </div>
-            </div>
-            {% endif %}
+                {% endif %}
+            </form>
         </div>
-    </div>
 
-    <!-- Location Management -->
-    <div class="card shadow mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">{{ get_translation('store_locations') }}</h5>
-            <a href="{{ url_for('admin_add_location') }}" class="btn btn-sm" style="background-color: var(--primary-red); color: white;">
-                <i class="fas fa-plus me-2"></i>{{ get_translation('add_location') }}
+        <!-- Quick Actions -->
+        <div class="quick-actions-grid">
+            <a href="{{ url_for('admin_orders') }}" class="action-card glass-card">
+                <i class="fas fa-shopping-cart"></i>
+                <div>
+                    <h4>{{ get_translation('manage_orders') }}</h4>
+                    <p>{{ get_translation('manage_orders_description') }}</p>
+                </div>
+                <i class="fas fa-arrow-left action-arrow"></i>
+            </a>
+            <a href="{{ url_for('admin_order_comments') }}" class="action-card glass-card">
+                <i class="fas fa-comments"></i>
+                <div>
+                    <h4>{{ get_translation('order_comments') }}</h4>
+                    <p>{{ get_translation('view_order_comments_description') }}</p>
+                </div>
+                <i class="fas fa-arrow-left action-arrow"></i>
+            </a>
+            <a href="{{ url_for('admin_users') }}" class="action-card glass-card">
+                <i class="fas fa-users"></i>
+                <div>
+                    <h4>{{ get_translation('users') }}</h4>
+                    <p>{{ get_translation('view_all_users_and_orders') if get_translation('view_all_users_and_orders') else 'View all users and their orders' }}</p>
+                </div>
+                <i class="fas fa-arrow-left action-arrow"></i>
             </a>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table">
+
+        <!-- Location Management -->
+        <div class="glass-card management-card">
+            <div class="card-heading">
+                <div>
+                    <p class="muted-label">{{ get_translation('store_locations') }}</p>
+                    <h3>{{ get_translation('location_management') or 'مدیریت فروشگاه‌ها' }}</h3>
+                </div>
+                <a href="{{ url_for('admin_add_location') }}" class="add-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>{{ get_translation('add_location') }}</span>
+                </a>
+            </div>
+            <div class="table-wrapper">
+                <table class="admin-table">
                     <thead>
                         <tr>
                             <th>{{ get_translation('name') }}</th>
@@ -133,25 +173,21 @@
                     <tbody>
                         {% for location in locations %}
                         <tr>
-                            <td>{{ location.name }}</td>
+                            <td><strong>{{ location.name }}</strong></td>
                             <td>{{ location.address }}</td>
                             <td>
-                                <span class="badge {% if location.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                <span class="status-chip {% if location.is_active %}status-active{% else %}status-inactive{% endif %}">
                                     {{ get_translation('active') if location.is_active else get_translation('inactive') }}
                                 </span>
                             </td>
                             <td>
-                                <div class="btn-group">
-                                    <a href="{{ url_for('admin_edit_location', location_id=location.id) }}" 
-                                       class="btn btn-sm btn-outline-primary">
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('admin_edit_location', location_id=location.id) }}" class="action-btn edit-btn">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ url_for('admin_delete_location', location_id=location.id) }}" 
-                                          method="POST" 
-                                          class="d-inline"
-                                          onsubmit="return confirm('{{ get_translation('confirm_delete_location') }}')">
+                                    <form action="{{ url_for('admin_delete_location', location_id=location.id) }}" method="POST" class="d-inline needs-confirm" data-confirm="{{ get_translation('confirm_delete_location') }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <button type="submit" class="action-btn delete-btn">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
@@ -163,49 +199,17 @@
                 </table>
             </div>
         </div>
-    </div>
 
-    <!-- Delivery Settings -->
-    <!-- <div class="card shadow mb-4">
-        <div class="card-header bg-white">
-            <h5 class="mb-0">{{ get_translation('delivery_settings') }}</h5>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('admin_update_delivery_settings') }}" class="row g-3">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <div class="col-md-6">
-                    <label for="delivery_fee_percentage" class="form-label">{{ get_translation('delivery_fee_percentage') }}</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" id="delivery_fee_percentage" name="delivery_fee_percentage" 
-                               value="{{ delivery_fee_percentage }}" step="0.1" min="0" max="100" required>
-                        <span class="input-group-text">%</span>
-                    </div>
+        <!-- Product Management -->
+        <div class="glass-card management-card">
+            <div class="card-heading">
+                <div>
+                    <p class="muted-label">{{ get_translation('product_management') }}</p>
+                    <h3>{{ get_translation('all_products') or 'همه محصولات' }}</h3>
                 </div>
-                <div class="col-md-6">
-                    <label for="min_delivery_fee" class="form-label">{{ get_translation('min_delivery_fee') }}</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" id="min_delivery_fee" name="min_delivery_fee" 
-                               value="{{ min_delivery_fee }}" min="0" required>
-                        <span class="input-group-text">{{ get_translation('tooman') }}</span>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn" style="background-color: var(--primary-red); color: white;">
-                        <i class="fas fa-save me-2"></i>{{ get_translation('save_settings') }}
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div> -->
-
-    <!-- Product Management -->
-    <div class="card shadow mb-4">
-        <div class="card-header bg-white">
-            <h5 class="mb-0">{{ get_translation('product_management') }}</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table">
+            </div>
+            <div class="table-wrapper">
+                <table class="admin-table">
                     <thead>
                         <tr>
                             <th>{{ get_translation('image') }}</th>
@@ -216,7 +220,6 @@
                             <th>{{ get_translation('stock') }}</th>
                             <th>{{ get_translation('discount') }}</th>
                             <th>{{ get_translation('featured') }}</th>
-                            <!-- <th>{{ get_translation('verified_only') }}</th> -->
                             <th>{{ get_translation('actions') }}</th>
                         </tr>
                     </thead>
@@ -224,72 +227,64 @@
                         {% for product in filtered_products %}
                         <tr>
                             <td>
-                                <img src="{{ get_image_or_default(product.image_url) }}" alt="{{ product.name }}" 
-                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;" loading="lazy">
+                                <img src="{{ get_image_or_default(product.image_url) }}" alt="{{ product.name }}" class="product-thumb" loading="lazy">
                             </td>
-                            <td>{{ product.name }}</td>
-                            <td>
-                                <span class="badge bg-secondary">{{ product.category }}</span>
-                            </td>
+                            <td><strong>{{ product.name }}</strong></td>
+                            <td><span class="category-chip">{{ product.category }}</span></td>
                             <td>
                                 {% if product.brand %}
-                                <span class="badge bg-info">{{ product.brand.name }}</span>
+                                <span class="brand-chip">{{ product.brand.name }}</span>
                                 {% else %}
                                 <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if product.discount > 0 %}
-                                <span class="text-decoration-line-through text-muted">{{ "%.0f"|format(product.price) }} تومان</span>
-                                <span class="text-success ms-2">{{ "%.0f"|format(product.price * (1 - product.discount/100)) }} تومان</span>
+                                <div class="price-row">
+                                    <span class="old-price">{{ "%.0f"|format(product.price) }}</span>
+                                    <strong class="current-price">{{ "%.0f"|format(product.price * (1 - product.discount/100)) }}</strong>
+                                </div>
                                 {% else %}
-                                {{ "%.0f"|format(product.price) }} تومان
+                                <strong>{{ "%.0f"|format(product.price) }}</strong>
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge {% if product.stock < 10 %}bg-danger{% else %}bg-success{% endif %}">
+                                <span class="stock-chip {% if product.stock < 10 %}stock-low{% else %}stock-ok{% endif %}">
                                     {{ product.stock }}
                                 </span>
                             </td>
                             <td>
                                 {% if product.discount > 0 %}
-                                <span class="badge bg-success">{{ product.discount }}%</span>
+                                <span class="discount-chip">{{ product.discount }}%</span>
                                 {% else %}
-                                <span class="badge bg-secondary">0%</span>
+                                <span class="text-muted">0%</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if product.is_featured %}
-                                <span class="badge bg-primary">{{ get_translation('yes') }}</span>
+                                <span class="featured-chip">{{ get_translation('yes') }}</span>
                                 {% else %}
-                                <span class="badge bg-secondary">{{ get_translation('no') }}</span>
+                                <span class="text-muted">{{ get_translation('no') }}</span>
                                 {% endif %}
                             </td>
-                            <!-- <td>
-                                {% if product.is_verified_only %}
-                                <span class="badge bg-warning">{{ get_translation('yes') }}</span>
-                                {% else %}
-                                <span class="badge bg-secondary">{{ get_translation('no') }}</span>
-                                {% endif %}
-                            </td> -->
                             <td>
-                                <div class="btn-group">
-                                    <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i> {{ get_translation('edit') }}
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" class="action-btn edit-btn">
+                                        <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{{ url_for('admin_delete_product', product_id=product.id) }}" 
-                                       class="btn btn-sm btn-outline-danger"
-                                       onclick="return confirm('{{ get_translation('confirm_delete_product') }}')">
-                                        <i class="fas fa-trash"></i> {{ get_translation('delete') }}
+                                    <a href="{{ url_for('admin_delete_product', product_id=product.id) }}" class="action-btn delete-btn needs-confirm" data-confirm="{{ get_translation('confirm_delete_product') }}">
+                                        <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-4">
-                                {{ get_translation('no_results_found') if get_translation('no_results_found') else 'No products found.' }}
+                            <td colspan="9" class="empty-state-cell">
+                                <div class="empty-state">
+                                    <i class="fas fa-box-open"></i>
+                                    <p>{{ get_translation('no_results_found') if get_translation('no_results_found') else 'No products found.' }}</p>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -297,19 +292,21 @@
                 </table>
             </div>
         </div>
-    </div>
 
-    <!-- Brand Management -->
-    <div class="card shadow mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">{{ get_translation('brand_management') }}</h5>
-            <a href="{{ url_for('admin_add_brand') }}" class="btn btn-sm" style="background-color: var(--primary-red); color: white;">
-                <i class="fas fa-plus me-2"></i>{{ get_translation('add_brand') }}
-            </a>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table">
+        <!-- Brand Management -->
+        <div class="glass-card management-card">
+            <div class="card-heading">
+                <div>
+                    <p class="muted-label">{{ get_translation('brand_management') }}</p>
+                    <h3>{{ get_translation('all_brands') or 'همه برندها' }}</h3>
+                </div>
+                <a href="{{ url_for('admin_add_brand') }}" class="add-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>{{ get_translation('add_brand') }}</span>
+                </a>
+            </div>
+            <div class="table-wrapper">
+                <table class="admin-table">
                     <thead>
                         <tr>
                             <th>{{ get_translation('image') }}</th>
@@ -321,23 +318,18 @@
                         {% for brand in filtered_brands %}
                         <tr>
                             <td>
-                                <img src="{{ get_image_or_default(brand.image_url) }}" alt="{{ brand.name }}" 
-                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;" loading="lazy">
+                                <img src="{{ get_image_or_default(brand.image_url) }}" alt="{{ brand.name }}" class="brand-thumb" loading="lazy">
                             </td>
-                            <td>{{ brand.name }}</td>
+                            <td><strong>{{ brand.name }}</strong></td>
                             <td>
-                                <div class="btn-group">
-                                    <a href="{{ url_for('admin_edit_brand', brand_id=brand.id) }}" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i> {{ get_translation('edit') }}
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('admin_edit_brand', brand_id=brand.id) }}" class="action-btn edit-btn">
+                                        <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ url_for('admin_delete_brand', brand_id=brand.id) }}" 
-                                          method="POST" 
-                                          class="d-inline"
-                                          onsubmit="return confirm('{{ get_translation('confirm_delete_brand') }}')">
+                                    <form action="{{ url_for('admin_delete_brand', brand_id=brand.id) }}" method="POST" class="d-inline needs-confirm" data-confirm="{{ get_translation('confirm_delete_brand') }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="fas fa-trash"></i> {{ get_translation('delete') }}
+                                        <button type="submit" class="action-btn delete-btn">
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -345,8 +337,11 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="3" class="text-center text-muted py-4">
-                                {{ get_translation('no_results_found') if get_translation('no_results_found') else 'No brands found.' }}
+                            <td colspan="3" class="empty-state-cell">
+                                <div class="empty-state">
+                                    <i class="fas fa-tag"></i>
+                                    <p>{{ get_translation('no_results_found') if get_translation('no_results_found') else 'No brands found.' }}</p>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -354,31 +349,21 @@
                 </table>
             </div>
         </div>
-    </div>
 
-    <!-- Category Management -->
-    <div class="card shadow mb-4">
-        <div class="card-header bg-white">
-            <h5 class="mb-0">{{ get_translation('category_management') }}</h5>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('admin_add_category') }}" enctype="multipart/form-data" class="row g-3 mb-4">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <div class="col-md-6">
-                    <input type="text" class="form-control" name="category_name" placeholder="{{ get_translation('new_category_name') }}" required>
+        <!-- Category Management -->
+        <div class="glass-card management-card">
+            <div class="card-heading">
+                <div>
+                    <p class="muted-label">{{ get_translation('category_management') }}</p>
+                    <h3>{{ get_translation('all_categories') or 'همه دسته‌بندی‌ها' }}</h3>
                 </div>
-                <div class="col-md-3">
-                    <input type="text" class="form-control" name="image_url" placeholder="{{ get_translation('or_enter_url') }}">
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn w-100" style="background-color: var(--primary-red); color: white;">
-                        <i class="fas fa-plus me-2"></i>{{ get_translation('add_category') }}
-                    </button>
-                </div>
-            </form>
-            
-            <div class="table-responsive">
-                <table class="table">
+                <a href="{{ url_for('admin_add_category') }}" class="add-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>{{ get_translation('add_category') }}</span>
+                </a>
+            </div>
+            <div class="table-wrapper">
+                <table class="admin-table">
                     <thead>
                         <tr>
                             <th>{{ get_translation('image') }}</th>
@@ -391,28 +376,27 @@
                         {% set category_obj = category_objects|selectattr('name', 'equalto', category)|first if category_objects else none %}
                         <tr>
                             <td>
-                                <img src="{{ get_image_or_default(category_obj.image_url if category_obj else None) }}" alt="{{ category }}" 
-                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;" loading="lazy">
+                                <img src="{{ get_image_or_default(category_obj.image_url if category_obj else None) }}" alt="{{ category }}" class="category-thumb" loading="lazy">
                             </td>
-                            <td>{{ category }}</td>
+                            <td><strong>{{ category }}</strong></td>
                             <td>
-                                <div class="btn-group">
-                                    <a href="{{ url_for('admin_edit_category', category=category) }}" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i> {{ get_translation('edit') }}
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('admin_edit_category', category=category) }}" class="action-btn edit-btn">
+                                        <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{{ url_for('admin_delete_category', category=category) }}" 
-                                       class="btn btn-sm btn-outline-danger"
-                                       onclick="return confirm('{{ get_translation('confirm_delete_category') }}')">
-                                        <i class="fas fa-trash"></i> {{ get_translation('delete') }}
+                                    <a href="{{ url_for('admin_delete_category', category=category) }}" class="action-btn delete-btn needs-confirm" data-confirm="{{ get_translation('confirm_delete_category') }}">
+                                        <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="3" class="text-center text-muted py-4">
-                                {{ get_translation('no_results_found') if get_translation('no_results_found') else 'No categories found.' }}
+                            <td colspan="3" class="empty-state-cell">
+                                <div class="empty-state">
+                                    <i class="fas fa-folder-open"></i>
+                                    <p>{{ get_translation('no_results_found') if get_translation('no_results_found') else 'No categories found.' }}</p>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -421,180 +405,595 @@
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">{{ get_translation('manage_orders') }}</h5>
-                    <p class="card-text">{{ get_translation('manage_orders_description') }}</p>
-                    <a href="{{ url_for('admin_orders') }}" class="btn btn-primary">
-                        <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('manage_orders') }}
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">{{ get_translation('order_comments') }}</h5>
-                    <p class="card-text">{{ get_translation('view_order_comments_description') }}</p>
-                    <a href="{{ url_for('admin_order_comments') }}" class="btn btn-primary">
-                        <i class="fas fa-comments me-2"></i>{{ get_translation('view_comments') }}
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">{{ get_translation('users') }}</h5>
-                    <p class="card-text">{{ get_translation('view_all_users_and_orders') if get_translation('view_all_users_and_orders') else 'View all users and their orders' }}</p>
-                    <a href="{{ url_for('admin_users') }}" class="btn btn-primary">
-                        <i class="fas fa-users me-2"></i>{{ get_translation('view_users') if get_translation('view_users') else get_translation('users') }}
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+</section>
 
 <style>
-    .card {
+    .admin-dashboard-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
+    }
+
+    .admin-backdrop {
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
+
+    .admin-backdrop:first-of-type {
+        left: -150px;
+        bottom: 10%;
+    }
+
+    .admin-backdrop-2 {
+        right: -130px;
+        top: 15%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 3s;
+    }
+
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .admin-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .admin-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+    }
+
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .back-chip:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    .primary-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 18px;
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        text-decoration: none;
+        font-weight: 700;
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(212, 175, 55, 0.4);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .stat-card {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        padding: 1.5rem;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        background: rgba(212, 175, 55, 0.15);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--yellow);
+        font-size: 1.5rem;
+    }
+
+    .stat-content h2 {
+        margin: 0.25rem 0 0;
+        font-size: 2rem;
+        color: var(--text-light);
+    }
+
+    .stat-label {
+        margin: 0;
+        color: var(--text-gray);
+        font-size: 0.9rem;
+    }
+
+    .glass-card {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.75rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .card-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .card-heading h3 {
+        margin: 0.25rem 0 0;
+        font-size: 1.4rem;
+    }
+
+    .muted-label {
+        color: var(--text-gray);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    .admin-search-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .search-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr auto auto;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .search-input-wrapper {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.85rem 3rem 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+    }
+
+    .scope-select {
+        padding: 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+    }
+
+    .search-btn, .reset-btn {
+        padding: 0.85rem 1.25rem;
+        border-radius: 16px;
         border: none;
-        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
     }
 
-    .card-header {
-        border-bottom: 1px solid var(--light-gray);
+    .search-btn {
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+    }
+
+    .reset-btn {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-light);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .search-summary {
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .scope-badge {
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(212, 175, 55, 0.15);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: var(--yellow);
+        font-size: 0.85rem;
+    }
+
+    .summary-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .summary-chip {
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.85rem;
+    }
+
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .action-card {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        text-decoration: none;
+        color: var(--text-light);
+        transition: all 0.3s ease;
+        padding: 1.5rem;
+    }
+
+    .action-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--yellow);
+    }
+
+    .action-card i:first-child {
+        font-size: 2rem;
+        color: var(--yellow);
+        width: 50px;
+        text-align: center;
+    }
+
+    .action-card h4 {
+        margin: 0 0 0.25rem;
+        font-size: 1.1rem;
+    }
+
+    .action-card p {
+        margin: 0;
+        color: var(--text-gray);
+        font-size: 0.9rem;
+    }
+
+    .action-arrow {
+        margin-right: auto;
+        color: var(--text-gray);
+        transition: transform 0.3s ease;
+    }
+
+    .action-card:hover .action-arrow {
+        transform: translateX(-4px);
+        color: var(--yellow);
+    }
+
+    .management-card {
+        margin-bottom: 2rem;
+    }
+
+    .add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 16px;
+        background: rgba(212, 175, 55, 0.15);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: var(--yellow);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .add-btn:hover {
+        background: rgba(212, 175, 55, 0.25);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .admin-table thead th {
         padding: 1rem;
-    }
-
-    .card-title {
-        color: var(--dark-text);
+        text-align: right;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-gray);
         font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
-    .table th {
-        font-weight: 600;
-        color: var(--dark-text);
-        border-top: none;
-    }
-
-    .table td {
+    .admin-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         vertical-align: middle;
     }
 
-    .badge {
-        padding: 0.5em 0.8em;
-        font-weight: 500;
+    .admin-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
     }
 
-    .btn-outline-primary {
-        border-color: var(--primary-red);
-        color: var(--primary-red);
+    .product-thumb, .brand-thumb, .category-thumb {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .btn-outline-primary:hover {
-        background-color: var(--primary-red);
-        color: white;
+    .category-chip, .brand-chip {
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.85rem;
     }
 
-    .btn-outline-danger {
-        border-color: var(--danger);
-        color: var(--danger);
+    .price-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
     }
 
-    .btn-outline-danger:hover {
-        background-color: var(--danger);
-        color: white;
+    .old-price {
+        text-decoration: line-through;
+        color: var(--text-gray);
+        font-size: 0.85rem;
     }
 
-    .form-control {
-        border: 2px solid var(--light-gray);
-        border-radius: 8px;
-        padding: 0.8rem 1rem;
+    .current-price {
+        color: var(--yellow);
     }
 
-    .form-control:focus {
-        border-color: var(--primary-red);
-        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
-    }
-
-    .form-select {
-        border: 2px solid var(--light-gray);
-        border-radius: 8px;
-        padding: 0.8rem 1rem;
-    }
-
-    .form-select:focus {
-        border-color: var(--primary-red);
-        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
-    }
-
-    .admin-search-form .form-label {
-        font-size: 0.8rem;
+    .stock-chip {
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
         font-weight: 600;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
+        font-size: 0.85rem;
     }
 
-    .admin-search-form input,
-    .admin-search-form select {
-        min-height: 52px;
+    .stock-ok {
+        background: rgba(40, 167, 69, 0.15);
+        border: 1px solid rgba(40, 167, 69, 0.3);
+        color: #9dffbb;
     }
 
-    .search-buttons .btn {
-        min-height: 48px;
+    .stock-low {
+        background: rgba(231, 76, 60, 0.15);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #ff9d94;
     }
 
-    .search-summary .badge {
-        background-color: var(--light-gray);
-        font-size: 0.8rem;
+    .discount-chip {
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(40, 167, 69, 0.15);
+        border: 1px solid rgba(40, 167, 69, 0.3);
+        color: #9dffbb;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .featured-chip {
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(212, 175, 55, 0.15);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: var(--yellow);
+        font-size: 0.85rem;
+    }
+
+    .status-chip {
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
         font-weight: 600;
     }
 
-    @media (max-width: 576px) {
-        .search-buttons .btn {
-            width: 100%;
-        }
+    .status-active {
+        background: rgba(40, 167, 69, 0.15);
+        border: 1px solid rgba(40, 167, 69, 0.3);
+        color: #9dffbb;
+    }
+
+    .status-inactive {
+        background: rgba(231, 76, 60, 0.15);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #ff9d94;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: var(--text-light);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .edit-btn:hover {
+        background: rgba(0, 123, 255, 0.15);
+        border-color: rgba(0, 123, 255, 0.3);
+        color: #7fd1ff;
+    }
+
+    .delete-btn:hover {
+        background: rgba(231, 76, 60, 0.15);
+        border-color: rgba(231, 76, 60, 0.3);
+        color: #ff9d94;
+    }
+
+    .empty-state-cell {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        color: var(--text-gray);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: var(--yellow);
+        opacity: 0.5;
     }
 
     .autocomplete-dropdown {
         position: absolute;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        background: rgba(10, 14, 39, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
         max-height: 300px;
         overflow-y: auto;
         z-index: 1000;
         display: none;
         width: 100%;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         top: 100%;
-        margin-top: 5px;
+        margin-top: 0.5rem;
+        backdrop-filter: blur(18px);
     }
 
     .autocomplete-item {
-        padding: 10px;
+        padding: 1rem;
         cursor: pointer;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 1rem;
+        transition: background 0.2s ease;
     }
 
     .autocomplete-item:hover {
-        background-color: #f5f5f5;
+        background: rgba(255, 255, 255, 0.05);
     }
 
-    .autocomplete-item img {
-        width: 40px;
-        height: 40px;
-        object-fit: cover;
-        border-radius: 4px;
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+
+    @media (max-width: 991.98px) {
+        .admin-header {
+            grid-template-columns: 1fr;
+        }
+
+        .search-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .quick-actions-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .admin-dashboard-page {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .glass-card {
+            padding: 1.4rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .table-wrapper {
+            overflow-x: scroll;
+        }
     }
 </style>
 
@@ -631,16 +1030,14 @@ if (adminSearchInput) {
                         div.className = 'autocomplete-item';
                         
                         let content = `<div><strong>${item.name}</strong>`;
-                        if (item.category) content += ` <small class="text-muted">- ${item.category}</small>`;
-                        if (item.brand) content += ` <small class="text-muted">- ${item.brand}</small>`;
-                        content += `<br><small class="text-muted">${item.type}</small></div>`;
+                        if (item.category) content += ` <small style="color: var(--text-gray);">- ${item.category}</small>`;
+                        if (item.brand) content += ` <small style="color: var(--text-gray);">- ${item.brand}</small>`;
+                        content += `<br><small style="color: var(--text-gray);">${item.type}</small></div>`;
                         
                         div.innerHTML = content;
                         div.addEventListener('click', () => {
                             adminSearchInput.value = item.name;
                             adminAutocompleteResults.style.display = 'none';
-                            // Optionally submit the form
-                            // document.querySelector('.admin-search-form').submit();
                         });
                         
                         adminAutocompleteResults.appendChild(div);
@@ -655,7 +1052,6 @@ if (adminSearchInput) {
         }, 300);
     });
     
-    // Update autocomplete when scope changes
     if (adminSearchScope) {
         adminSearchScope.addEventListener('change', function() {
             if (adminSearchInput.value.trim().length >= 2) {
@@ -664,12 +1060,24 @@ if (adminSearchInput) {
         });
     }
     
-    // Hide autocomplete when clicking outside
     document.addEventListener('click', function(e) {
         if (!adminSearchInput.contains(e.target) && !adminAutocompleteResults.contains(e.target)) {
             adminAutocompleteResults.style.display = 'none';
         }
     });
 }
+
+document.querySelectorAll('.needs-confirm').forEach((element) => {
+    const eventName = element.tagName === 'FORM' ? 'submit' : 'click';
+    element.addEventListener(eventName, function(event) {
+        const message = this.getAttribute('data-confirm');
+        if (message && !window.confirm(message)) {
+            event.preventDefault();
+            if (eventName === 'submit') {
+                event.stopPropagation();
+            }
+        }
+    });
+});
 </script>
-{% endblock %} 
+{% endblock %}

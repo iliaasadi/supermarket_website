@@ -1,77 +1,421 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-body">
-            <h2 class="card-title">Order Confirmation</h2>
-            <div class="alert alert-success">
-                Thank you for your order! Your order has been placed successfully.
+<section class="order-confirmation-page">
+    <div class="order-confirmation-backdrop"></div>
+    <div class="order-confirmation-backdrop order-confirmation-backdrop-2"></div>
+
+    <div class="container order-confirmation-container">
+        <div class="confirmation-header">
+            <a href="{{ request.referrer or url_for('orders') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('order_placed_successfully') or 'سفارش شما ثبت شد' }}</p>
+                <h1>{{ get_translation('order_confirmation_title') or 'تایید سفارش' }}</h1>
+                <p>{{ get_translation('order_confirmation_subtitle') or 'جزئیات سفارش و وضعیت ارسال در ادامه قابل مشاهده است.' }}</p>
             </div>
-
-            <div class="row">
-                <div class="col-md-8">
-                    <h4>Order Details</h4>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in order.items %}
-                            <tr>
-                                <td>{{ item.product.name }}</td>
-                                <td>{{ item.quantity }}</td>
-                                <td>{{ "%.0f"|format(item.price) }} تومان</td>
-                                <td>{{ "%.0f"|format(item.price * item.quantity) }} تومان</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="3" class="text-right"><strong>Subtotal:</strong></td>
-                                <td>{{ "%.0f"|format(order.total_amount - order.delivery_fee) }} تومان</td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="text-right"><strong>Delivery Fee:</strong></td>
-                                <td>{{ "%.0f"|format(order.delivery_fee) }} تومان</td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="text-right"><strong>Total:</strong></td>
-                                <td><strong>{{ "%.0f"|format(order.total_amount) }} تومان</strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
-                <div class="col-md-4">
-                    <h4>Delivery Information</h4>
-                    <p><strong>Delivery Type:</strong> {{ order.delivery_type|title }}</p>
-                    {% if order.delivery_type == 'pickup' %}
-                        {% if order.location %}
-                        <p><strong>Pickup Location:</strong><br>
-                        {{ order.location.name }}<br>
-                        {{ order.location.address }}</p>
-                        {% endif %}
-                    {% else %}
-                        {% if order.address %}
-                        <p><strong>Delivery Address:</strong><br>
-                        {{ order.address.street }}<br>
-                        {{ order.address.city }}, {{ order.address.state }} {{ order.address.postal_code }}</p>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="mt-4">
-                <a href="{{ url_for('profile') }}" class="btn btn-primary">View Order History</a>
-                <a href="{{ url_for('index') }}" class="btn btn-secondary">Continue Shopping</a>
+            <div class="header-badge">
+                <i class="fas fa-check"></i>
+                <span>{{ get_translation('success') or 'موفق' }}</span>
             </div>
         </div>
+
+        <div class="confirmation-grid">
+            <div class="confirmation-main">
+                <article class="glass-card">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('order_items') }}</p>
+                        <h3>{{ get_translation('items_summary') or 'جزئیات آیتم‌ها' }}</h3>
+                    </div>
+                    <div class="items-table">
+                        <div class="items-table-header">
+                            <span>{{ get_translation('product') }}</span>
+                            <span>{{ get_translation('quantity') }}</span>
+                            <span>{{ get_translation('price') }}</span>
+                            <span>{{ get_translation('total') }}</span>
+                        </div>
+                        {% for item in order.items %}
+                        <div class="items-row">
+                            <div class="item-info">
+                                <strong>{{ item.product.name }}</strong>
+                                <small>{{ item.product.category }}</small>
+                            </div>
+                            <span>x{{ item.quantity }}</span>
+                            <span>{{ "{:,.0f}".format(item.price) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</span>
+                            <span>{{ "{:,.0f}".format(item.price * item.quantity) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="totals">
+                        <div>
+                            <span>{{ get_translation('subtotal') }}</span>
+                            <strong>{{ "{:,.0f}".format(order.total_amount - order.delivery_fee) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                        </div>
+                        {% if order.delivery_fee %}
+                        <div>
+                            <span>{{ get_translation('delivery_fee') }}</span>
+                            <strong>{{ "{:,.0f}".format(order.delivery_fee) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <span>{{ get_translation('total') }}</span>
+                            <strong>{{ "{:,.0f}".format(order.total_amount) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="glass-card">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('next_steps') or 'گام‌های بعدی' }}</p>
+                        <h3>{{ get_translation('what_happens_next') or 'چه اتفاقی می‌افتد؟' }}</h3>
+                    </div>
+                    <div class="steps-grid">
+                        <div class="step-card">
+                            <div class="step-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <h4>{{ get_translation('order_received') or 'سفارش دریافت شد' }}</h4>
+                                <p>{{ get_translation('order_received_desc') or 'سفارش شما ثبت و در صف پردازش قرار گرفت.' }}</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-icon">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                            <div>
+                                <h4>{{ get_translation('preparing_order') or 'در حال آماده‌سازی' }}</h4>
+                                <p>{{ get_translation('preparing_order_desc') or 'تیم ما در حال آماده کردن سفارش شماست.' }}</p>
+                            </div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-icon">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div>
+                                <h4>{{ get_translation('delivery_on_way') or 'ارسال در مسیر' }}</h4>
+                                <p>{{ get_translation('delivery_on_way_desc') or 'به محض ارسال، شما را مطلع خواهیم کرد.' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <aside class="confirmation-side">
+                <div class="glass-card">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('delivery_information') }}</p>
+                        <h3>{{ get_translation('delivery_summary') or 'خلاصه ارسال' }}</h3>
+                    </div>
+                    <div class="info-grid">
+                        <div>
+                            <span>{{ get_translation('delivery_type') }}</span>
+                            <strong>{{ get_translation(order.delivery_type) }}</strong>
+                        </div>
+                        <div>
+                            <span>{{ get_translation('payment_method') }}</span>
+                            <strong>{{ get_translation('pay_online') }}</strong>
+                        </div>
+                        {% if order.delivery_type == 'pickup' and order.location %}
+                        <div>
+                            <span>{{ get_translation('pickup_location') }}</span>
+                            <strong>{{ order.location.name }}</strong>
+                            <small>{{ order.location.address }}</small>
+                        </div>
+                        {% elif order.address %}
+                        <div>
+                            <span>{{ get_translation('delivery_address') }}</span>
+                            <strong>{{ order.address.street }}</strong>
+                            <small>{{ order.address.city }} {{ order.address.postal_code }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="glass-card action-card">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('order_actions') }}</p>
+                        <h3>{{ get_translation('whats_next') or 'قدم بعدی؟' }}</h3>
+                    </div>
+                    <div class="action-buttons">
+                        <a href="{{ url_for('orders') }}" class="ghost-btn">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span>{{ get_translation('view_orders') or 'مشاهده سفارش‌ها' }}</span>
+                        </a>
+                        <a href="{{ url_for('index') }}" class="primary-btn">
+                            <span>{{ get_translation('continue_shopping') }}</span>
+                            <i class="fas fa-shopping-bag"></i>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+        </div>
     </div>
-</div>
-{% endblock %} 
+</section>
+
+<style>
+    .order-confirmation-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
+    }
+
+    .order-confirmation-backdrop {
+        position: absolute;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
+
+    .order-confirmation-backdrop:first-of-type {
+        left: -120px;
+        bottom: 10%;
+    }
+
+    .order-confirmation-backdrop-2 {
+        right: -120px;
+        top: 15%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 3s;
+    }
+
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .order-confirmation-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .confirmation-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+    }
+
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .header-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.1rem;
+        border-radius: 999px;
+        background: rgba(46, 204, 113, 0.15);
+        border: 1px solid rgba(46, 204, 113, 0.4);
+        color: #9dffbb;
+        font-weight: 600;
+    }
+
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .confirmation-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 0.85fr);
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.75rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .card-heading {
+        margin-bottom: 1.5rem;
+    }
+
+    .card-heading h3 {
+        margin: 0;
+        font-size: 1.4rem;
+    }
+
+    .items-table {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .items-table-header,
+    .items-row {
+        display: grid;
+        grid-template-columns: 2fr repeat(3, minmax(80px, auto));
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .items-table-header {
+        color: var(--text-gray);
+        font-size: 0.85rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding-bottom: 0.6rem;
+    }
+
+    .items-row {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .item-info strong {
+        display: block;
+    }
+
+    .item-info small {
+        color: var(--text-gray);
+    }
+
+    .totals {
+        margin-top: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .totals span {
+        color: var(--text-gray);
+        font-size: 0.85rem;
+    }
+
+    .steps-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .step-card {
+        display: flex;
+        gap: 1rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .step-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--yellow);
+        font-size: 1.2rem;
+    }
+
+    .info-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .info-grid span {
+        color: var(--text-gray);
+        font-size: 0.85rem;
+    }
+
+    .info-grid strong {
+        display: block;
+        margin-top: 0.25rem;
+    }
+
+    small {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .ghost-btn,
+    .primary-btn {
+        border-radius: 18px;
+        padding: 0.85rem 1.4rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        text-decoration: none;
+        font-weight: 600;
+        border: none;
+        justify-content: center;
+    }
+
+    .ghost-btn {
+        color: var(--text-light);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .primary-btn {
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+    }
+
+    @media (max-width: 991.98px) {
+        .confirmation-header {
+            grid-template-columns: 1fr;
+        }
+
+        .confirmation-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .order-confirmation-page {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .glass-card {
+            padding: 1.4rem;
+        }
+
+        .items-table-header,
+        .items-row {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}

@@ -3,369 +3,870 @@
 {% block title %}{{ get_translation('cart') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">{{ get_translation('cart') }}</h2>
-    
-    {% if cart_items %}
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>{{ get_translation('product') }}</th>
-                                    <th>{{ get_translation('price') }}</th>
-                                    <th>{{ get_translation('quantity') }}</th>
-                                    <th>{{ get_translation('total') }}</th>
-                                    <th style="min-width: 100px;">{{ get_translation('actions') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in cart_items %}
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <img src="{{ get_image_or_default(item.product.image_url) }}" loading="lazy"
-                                                 alt="{{ item.product.name }}" 
-                                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"
-                                                 class="me-3">
-                                            <div>
-                                                <h6 class="mb-0">{{ item.product.name }}</h6>
-                                                <small class="text-muted">{{ item.product.category }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {% if item.product.discount > 0 %}
-                                        <span class="text-decoration-line-through text-muted">{{ "%.0f"|format(item.product.price) }} {{ get_translation('tooman') }}</span>
-                                        <span class="text-success ms-2">{{ "%.0f"|format(item.product.price * (1 - item.product.discount/100)) }} {{ get_translation('tooman') }}</span>
-                                        {% else %}
-                                        {{ "%.0f"|format(item.product.price) }} {{ get_translation('tooman') }}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="input-group input-group-sm" style="width: 120px;">
-                                                <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity({{ item.id }}, {{ item.quantity - 1 }})">-</button>
-                                                <input type="number" id="quantity-{{ item.id }}" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" 
-                                                       class="form-control text-center" readonly>
-                                                <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity({{ item.id }}, {{ item.quantity + 1 }})">+</button>
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="submitQuantityUpdate({{ item.id }})">
-                                                <i class="fas fa-sync-alt"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {% if item.product.discount > 0 %}
-                                        {{ "%.0f"|format(item.product.price * (1 - item.product.discount/100) * item.quantity) }} {{ get_translation('tooman') }}
-                                        {% else %}
-                                        {{ "%.0f"|format(item.product.price * item.quantity) }} {{ get_translation('tooman') }}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <form action="{{ url_for('remove_from_cart', item_id=item.id) }}" method="POST" class="d-inline">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+<section class="cart-page">
+    <div class="cart-backdrop"></div>
+    <div class="cart-backdrop cart-backdrop-2"></div>
+
+    <div class="container cart-container">
+        <header class="cart-header">
+            <a href="{{ request.referrer or url_for('index') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('cart') }}</p>
+                <h1>{{ get_translation('cart') }}</h1>
+                <p>{{ get_translation('cart_subtitle') or 'سبد خرید خود را بررسی و آماده پرداخت کنید.' }}</p>
+            </div>
+            <div class="header-badge">
+                <i class="fas fa-shopping-basket"></i>
+                <span>{{ cart_items|length }} {{ get_translation('items') }}</span>
+            </div>
+        </header>
+
+        {% if cart_items %}
+        <div class="cart-stats">
+            <div class="stat-card neutral-card">
+                <span>{{ get_translation('items') }}</span>
+                <strong>{{ cart_items|length }}</strong>
+                <small>{{ get_translation('products_in_cart') or 'محصول در سبد' }}</small>
+            </div>
+            <div class="stat-card info-card">
+                <span>{{ get_translation('subtotal') }}</span>
+                <strong>{{ "{:,.0f}".format(subtotal) }}</strong>
+                <small>{{ get_translation('tooman') }}</small>
+            </div>
+            <div class="stat-card warning-card">
+                <span>{{ get_translation('delivery_fee') }}</span>
+                <strong>{{ "{:,.0f}".format(delivery_fee) }}</strong>
+                <small>{{ get_translation('tooman') }}</small>
             </div>
         </div>
-        
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ get_translation('order_summary') }}</h5>
-                    <div class="d-flex justify-content-between mb-2">
+
+        <div class="cart-layout">
+            <div class="cart-items glass-card">
+                <div class="card-heading">
+                    <p class="muted-label">{{ get_translation('cart') }}</p>
+                    <h3>{{ get_translation('items') }}</h3>
+                </div>
+                <div class="items-list">
+                    {% for item in cart_items %}
+                    <article class="item-row">
+                        <div class="item-info">
+                            <div class="media">
+                                <img src="{{ get_image_or_default(item.product.image_url) }}" alt="{{ item.product.name }}" loading="lazy">
+                            </div>
+                            <div class="details">
+                                <h4>{{ item.product.name }}</h4>
+                                <p>{{ item.product.category }}</p>
+                                {% if item.product.discount > 0 %}
+                                <div class="price-dual">
+                                    <span class="old-price">{{ "%.0f"|format(item.product.price) }} {{ get_translation('tooman') }}</span>
+                                    <span class="new-price">{{ "%.0f"|format(item.product.price * (1 - item.product.discount/100)) }} {{ get_translation('tooman') }}</span>
+                                </div>
+                                {% else %}
+                                <div class="price-single">
+                                    <span>{{ "%.0f"|format(item.product.price) }} {{ get_translation('tooman') }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <div class="quantity-controller">
+                                <button type="button" class="qty-btn" data-direction="decrease" data-item="{{ item.id }}">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" id="quantity-{{ item.id }}" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" readonly>
+                                <button type="button" class="qty-btn" data-direction="increase" data-item="{{ item.id }}">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button type="button" class="ghost-btn mini update-btn" data-item="{{ item.id }}">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                            <div class="item-total">
+                                <span>{{ get_translation('total') }}</span>
+                                <strong>
+                                    {% if item.product.discount > 0 %}
+                                    {{ "{:,.0f}".format(item.product.price * (1 - item.product.discount/100) * item.quantity) }}
+                                    {% else %}
+                                    {{ "{:,.0f}".format(item.product.price * item.quantity) }}
+                                    {% endif %}
+                                    {{ get_translation('tooman') }}
+                                </strong>
+                            </div>
+                            <form action="{{ url_for('remove_from_cart', item_id=item.id) }}" method="POST" class="inline-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="ghost-btn danger mini">
+                                    <i class="fas fa-trash"></i>
+                                    <span>{{ get_translation('delete') }}</span>
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <aside class="glass-card summary-panel">
+                <div class="card-heading">
+                    <p class="muted-label">{{ get_translation('order_summary') }}</p>
+                    <h3>{{ get_translation('checkout_summary') or get_translation('order_summary') }}</h3>
+                </div>
+
+                <div class="summary-rows">
+                    <div class="summary-row">
                         <span>{{ get_translation('subtotal') }}</span>
-                        <span>{{ "{:,.0f}".format(subtotal) }} {{ get_translation('tooman') }}</span>
+                        <strong>{{ "{:,.0f}".format(subtotal) }} {{ get_translation('tooman') }}</strong>
                     </div>
-                    <div class="d-flex justify-content-between mb-2 delivery-fee-row" style="display: none;">
+                    <div class="summary-row delivery-fee-row" style="display: none;">
                         <span>{{ get_translation('delivery_fee') }}</span>
-                        <span class="delivery-fee">{{ "{:,.0f}".format(delivery_fee) }} {{ get_translation('tooman') }}</span>
+                        <strong class="delivery-fee">{{ "{:,.0f}".format(delivery_fee) }} {{ get_translation('tooman') }}</strong>
                     </div>
-                    <hr>
-                    <div class="d-flex justify-content-between mb-3">
-                        <strong>{{ get_translation('total') }}</strong>
+                    <div class="summary-divider"></div>
+                    <div class="summary-row total">
+                        <span>{{ get_translation('total') }}</span>
                         <strong class="total-amount">{{ "{:,.0f}".format(subtotal) }} {{ get_translation('tooman') }}</strong>
                     </div>
-                    
-                    <!-- Delivery Options -->
-                    <div class="mb-3">
-                        <h6 class="mb-2">{{ get_translation('delivery_type') }}</h6>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="delivery_type" id="pickup" value="pickup" checked>
-                            <label class="form-check-label" for="pickup">
-                                {{ get_translation('pickup_from_store') }}
-                            </label>
-                        </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" name="delivery_type" id="delivery" value="delivery">
-                            <label class="form-check-label" for="delivery">
-                                {{ get_translation('delivery_to_address').format("%.0f"|format(delivery_fee)) }}
-                            </label>
-                        </div>
-                        
-                        <!-- Store Location Selection -->
-                        <div id="store-location" class="mb-3">
-                            <label for="store_location_id" class="form-label">{{ get_translation('select_store_location') }}</label>
-                            <select class="form-select" id="store_location_id" name="store_location_id" required>
-                                {% if default_location %}
-                                    {% for location in locations %}
-                                    <option value="{{ location.id }}" {% if location.id == default_location.id %}selected{% endif %}>{{ location.name }} - {{ location.address }}</option>
-                                    {% endfor %}
-                                {% else %}
-                                <option value="">{{ get_translation('choose_location') }}</option>
-                                {% for location in locations %}
-                                <option value="{{ location.id }}">{{ location.name }} - {{ location.address }}</option>
-                                {% endfor %}
-                                {% endif %}
-                            </select>
-                        </div>
-
-                        <!-- Delivery Address Selection -->
-                        <div id="delivery-address" class="mb-3" style="display: none;">
-                            <label class="form-label">{{ get_translation('select_delivery_address') }}</label>
-                            {% if addresses %}
-                            <select class="form-select" id="delivery_address_id" name="delivery_address_id">
-                                <option value="">{{ get_translation('choose_address') }}</option>
-                                {% for address in addresses %}
-                                <option value="{{ address.id }}">{{ address.street }}, {{ address.tag }}</option>
-                                {% endfor %}
-                            </select>
-                            {% else %}
-                            <div class="alert alert-info">
-                                {{ get_translation('no_delivery_addresses') }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Payment Method - Fixed to Online -->
-                    <div class="mb-3">
-                        <h6 class="mb-2">{{ get_translation('payment_method') }}</h6>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="payment_method" id="online" value="online" checked disabled>
-                            <label class="form-check-label" for="online">
-                                <i class="fas fa-credit-card me-1"></i>{{ get_translation('pay_online') }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <form action="{{ url_for('checkout') }}" method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <input type="hidden" name="delivery_type" id="delivery_type_input" value="pickup">
-                        <input type="hidden" name="store_location_id" id="store_location_input" value="{% if default_location %}{{ default_location.id }}{% endif %}">
-                        <input type="hidden" name="delivery_address_id" id="delivery_address_input">
-                        <input type="hidden" name="payment_method" id="payment_method_input" value="online">
-                        
-                        <!-- Order Description -->
-                        <div class="mb-3">
-                            <label for="order_description" class="form-label">
-                                <i class="fas fa-sticky-note me-2"></i>{{ get_translation('order_description') }}
-                            </label>
-                            <textarea class="form-control" id="order_description" name="order_description" rows="3" 
-                                    placeholder="{{ get_translation('order_description_placeholder') }}"></textarea>
-                            <small class="text-muted">{{ get_translation('order_description_help') }}</small>
-                        </div>
-                        
-                        <button type="submit" class="btn w-100" style="background-color: var(--primary-red); color: white;">
-                            <i class="fas fa-shopping-cart me-2"></i>{{ get_translation('proceed_to_checkout') }}
-                        </button>
-                    </form>
-                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary w-100 mt-3">
-                        <i class="fas fa-arrow-left me-2"></i>{{ get_translation('continue_shopping') }}
-                    </a>
                 </div>
-            </div>
+
+                <div class="delivery-card">
+                    <p class="muted-label">{{ get_translation('delivery_type') }}</p>
+                    <div class="delivery-options">
+                        <label class="delivery-chip active">
+                            <input type="radio" name="delivery_type" value="pickup" checked>
+                            <div>
+                                <strong>{{ get_translation('pickup_from_store') }}</strong>
+                                <small>{{ get_translation('pickup_from_store_desc') or 'تحویل سریع از فروشگاه' }}</small>
+                            </div>
+                        </label>
+                        <label class="delivery-chip">
+                            <input type="radio" name="delivery_type" value="delivery">
+                            <div>
+                                <strong>{{ get_translation('delivery_to_address').format("%.0f"|format(delivery_fee)) }}</strong>
+                                <small>{{ get_translation('delivery_to_address_desc') or 'ارسال به درب منزل' }}</small>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="store-location" class="form-group">
+                        <label for="store_location_id">{{ get_translation('select_store_location') }}</label>
+                        <select id="store_location_id" class="control-input">
+                            {% if default_location %}
+                                {% for location in locations %}
+                                <option value="{{ location.id }}" {% if location.id == default_location.id %}selected{% endif %}>
+                                    {{ location.name }} - {{ location.address }}
+                                </option>
+                                {% endfor %}
+                            {% else %}
+                            <option value="">{{ get_translation('choose_location') }}</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.name }} - {{ location.address }}</option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <div id="delivery-address" class="form-group" style="display: none;">
+                        <label for="delivery_address_id">{{ get_translation('select_delivery_address') }}</label>
+                        {% if addresses %}
+                        <select id="delivery_address_id" class="control-input">
+                            <option value="">{{ get_translation('choose_address') }}</option>
+                            {% for address in addresses %}
+                            <option value="{{ address.id }}">{{ address.street }}, {{ address.tag }}</option>
+                            {% endfor %}
+                        </select>
+                        {% else %}
+                        <div class="empty-hint">
+                            <i class="fas fa-info-circle"></i>
+                            <p>{{ get_translation('no_delivery_addresses') }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="payment-card">
+                    <p class="muted-label">{{ get_translation('payment_method') }}</p>
+                    <div class="payment-chip">
+                        <i class="fas fa-credit-card"></i>
+                        <div>
+                            <strong>{{ get_translation('pay_online') }}</strong>
+                            <small>{{ get_translation('secure_checkout') or 'پرداخت امن آنلاین' }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="checkout-form" action="{{ url_for('checkout') }}" method="POST" class="checkout-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="delivery_type" id="delivery_type_input" value="pickup">
+                    <input type="hidden" name="store_location_id" id="store_location_input" value="{% if default_location %}{{ default_location.id }}{% endif %}">
+                    <input type="hidden" name="delivery_address_id" id="delivery_address_input">
+                    <input type="hidden" name="payment_method" value="online">
+
+                    <div class="form-group">
+                        <label for="order_description">
+                            <i class="fas fa-sticky-note"></i>
+                            {{ get_translation('order_description') }}
+                        </label>
+                        <textarea id="order_description" name="order_description" rows="3" placeholder="{{ get_translation('order_description_placeholder') }}" class="control-input"></textarea>
+                        <small>{{ get_translation('order_description_help') }}</small>
+                    </div>
+
+                    <button type="submit" class="primary-btn full-width">
+                        <i class="fas fa-credit-card"></i>
+                        <span>{{ get_translation('proceed_to_checkout') }}</span>
+                    </button>
+                    <a href="{{ url_for('index') }}" class="ghost-btn full-width">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>{{ get_translation('continue_shopping') }}</span>
+                    </a>
+                </form>
+            </aside>
         </div>
+        {% else %}
+        <div class="empty-state glass-card">
+            <i class="fas fa-shopping-cart"></i>
+            <h3>{{ get_translation('empty_cart') }}</h3>
+            <p>{{ get_translation('add_some_products') }}</p>
+            <a href="{{ url_for('index') }}" class="primary-btn">
+                <i class="fas fa-arrow-left"></i>
+                <span>{{ get_translation('continue_shopping') }}</span>
+            </a>
+        </div>
+        {% endif %}
     </div>
-    {% else %}
-    <div class="text-center py-5">
-        <i class="fas fa-shopping-cart fa-3x mb-3" style="color: var(--primary-red);"></i>
-        <h3>{{ get_translation('empty_cart') }}</h3>
-        <p class="text-muted">{{ get_translation('add_some_products') }}</p>
-        <a href="{{ url_for('index') }}" class="btn" style="background-color: var(--primary-red); color: white;">
-            <i class="fas fa-arrow-left me-2"></i>{{ get_translation('continue_shopping') }}
-        </a>
-    </div>
-    {% endif %}
-</div>
+</section>
 
 <style>
-    .card {
-        border: none;
-        border-radius: 12px;
+    .cart-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
     }
 
-    .card-title {
-        color: var(--dark-text);
-        font-weight: 600;
+    .cart-backdrop {
+        position: absolute;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(45px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
+
+    .cart-backdrop:first-of-type {
+        left: -150px;
+        bottom: 10%;
+    }
+
+    .cart-backdrop-2 {
+        right: -140px;
+        top: 15%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 4s;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-18px); }
+    }
+
+    .cart-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .cart-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.6rem);
+    }
+
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .header-badge {
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .back-chip:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    .cart-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .stat-card {
+        border-radius: 24px;
+        padding: 1.4rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(18px);
+        background: rgba(10, 14, 39, 0.78);
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .stat-card span {
+        color: var(--text-gray);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .stat-card strong {
+        font-size: 2rem;
+        color: var(--text-light);
+    }
+
+    .stat-card small {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .neutral-card {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .info-card {
+        border-color: rgba(16, 70, 255, 0.35);
+        background: rgba(16, 70, 255, 0.12);
+    }
+
+    .warning-card {
+        border-color: rgba(255, 193, 7, 0.35);
+        background: rgba(255, 193, 7, 0.12);
+    }
+
+    .cart-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        border-radius: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.75rem;
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(20px);
+    }
+
+    .card-heading {
         margin-bottom: 1.5rem;
     }
 
-    .table th {
+    .muted-label {
+        color: var(--text-gray);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    .items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .item-row {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .item-info {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .media img {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .details h4 {
+        margin: 0;
+    }
+
+    .details p {
+        margin: 0.25rem 0 0;
+        color: rgba(255, 255, 255, 0.75);
+    }
+
+    .price-dual,
+    .price-single {
+        display: flex;
+        gap: 0.65rem;
+        align-items: baseline;
+    }
+
+    .old-price {
+        text-decoration: line-through;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .new-price {
+        color: var(--yellow);
         font-weight: 600;
-        color: var(--dark-text);
-        border-top: none;
     }
 
-    .table td {
-        vertical-align: middle;
+    .item-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        justify-content: space-between;
     }
 
-    .form-control {
-        border: 2px solid var(--light-gray);
-        border-radius: 8px;
+    .quantity-controller {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 0.3rem 0.5rem;
+        background: rgba(255, 255, 255, 0.03);
     }
 
-    .form-control:focus {
-        border-color: var(--primary-red);
-        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    .quantity-controller button {
+        background: none;
+        border: none;
+        color: var(--text-light);
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        cursor: pointer;
     }
 
-    .btn-outline-primary {
-        border-color: var(--primary-red);
-        color: var(--primary-red);
+    .quantity-controller input {
+        width: 60px;
+        text-align: center;
+        border: none;
+        background: transparent;
+        color: var(--text-light);
+        font-weight: 600;
     }
 
-    .btn-outline-primary:hover {
-        background-color: var(--primary-red);
-        color: white;
+    .quantity-controller .ghost-btn {
+        border-radius: 12px;
+        padding: 0.4rem 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
-    .btn-outline-danger {
-        border-color: var(--danger);
-        color: var(--danger);
+    .ghost-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.65rem 1.2rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.85);
+        background: rgba(255, 255, 255, 0.03);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
     }
 
-    .btn-outline-danger:hover {
-        background-color: var(--danger);
-        color: white;
+    .ghost-btn:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
     }
 
-    hr {
-        margin: 1rem 0;
+    .ghost-btn.danger {
+        border-color: rgba(220, 53, 69, 0.35);
+        color: #ff9aa2;
     }
 
-    .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        margin-bottom: 1rem;
+    .ghost-btn.mini {
+        padding: 0.4rem 0.9rem;
     }
-    
-    .table {
-        min-width: 800px;  /* Ensure table has minimum width for scrolling */
+
+    .item-total {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
     }
-    
-    .table td, .table th {
-        white-space: nowrap;
+
+    .item-total span {
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.85rem;
+    }
+
+    .summary-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .summary-rows {
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1rem 1.25rem;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .summary-row.total strong {
+        font-size: 1.3rem;
+    }
+
+    .summary-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 0.75rem 0;
+    }
+
+    .delivery-card,
+    .payment-card {
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.25rem;
+        background: rgba(255, 255, 255, 0.02);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .delivery-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .delivery-chip {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        gap: 0.75rem;
+        cursor: pointer;
+        transition: border 0.3s ease, background 0.3s ease;
+    }
+
+    .delivery-chip input {
+        display: none;
+    }
+
+    .delivery-chip.active,
+    .delivery-chip:hover {
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.08);
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .control-input,
+    textarea.control-input {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+        padding: 0.85rem 1rem;
+    }
+
+    .control-input:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+    }
+
+    .empty-hint {
+        border-radius: 16px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        padding: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .payment-chip {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 0.9rem 1rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .payment-chip i {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        background: rgba(212, 175, 55, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--yellow);
+    }
+
+    .checkout-form .primary-btn,
+    .checkout-form .ghost-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .primary-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 18px;
+        padding: 0.85rem 1.5rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+    }
+
+    .primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(212, 175, 55, 0.4);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .empty-state h3 {
+        margin: 0;
+    }
+
+    .empty-state p {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+    }
+
+    @media (max-width: 991.98px) {
+        .cart-header {
+            grid-template-columns: 1fr;
+        }
+
+        .cart-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .cart-page {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .glass-card {
+            padding: 1.4rem;
+        }
+
+        .item-actions {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .quantity-controller {
+            width: 100%;
+            justify-content: space-between;
+        }
     }
 </style>
 
 {% block scripts %}
 <script>
-    // Update delivery fee and total when delivery type changes
-    document.querySelectorAll('input[name="delivery_type"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const subtotal = parseFloat('{{ subtotal }}');
-            const deliveryFee = this.value === 'delivery' ? parseFloat('{{ delivery_fee }}') : 0;
-            const total = subtotal + deliveryFee;
-            
-            // Show/hide delivery fee row
-            const deliveryFeeRow = document.querySelector('.delivery-fee-row');
-            if (deliveryFeeRow) {
-                deliveryFeeRow.style.display = this.value === 'delivery' ? 'flex' : 'none';
+(function() {
+    const deliveryRadios = document.querySelectorAll('input[name="delivery_type"]');
+    const deliveryFee = parseFloat('{{ delivery_fee }}');
+    const subtotal = parseFloat('{{ subtotal }}');
+    const deliveryFeeRow = document.querySelector('.delivery-fee-row');
+    const deliveryFeeEl = document.querySelector('.delivery-fee');
+    const totalAmountEl = document.querySelector('.total-amount');
+    const storeLocation = document.getElementById('store-location');
+    const deliveryAddress = document.getElementById('delivery-address');
+    const storeLocationSelect = document.getElementById('store_location_id');
+    const deliveryAddressSelect = document.getElementById('delivery_address_id');
+    const storeLocationInput = document.getElementById('store_location_input');
+    const deliveryAddressInput = document.getElementById('delivery_address_input');
+    const checkoutForm = document.getElementById('checkout-form');
+
+    function formatCurrency(value) {
+        return value.toLocaleString() + ' {{ get_translation("tooman") }}';
+    }
+
+    function updateTotals(type) {
+        const fee = type === 'delivery' ? deliveryFee : 0;
+        const total = subtotal + fee;
+
+        if (deliveryFeeRow) {
+            deliveryFeeRow.style.display = type === 'delivery' ? 'flex' : 'none';
+        }
+        if (deliveryFeeEl) {
+            deliveryFeeEl.textContent = formatCurrency(fee);
+        }
+        if (totalAmountEl) {
+            totalAmountEl.textContent = formatCurrency(total);
+        }
+        document.getElementById('delivery_type_input').value = type;
+        if (storeLocation && deliveryAddress) {
+            storeLocation.style.display = type === 'pickup' ? 'block' : 'none';
+            deliveryAddress.style.display = type === 'delivery' ? 'block' : 'none';
+        }
+        document.querySelectorAll('.delivery-chip').forEach(chip => chip.classList.remove('active'));
+        const activeChip = document.querySelector(`.delivery-chip input[value="${type}"]`)?.parentElement;
+        if (activeChip) activeChip.classList.add('active');
+    }
+
+    deliveryRadios.forEach(radio => {
+        radio.addEventListener('change', () => updateTotals(radio.value));
+    });
+
+    if (storeLocationSelect && storeLocationInput) {
+        storeLocationSelect.addEventListener('change', function() {
+            storeLocationInput.value = this.value;
+        });
+    }
+
+    if (deliveryAddressSelect && deliveryAddressInput) {
+        deliveryAddressSelect.addEventListener('change', function() {
+            deliveryAddressInput.value = this.value;
+        });
+    }
+
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function() {
+            if (deliveryAddressSelect && deliveryAddressInput && deliveryAddressSelect.value) {
+                deliveryAddressInput.value = deliveryAddressSelect.value;
             }
-            
-            // Update delivery fee amount
-            const deliveryFeeElement = document.querySelector('.delivery-fee');
-            if (deliveryFeeElement) {
-                deliveryFeeElement.textContent = deliveryFee.toLocaleString() + ' {{ get_translation("tooman") }}';
-            }
-            
-            // Update total amount
-            const totalAmountElement = document.querySelector('.total-amount');
-            if (totalAmountElement) {
-                totalAmountElement.textContent = total.toLocaleString() + ' {{ get_translation("tooman") }}';
-            }
-            
-            // Update hidden input
-            document.getElementById('delivery_type_input').value = this.value;
-            
-            // Show/hide address selection
-            document.getElementById('store-location').style.display = this.value === 'pickup' ? 'block' : 'none';
-            document.getElementById('delivery-address').style.display = this.value === 'delivery' ? 'block' : 'none';
-            
-            // Wallet feature removed
+        });
+    }
+
+    updateTotals('pickup');
+
+    document.querySelectorAll('.qty-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const itemId = btn.dataset.item;
+            if (!itemId) return;
+            const input = document.getElementById(`quantity-${itemId}`);
+            if (!input) return;
+            const current = parseInt(input.value, 10) || 0;
+            const direction = btn.dataset.direction === 'increase' ? 1 : -1;
+            window.updateQuantity(itemId, current + direction);
         });
     });
 
-    // Payment method is fixed to online - no need to update
-
-    // Update store location and delivery address hidden inputs
-    // Set default location on page load
-    {% if default_location %}
-    document.getElementById('store_location_input').value = '{{ default_location.id }}';
-    {% endif %}
-    
-    document.getElementById('store_location_id').addEventListener('change', function() {
-        document.getElementById('store_location_input').value = this.value;
+    document.querySelectorAll('.update-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const itemId = btn.dataset.item;
+            if (itemId) {
+                window.submitQuantityUpdate(itemId);
+            }
+        });
     });
+})();
 
-    document.getElementById('delivery_address_id').addEventListener('change', function() {
-        document.getElementById('delivery_address_input').value = this.value;
-    });
-
-    // Handle form submission
-    document.querySelector('form').addEventListener('submit', function(e) {
-        // Update order description hidden input
-        document.getElementById('order_description_input').value = document.getElementById('order_description').value;
-    });
-
-    // Update quantity function
-    function updateQuantity(itemId, newQuantity) {
-        const input = document.getElementById(`quantity-${itemId}`);
-        const max = parseInt(input.getAttribute('max'));
-        const min = parseInt(input.getAttribute('min'));
-        
-        if (newQuantity >= min && newQuantity <= max) {
-            input.value = newQuantity;
-        }
+window.updateQuantity = function(itemId, newQuantity) {
+    const input = document.getElementById(`quantity-${itemId}`);
+    if (!input) return;
+    const max = parseInt(input.getAttribute('max'), 10);
+    const min = parseInt(input.getAttribute('min'), 10);
+    if (newQuantity >= min && newQuantity <= max) {
+        input.value = newQuantity;
     }
+};
 
-    // Submit quantity update
-    function submitQuantityUpdate(itemId) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/cart/update/${itemId}`;
-        
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrf_token';
-        csrfInput.value = document.querySelector('input[name="csrf_token"]').value;
-        
-        const quantityInput = document.createElement('input');
-        quantityInput.type = 'hidden';
-        quantityInput.name = 'quantity';
-        quantityInput.value = document.getElementById(`quantity-${itemId}`).value;
-        
-        form.appendChild(csrfInput);
-        form.appendChild(quantityInput);
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
+window.submitQuantityUpdate = function(itemId) {
+    const csrf = document.querySelector('input[name="csrf_token"]');
+    const quantityInput = document.getElementById(`quantity-${itemId}`);
+    if (!csrf || !quantityInput) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/cart/update/${itemId}`;
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = csrf.value;
+
+    const quantityField = document.createElement('input');
+    quantityField.type = 'hidden';
+    quantityField.name = 'quantity';
+    quantityField.value = quantityInput.value;
+
+    form.appendChild(csrfInput);
+    form.appendChild(quantityField);
+    document.body.appendChild(form);
+    form.submit();
+};
 </script>
 {% endblock %}
-{% endblock %} 
+{% endblock %}

@@ -1,79 +1,289 @@
 {% extends "base.html" %}
 
-{% block title %}{% block admin_title %}{% endblock %} - Admin{% endblock %}
+{% block title %}{% block admin_title %}{% endblock %} - ADMIN{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Admin Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
-                <i class="fas fa-shield-alt me-2"></i>{{ get_translation('admin_dashboard') }}
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="adminNavbar">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
-                            <i class="fas fa-home me-1"></i>{{ get_translation('dashboard') }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
-                            <i class="fas fa-shopping-cart me-1"></i>{{ get_translation('manage_orders') }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin_order_comments') }}">
-                            <i class="fas fa-comments me-1"></i>{{ get_translation('order_comments') }}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin_users') }}">
-                            <i class="fas fa-users me-1"></i>{{ get_translation('users') }}
-                        </a>
-                    </li>
-                </ul>
-                <div class="d-flex">
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
-                        <i class="fas fa-sign-out-alt me-1"></i>{{ get_translation('logout') }}
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
+{% set current_endpoint = request.endpoint %}
 
-    <!-- Admin Content -->
-    <div class="admin-content">
-        {% block admin_content %}{% endblock %}
+<section class="admin-shell">
+    <div class="admin-glow"></div>
+    <div class="admin-glow admin-glow-2"></div>
+
+    <div class="container admin-shell-container">
+        <header class="admin-hero">
+            <a href="{{ request.referrer or url_for('index') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back') }}</span>
+            </a>
+            <div class="hero-text">
+                <p class="muted-label">{{ get_translation('admin_panel') or 'پنل مدیریت' }}</p>
+                <h1>{{ get_translation('admin_dashboard') }}</h1>
+                <p>{{ get_translation('admin_subtitle') or 'سفارش‌ها، کاربران و فروشگاه‌ها را از اینجا مدیریت کنید.' }}</p>
+            </div>
+            <div class="hero-actions">
+                <a href="{{ url_for('logout') }}" class="ghost-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>{{ get_translation('logout') }}</span>
+                </a>
+            </div>
+        </header>
+
+        <nav class="admin-nav">
+            <button class="nav-toggle" type="button" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-links">
+                <li>
+                    <a href="{{ url_for('admin_dashboard') }}"
+                       class="{% if current_endpoint == 'admin_dashboard' %}active{% endif %}">
+                        <i class="fas fa-home"></i>
+                        <span>{{ get_translation('dashboard') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin_orders') }}"
+                       class="{% if current_endpoint in ['admin_orders', 'admin_order_details'] %}active{% endif %}">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>{{ get_translation('manage_orders') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin_order_comments') }}"
+                       class="{% if current_endpoint == 'admin_order_comments' %}active{% endif %}">
+                        <i class="fas fa-comments"></i>
+                        <span>{{ get_translation('order_comments') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin_users') }}"
+                       class="{% if current_endpoint == 'admin_users' %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        <span>{{ get_translation('users') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin_locations') }}"
+                       class="{% if current_endpoint == 'admin_locations' %}active{% endif %}">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>{{ get_translation('store_locations') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin_add_product') }}"
+                       class="{% if current_endpoint in ['admin_add_product', 'admin_edit_product'] %}active{% endif %}">
+                        <i class="fas fa-box"></i>
+                        <span>{{ get_translation('manage_products') or get_translation('products') }}</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="admin-content glass-panel">
+            {% block admin_content %}{% endblock %}
+        </div>
     </div>
-</div>
+</section>
 
 <style>
-.admin-content {
-    padding: 20px;
-}
+    .admin-shell {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
+    }
 
-.navbar {
-    box-shadow: 0 2px 4px rgba(0,0,0,.1);
-}
+    .admin-glow {
+        position: absolute;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(45px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
 
-.navbar-brand {
-    font-weight: 600;
-}
+    .admin-glow:first-of-type {
+        left: -160px;
+        top: 15%;
+    }
 
-.nav-link {
-    font-weight: 500;
-}
+    .admin-glow-2 {
+        right: -150px;
+        bottom: 5%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 4s;
+    }
 
-.nav-link:hover {
-    color: var(--primary-red) !important;
-}
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-18px); }
+    }
 
-.nav-link.active {
-    color: var(--primary-red) !important;
-}
+    .admin-shell-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 1.75rem;
+    }
+
+    .admin-hero {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .hero-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.6rem);
+    }
+
+    .hero-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .muted-label {
+        color: var(--text-gray);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.85rem;
+    }
+
+    .back-chip,
+    .ghost-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .back-chip:hover,
+    .ghost-btn:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.12);
+    }
+
+    .admin-nav {
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 0.75rem 1.25rem;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+        position: relative;
+    }
+
+    .nav-toggle {
+        display: none;
+        background: none;
+        border: none;
+        color: var(--text-light);
+        font-size: 1.4rem;
+    }
+
+    .nav-links {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .nav-links li a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.1rem;
+        border-radius: 16px;
+        color: rgba(255, 255, 255, 0.78);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .nav-links li a:hover {
+        color: var(--yellow);
+    }
+
+    .nav-links li a.active {
+        background: rgba(212, 175, 55, 0.18);
+        color: var(--yellow);
+        border: 1px solid rgba(212, 175, 55, 0.35);
+        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+    }
+
+    .admin-content {
+        border-radius: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 2rem;
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+        min-height: 420px;
+    }
+
+    .glass-panel {
+        backdrop-filter: blur(18px);
+    }
+
+    @media (max-width: 991.98px) {
+        .admin-hero {
+            grid-template-columns: 1fr;
+        }
+
+        .admin-nav {
+            padding: 0.75rem;
+        }
+
+        .nav-toggle {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-links {
+            flex-direction: column;
+            gap: 0.25rem;
+            display: none;
+        }
+
+        .nav-links.open {
+            display: flex;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .admin-shell {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .admin-content {
+            padding: 1.5rem;
+        }
+    }
 </style>
-{% endblock %} 
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.querySelector('.nav-toggle');
+    const links = document.querySelector('.nav-links');
+
+    if (toggle && links) {
+        toggle.addEventListener('click', function () {
+            links.classList.toggle('open');
+        });
+    }
+});
+</script>
+{% endblock %}

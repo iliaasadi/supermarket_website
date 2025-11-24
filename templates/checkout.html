@@ -1,80 +1,320 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Checkout</h2>
-    
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">Delivery Options</h5>
-                    <form method="POST" id="checkout-form">
-                        <div class="form-group">
-                            <div class="custom-control custom-radio">
-                                <input type="radio" id="pickup" name="delivery_type" value="pickup" class="custom-control-input" checked>
-                                <label class="custom-control-label" for="pickup">Pickup from Store</label>
-                            </div>
-                            <div class="custom-control custom-radio">
-                                <input type="radio" id="delivery" name="delivery_type" value="delivery" class="custom-control-input">
-                                <label class="custom-control-label" for="delivery">Delivery to Address</label>
-                            </div>
-                        </div>
+<section class="checkout-page">
+    <div class="checkout-backdrop"></div>
+    <div class="checkout-backdrop checkout-backdrop-2"></div>
 
-                        <div id="location-section" class="form-group">
-                            <label for="location_id">Select Store Location</label>
-                            <select class="form-control" id="location_id" name="location_id" required>
-                                <option value="">Choose a location...</option>
-                                {% for location in locations %}
-                                <option value="{{ location.id }}">{{ location.name }} - {{ location.address }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div id="address-section" class="form-group" style="display: none;">
-                            <label for="address_id">Select Delivery Address</label>
-                            <select class="form-control" id="address_id" name="address_id">
-                                <option value="">Choose an address...</option>
-                                {% for address in addresses %}
-                                <option value="{{ address.id }}">{{ address.street }}, {{ address.city }}, {{ address.state }} {{ address.postal_code }}</option>
-                                {% endfor %}
-                            </select>
-                            {% if not addresses %}
-                            <div class="alert alert-info">
-                                No delivery addresses found. <a href="{{ url_for('add_address') }}">Add an address</a>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Place Order</button>
-                    </form>
-                </div>
+    <div class="container checkout-container">
+        <div class="checkout-header">
+            <a href="{{ request.referrer or url_for('cart') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('ready_to_checkout') or 'نهایی کردن خرید' }}</p>
+                <h1>{{ get_translation('checkout') or 'نهایی کردن سفارش' }}</h1>
+                <p>{{ get_translation('checkout_subtitle') or 'روش تحویل خود را انتخاب کنید و سفارش را تایید کنید.' }}</p>
+            </div>
+            <div class="header-badge">
+                <i class="fas fa-lock"></i>
+                <span>{{ get_translation('secure_payment') or 'پرداخت امن' }}</span>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Order Summary</h5>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Subtotal:</span>
-                        <span>{{ "%.0f"|format(subtotal) }} تومان</span>
+        <div class="checkout-grid">
+            <form method="POST" id="checkout-form" class="glass-card checkout-form">
+                <div class="card-heading">
+                    <p class="muted-label">{{ get_translation('delivery_options') or 'روش تحویل' }}</p>
+                    <h3>{{ get_translation('choose_delivery') or 'نوع تحویل را انتخاب کنید' }}</h3>
+                </div>
+
+                <div class="delivery-toggle">
+                    <label class="toggle-card">
+                        <input type="radio" id="pickup" name="delivery_type" value="pickup" checked>
+                        <div>
+                            <strong>{{ get_translation('pickup_from_store') or 'تحویل حضوری' }}</strong>
+                            <small>{{ get_translation('pickup_from_store_desc') or 'تحویل سریع از فروشگاه بدون هزینه ارسال' }}</small>
+                        </div>
+                    </label>
+                    <label class="toggle-card">
+                        <input type="radio" id="delivery" name="delivery_type" value="delivery">
+                        <div>
+                            <strong>{{ get_translation('delivery_to_address') or 'ارسال به آدرس' }}</strong>
+                            <small>{{ get_translation('delivery_to_address_desc') or 'تحویل درب منزل با محاسبه هزینه ارسال' }}</small>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="location-section" class="form-group">
+                    <label for="location_id">{{ get_translation('select_store_location') }}</label>
+                    <select id="location_id" name="location_id" required>
+                        <option value="">{{ get_translation('choose_location') or 'انتخاب فروشگاه...' }}</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}">{{ location.name }} - {{ location.address }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="address-section" class="form-group hidden">
+                    <label for="address_id">{{ get_translation('select_delivery_address') }}</label>
+                    <select id="address_id" name="address_id">
+                        <option value="">{{ get_translation('choose_address') or 'انتخاب آدرس...' }}</option>
+                        {% for address in addresses %}
+                        <option value="{{ address.id }}">{{ address.street }}, {{ address.city }}, {{ address.state }} {{ address.postal_code }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if not addresses %}
+                    <div class="helper-box">
+                        {{ get_translation('no_delivery_addresses') }}
+                        <a href="{{ url_for('add_address') }}">{{ get_translation('add_address') }}</a>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Delivery Fee:</span>
-                        <span class="delivery-fee">{{ "%.0f"|format(delivery_fee) }} تومان</span>
-                    </div>
-                    <hr>
-                    <div class="d-flex justify-content-between">
-                        <strong>Total:</strong>
-                        <strong class="total-amount">{{ "%.0f"|format(total) }} تومان</strong>
-                    </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="primary-btn submit-btn">
+                    <span>{{ get_translation('place_order') }}</span>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+
+            <div class="glass-card summary-card">
+                <div class="card-heading">
+                    <p class="muted-label">{{ get_translation('order_summary') }}</p>
+                    <h3>{{ get_translation('review_order') or 'خلاصه سفارش' }}</h3>
+                </div>
+                <div class="summary-row">
+                    <span>{{ get_translation('subtotal') }}</span>
+                    <strong>{{ "{:,.0f}".format(subtotal) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                </div>
+                <div class="summary-row">
+                    <span>{{ get_translation('delivery_fee') }}</span>
+                    <strong class="delivery-fee">{{ "{:,.0f}".format(delivery_fee) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                </div>
+                <div class="summary-row total-row">
+                    <span>{{ get_translation('total') }}</span>
+                    <strong class="total-amount">{{ "{:,.0f}".format(total) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                </div>
+
+                <div class="tips">
+                    <p>{{ get_translation('delivery_tip') or 'هزینه ارسال بر اساس آدرس شما محاسبه می‌شود.' }}</p>
+                    <p>{{ get_translation('pickup_tip') or 'تحویل حضوری بدون هزینه ارسال انجام می‌شود.' }}</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
+<style>
+    .checkout-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
+    }
+
+    .checkout-backdrop {
+        position: absolute;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
+
+    .checkout-backdrop:first-of-type {
+        left: -140px;
+        bottom: 8%;
+    }
+
+    .checkout-backdrop-2 {
+        right: -120px;
+        top: 12%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 3s;
+    }
+
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .checkout-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .checkout-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.6rem);
+    }
+
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .header-badge {
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.75rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .card-heading {
+        margin-bottom: 1.5rem;
+    }
+
+    .card-heading h3 {
+        margin: 0;
+        font-size: 1.4rem;
+    }
+
+    .delivery-toggle {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .toggle-card {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1rem;
+        display: flex;
+        gap: 0.8rem;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
+    }
+
+    .toggle-card input {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--yellow);
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group select {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+        padding: 0.85rem 1rem;
+    }
+
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .primary-btn.submit-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+    }
+
+    .total-row {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 0.8rem;
+        margin-top: 0.8rem;
+    }
+
+    .tips {
+        margin-top: 1rem;
+        color: var(--text-gray);
+        font-size: 0.9rem;
+    }
+
+    .helper-box {
+        margin-top: 0.6rem;
+        padding: 0.8rem;
+        border-radius: 14px;
+        border: 1px dashed rgba(255, 255, 255, 0.3);
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .checkout-header {
+            grid-template-columns: 1fr;
+        }
+
+        .checkout-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .checkout-page {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .glass-card {
+            padding: 1.4rem;
+        }
+    }
+</style>
+
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const pickupRadio = document.getElementById('pickup');
@@ -83,31 +323,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const addressSection = document.getElementById('address-section');
     const locationSelect = document.getElementById('location_id');
     const addressSelect = document.getElementById('address_id');
-    const deliveryFee = document.querySelector('.delivery-fee');
-    const totalAmount = document.querySelector('.total-amount');
-    const subtotal = {{ subtotal }};
+    const deliveryFeeEl = document.querySelector('.delivery-fee');
+    const totalAmountEl = document.querySelector('.total-amount');
+    const subtotal = parseFloat('{{ subtotal }}');
+    const baseDeliveryFee = parseFloat('{{ delivery_fee }}');
+    const currency = ' {{ get_translation("currency_toman") or get_translation("tooman") }}';
 
-    function updateDeliveryOptions() {
-        if (pickupRadio.checked) {
-            locationSection.style.display = 'block';
-            addressSection.style.display = 'none';
-            locationSelect.required = true;
-            addressSelect.required = false;
-            deliveryFee.textContent = '0 تومان';
-            totalAmount.textContent = `${subtotal.toLocaleString()} تومان`;
-        } else {
-            locationSection.style.display = 'none';
-            addressSection.style.display = 'block';
-            locationSelect.required = false;
-            addressSelect.required = true;
-            const fee = Math.max(20000, subtotal * 0.05);
-            deliveryFee.textContent = `${fee.toLocaleString()} تومان`;
-            totalAmount.textContent = `${(subtotal + fee).toLocaleString()} تومان`;
-        }
+    function formatCurrency(value) {
+        return value.toLocaleString() + currency;
     }
 
-    pickupRadio.addEventListener('change', updateDeliveryOptions);
-    deliveryRadio.addEventListener('change', updateDeliveryOptions);
+    function toggleSections(type) {
+        const isPickup = type === 'pickup';
+        locationSection?.classList.toggle('hidden', !isPickup);
+        addressSection?.classList.toggle('hidden', isPickup);
+        if (locationSelect) locationSelect.required = isPickup;
+        if (addressSelect) addressSelect.required = !isPickup;
+    }
+
+    function updateTotals(type) {
+        const fee = type === 'delivery' ? baseDeliveryFee : 0;
+        if (deliveryFeeEl) deliveryFeeEl.textContent = formatCurrency(fee);
+        if (totalAmountEl) totalAmountEl.textContent = formatCurrency(subtotal + fee);
+    }
+
+    function handleChange() {
+        const type = pickupRadio?.checked ? 'pickup' : 'delivery';
+        toggleSections(type);
+        updateTotals(type);
+    }
+
+    pickupRadio?.addEventListener('change', handleChange);
+    deliveryRadio?.addEventListener('change', handleChange);
+
+    handleChange();
 });
 </script>
-{% endblock %} 
+{% endblock %}

@@ -1,382 +1,675 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
-    <!-- Pending Orders -->
-    <div class="card mb-4">
-        <div class="card-header bg-warning text-white">
-            <h3 class="card-title mb-0">
-                <i class="fas fa-clock"></i> {{ get_translation('pending_orders') }}
-            </h3>
-        </div>
-        <div class="card-body">
-            {% if pending_orders %}
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>{{ get_translation('order_id') }}</th>
-                                <th>{{ get_translation('customer') }}</th>
-                                <th>{{ get_translation('items') }}</th>
-                                <th>{{ get_translation('total') }}</th>
-                                <th>{{ get_translation('payment_method') }}</th>
-                                <th>{{ get_translation('delivery_type') }}</th>
-                                <th>{{ get_translation('location') }}</th>
-                                <th>{{ get_translation('order_description') }}</th>
-                                <th>{{ get_translation('date') }}</th>
-                                <th>{{ get_translation('actions') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in pending_orders %}
-                                <tr>
-                                    <td>#{{ order.id }}</td>
-                                    <td>
-                                        <span dir="ltr" style="display: inline-block; direction: ltr;">{{ order.user.phone_number }}</span>
-                                    </td>
-                                    <td>
-                                        <ul class="list-unstyled mb-0">
-                                            {% for item in order.items %}
-                                                <li>{{ item.quantity }}x {{ item.product.name }}</li>
-                                            {% endfor %}
-                                        </ul>
-                                    </td>
-                                    <td>{{ "%.0f"|format(order.total_amount) }} تومان</td>
-                                    <td>
-                                        <span class="badge bg-primary">
-                                            {{ get_translation('pay_online') }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge {% if order.delivery_type == 'pickup' %}bg-info{% else %}bg-success{% endif %}">
-                                            {{ get_translation(order.delivery_type) }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if order.delivery_type == 'pickup' %}
-                                            {% if order.store_location %}
-                                                {{ order.store_location.name }}<br>
-                                                <small class="text-muted">{{ order.store_location.address }}</small>
-                                            {% endif %}
-                                        {% else %}
-                                            {% if order.address %}
-                                                {{ order.address.street }}<br>
-                                                <small class="text-muted">{{ order.address.city }}, {{ order.address.state }}</small>
-                                            {% endif %}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if order.description %}
-                                            <div class="order-description">
-                                                <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#pendingDescriptionModal{{ order.id }}">
-                                                    <i class="fas fa-sticky-note"></i> {{ get_translation('view_notes') }}
-                                                </button>
-                                                <!-- Modal -->
-                                                <div class="modal fade" id="pendingDescriptionModal{{ order.id }}" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title">
-                                                                    <i class="fas fa-sticky-note text-warning"></i>
-                                                                    {{ get_translation('order_notes') }} #{{ order.id }}
-                                                                </h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <div class="note-content">
-                                                                    <p class="mb-0">{{ order.description }}</p>
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ get_translation('close') }}</button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% else %}
-                                            <span class="text-muted">
-                                                <i class="fas fa-info-circle"></i> {{ get_translation('no_notes') }}
-                                            </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <form action="{{ url_for('approve_order', order_id=order.id) }}" method="POST" class="d-inline">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                                <button type="submit" class="btn btn-success btn-sm" 
-                                                        onclick="return confirm('{{ get_translation('confirm_approve_order') }}')">
-                                                    <i class="fas fa-check"></i> {{ get_translation('approve') }}
-                                                </button>
-                                            </form>
-                                            <form action="{{ url_for('reject_order', order_id=order.id) }}" method="POST" class="d-inline">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                                <button type="submit" class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('{{ get_translation('confirm_reject_order') }}')">
-                                                    <i class="fas fa-times"></i> {{ get_translation('reject') }}
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="text-muted mb-0">{{ get_translation('no_pending_orders') }}</p>
-            {% endif %}
-        </div>
-    </div>
+{% set pending_count = pending_orders|length if pending_orders else 0 %}
+{% set preparing_count = preparing_orders|length if preparing_orders else 0 %}
+{% set total_count = pending_count + preparing_count %}
 
-    <!-- Preparing Orders -->
-    <div class="card">
-        <div class="card-header bg-info text-white">
-            <h3 class="card-title mb-0">
-                <i class="fas fa-utensils"></i> {{ get_translation('orders_in_preparation') }}
-            </h3>
-        </div>
-        <div class="card-body">
-            {% if preparing_orders %}
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>{{ get_translation('order_id') }}</th>
-                                <th>{{ get_translation('customer') }}</th>
-                                <th>{{ get_translation('items') }}</th>
-                                <th>{{ get_translation('started') }}</th>
-                                <th>{{ get_translation('payment_method') }}</th>
-                                <th>{{ get_translation('delivery_type') }}</th>
-                                <th>{{ get_translation('location') }}</th>
-                                <th>{{ get_translation('order_description') }}</th>
-                                <th>{{ get_translation('actions') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in preparing_orders %}
-                                <tr>
-                                    <td>#{{ order.id }}</td>
-                                    <td>
-                                        <span dir="ltr" style="display: inline-block; direction: ltr;">{{ order.user.phone_number }}</span>
-                                    </td>
-                                    <td>
-                                        <ul class="list-unstyled mb-0">
-                                            {% for item in order.items %}
-                                                <li>{{ item.quantity }}x {{ item.product.name }}</li>
-                                            {% endfor %}
-                                        </ul>
-                                    </td>
-                                    <td>{{ to_tehran_time(order.preparation_start).strftime('%H:%M') }}</td>
-                                    <td>
-                                        <span class="badge bg-primary">
-                                            {{ get_translation('pay_online') }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge {% if order.delivery_type == 'pickup' %}bg-info{% else %}bg-success{% endif %}">
-                                            {{ get_translation(order.delivery_type) }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if order.delivery_type == 'pickup' %}
-                                            {% if order.store_location %}
-                                                {{ order.store_location.name }}<br>
-                                                <small class="text-muted">{{ order.store_location.address }}</small>
-                                            {% endif %}
-                                        {% else %}
-                                            {% if order.address %}
-                                                {{ order.address.street }}<br>
-                                                <small class="text-muted">{{ order.address.city }}, {{ order.address.state }}</small>
-                                            {% endif %}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if order.description %}
-                                            <div class="order-description">
-                                                <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#preparingDescriptionModal{{ order.id }}">
-                                                    <i class="fas fa-sticky-note"></i> {{ get_translation('view_notes') }}
-                                                </button>
-                                                <!-- Modal -->
-                                                <div class="modal fade" id="preparingDescriptionModal{{ order.id }}" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title">
-                                                                    <i class="fas fa-sticky-note text-warning"></i>
-                                                                    {{ get_translation('order_notes') }} #{{ order.id }}
-                                                                </h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <div class="note-content">
-                                                                    <p class="mb-0">{{ order.description }}</p>
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ get_translation('close') }}</button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% else %}
-                                            <span class="text-muted">
-                                                <i class="fas fa-info-circle"></i> {{ get_translation('no_notes') }}
-                                            </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <form action="{{ url_for('complete_order', order_id=order.id) }}" method="POST">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                            <button type="submit" class="btn btn-success btn-sm"
-                                                    onclick="return confirm('{{ get_translation('confirm_complete_order') }}')">
-                                                <i class="fas fa-check-circle"></i> {{ get_translation('mark_complete') }}
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+<section class="orders-admin-page">
+    <div class="orders-backdrop"></div>
+    <div class="orders-backdrop orders-backdrop-2"></div>
+
+    <div class="container orders-container">
+        <header class="orders-header">
+            <a href="{{ request.referrer or url_for('admin_dashboard') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back_to_dashboard') or get_translation('back') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('order_management') or get_translation('orders') }}</p>
+                <h1>{{ get_translation('orders_in_progress') or get_translation('orders') }}</h1>
+                <p>{{ get_translation('orders_admin_subtitle') or 'سفارش‌های در انتظار و در حال آماده‌سازی را در یک نگاه مدیریت کنید.' }}</p>
+            </div>
+            <div class="header-badge">
+                <i class="fas fa-bell"></i>
+                <span>{{ total_count }} {{ get_translation('orders') }}</span>
+            </div>
+        </header>
+
+        <div class="orders-summary">
+            <div class="summary-card warning-card">
+                <div class="summary-top">
+                    <span>{{ get_translation('pending_orders') }}</span>
+                    <i class="fas fa-clock"></i>
                 </div>
-            {% else %}
-                <p class="text-muted mb-0">{{ get_translation('no_orders_in_preparation') }}</p>
-            {% endif %}
+                <strong>{{ pending_count }}</strong>
+                <small>{{ get_translation('awaiting_action') or 'در انتظار تصمیم' }}</small>
+            </div>
+            <div class="summary-card info-card">
+                <div class="summary-top">
+                    <span>{{ get_translation('orders_in_preparation') }}</span>
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <strong>{{ preparing_count }}</strong>
+                <small>{{ get_translation('kitchen_queue') or 'در حال آماده‌سازی' }}</small>
+            </div>
+            <div class="summary-card neutral-card">
+                <div class="summary-top">
+                    <span>{{ get_translation('total_orders') or get_translation('orders') }}</span>
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <strong>{{ total_count }}</strong>
+                <small>{{ get_translation('active_sessions') or 'سفارش فعال' }}</small>
+            </div>
+        </div>
+
+        <div class="orders-grid">
+            <section class="orders-block glass-card">
+                <div class="block-header">
+                    <div>
+                        <p class="muted-label">{{ get_translation('queue') or 'صف' }}</p>
+                        <h2>{{ get_translation('pending_orders') }}</h2>
+                    </div>
+                    <span class="status-chip status-pending">{{ pending_count }} {{ get_translation('orders') }}</span>
+                </div>
+
+                {% if pending_orders %}
+                <div class="order-list">
+                    {% for order in pending_orders %}
+                    <article class="order-card">
+                        <div class="order-top">
+                            <div>
+                                <span class="order-id">#{{ order.id }}</span>
+                                <p class="order-date">{{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</p>
+                            </div>
+                            <span class="status-badge pending">{{ get_translation('pending') or get_translation('pending_orders') }}</span>
+                        </div>
+
+                        <div class="order-body">
+                            <div class="order-section">
+                                <p class="muted-label">{{ get_translation('customer') }}</p>
+                                <p class="value">
+                                    <i class="fas fa-phone"></i>
+                                    <span dir="ltr" style="display:inline-block;direction:ltr;">{{ order.user.phone_number }}</span>
+                                </p>
+                            </div>
+
+                            <div class="order-section">
+                                <p class="muted-label">{{ get_translation('items') }}</p>
+                                <ul class="items-list">
+                                    {% for item in order.items %}
+                                    <li>{{ item.quantity }}x {{ item.product.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            <div class="order-section split">
+                                <div>
+                                    <p class="muted-label">{{ get_translation('total') }}</p>
+                                    <p class="value">{{ "%.0f"|format(order.total_amount) }} {{ get_translation('currency_toman') or 'تومان' }}</p>
+                                </div>
+                                <div>
+                                    <p class="muted-label">{{ get_translation('payment_method') }}</p>
+                                    <span class="chip chip-primary">
+                                        <i class="fas fa-credit-card"></i>
+                                        {{ get_translation('pay_online') }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="order-section split">
+                                <div>
+                                    <p class="muted-label">{{ get_translation('delivery_type') }}</p>
+                                    <span class="chip {% if order.delivery_type == 'pickup' %}chip-info{% else %}chip-success{% endif %}">
+                                        <i class="fas {% if order.delivery_type == 'pickup' %}fa-store{% else %}fa-truck{% endif %}"></i>
+                                        {{ get_translation(order.delivery_type) }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="muted-label">{{ get_translation('location') }}</p>
+                                    <p class="value small">
+                                        {% if order.delivery_type == 'pickup' and order.store_location %}
+                                            {{ order.store_location.name }}<br>
+                                            <span>{{ order.store_location.address }}</span>
+                                        {% elif order.address %}
+                                            {{ order.address.street }}<br>
+                                            <span>{{ order.address.city }}, {{ order.address.state }}</span>
+                                        {% else %}
+                                            <span class="text-muted">{{ get_translation('not_available') or '-' }}</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="order-section">
+                                <p class="muted-label">{{ get_translation('order_description') }}</p>
+                                {% if order.description %}
+                                <div class="note-preview">
+                                    <p>{{ order.description }}</p>
+                                </div>
+                                {% else %}
+                                <p class="value text-muted">{{ get_translation('no_notes') }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="order-actions">
+                            <form action="{{ url_for('approve_order', order_id=order.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="ghost-btn success" onclick="return confirm('{{ get_translation('confirm_approve_order') }}')">
+                                    <i class="fas fa-check"></i>
+                                    <span>{{ get_translation('approve') }}</span>
+                                </button>
+                            </form>
+                            <form action="{{ url_for('reject_order', order_id=order.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="ghost-btn danger" onclick="return confirm('{{ get_translation('confirm_reject_order') }}')">
+                                    <i class="fas fa-times"></i>
+                                    <span>{{ get_translation('reject') }}</span>
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h4>{{ get_translation('no_pending_orders') }}</h4>
+                    <p>{{ get_translation('all_orders_processed') or 'تمام سفارش‌های در انتظار مدیریت شده‌اند.' }}</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="orders-block glass-card">
+                <div class="block-header">
+                    <div>
+                        <p class="muted-label">{{ get_translation('kitchen') or 'آشپزخانه' }}</p>
+                        <h2>{{ get_translation('orders_in_preparation') }}</h2>
+                    </div>
+                    <span class="status-chip status-preparing">{{ preparing_count }} {{ get_translation('orders') }}</span>
+                </div>
+
+                {% if preparing_orders %}
+                <div class="order-list">
+                    {% for order in preparing_orders %}
+                    <article class="order-card">
+                        <div class="order-top">
+                            <div>
+                                <span class="order-id">#{{ order.id }}</span>
+                                <p class="order-date">{{ get_translation('started') }} {{ to_tehran_time(order.preparation_start).strftime('%H:%M') }}</p>
+                            </div>
+                            <span class="status-badge preparing">{{ get_translation('preparing') or get_translation('orders_in_preparation') }}</span>
+                        </div>
+
+                        <div class="order-body">
+                            <div class="order-section">
+                                <p class="muted-label">{{ get_translation('customer') }}</p>
+                                <p class="value">
+                                    <i class="fas fa-phone"></i>
+                                    <span dir="ltr" style="display:inline-block;direction:ltr;">{{ order.user.phone_number }}</span>
+                                </p>
+                            </div>
+
+                            <div class="order-section">
+                                <p class="muted-label">{{ get_translation('items') }}</p>
+                                <ul class="items-list">
+                                    {% for item in order.items %}
+                                    <li>{{ item.quantity }}x {{ item.product.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            <div class="order-section split">
+                                <div>
+                                    <p class="muted-label">{{ get_translation('payment_method') }}</p>
+                                    <span class="chip chip-primary">
+                                        <i class="fas fa-credit-card"></i>
+                                        {{ get_translation('pay_online') }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="muted-label">{{ get_translation('delivery_type') }}</p>
+                                    <span class="chip {% if order.delivery_type == 'pickup' %}chip-info{% else %}chip-success{% endif %}">
+                                        <i class="fas {% if order.delivery_type == 'pickup' %}fa-store{% else %}fa-truck{% endif %}"></i>
+                                        {{ get_translation(order.delivery_type) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="order-section">
+                                <p class="muted-label">{{ get_translation('location') }}</p>
+                                <p class="value small">
+                                    {% if order.delivery_type == 'pickup' and order.store_location %}
+                                        {{ order.store_location.name }}<br>
+                                        <span>{{ order.store_location.address }}</span>
+                                    {% elif order.address %}
+                                        {{ order.address.street }}<br>
+                                        <span>{{ order.address.city }}, {{ order.address.state }}</span>
+                                    {% else %}
+                                        <span class="text-muted">{{ get_translation('not_available') or '-' }}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <div class="order-section">
+                                <p class="muted-label">{{ get_translation('order_description') }}</p>
+                                {% if order.description %}
+                                <div class="note-preview">
+                                    <p>{{ order.description }}</p>
+                                </div>
+                                {% else %}
+                                <p class="value text-muted">{{ get_translation('no_notes') }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="order-actions">
+                            <form action="{{ url_for('complete_order', order_id=order.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="primary-btn small" onclick="return confirm('{{ get_translation('confirm_complete_order') }}')">
+                                    <span>{{ get_translation('mark_complete') }}</span>
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-hands-wash"></i>
+                    <h4>{{ get_translation('no_orders_in_preparation') }}</h4>
+                    <p>{{ get_translation('kitchen_is_clear') or 'هیچ سفارش فعالی در آشپزخانه نیست.' }}</p>
+                </div>
+                {% endif %}
+            </section>
         </div>
     </div>
-</div>
+</section>
 
 <style>
-.order-description {
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+    .orders-admin-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
+    }
 
-.btn-link {
-    color: var(--primary-red);
-    text-decoration: none;
-}
+    .orders-backdrop {
+        position: absolute;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
 
-.btn-link:hover {
-    color: var(--primary-red);
-    text-decoration: underline;
-}
+    .orders-backdrop:first-of-type {
+        left: -140px;
+        bottom: 8%;
+    }
 
-.modal-content {
-    border-radius: 12px;
-    border: none;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-}
+    .orders-backdrop-2 {
+        right: -120px;
+        top: 12%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 3s;
+    }
 
-.modal-header {
-    border-bottom: 1px solid var(--light-gray);
-    background-color: #f8f9fa;
-    border-radius: 12px 12px 0 0;
-}
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
 
-.modal-body {
-    padding: 1.5rem;
-}
+    .orders-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
 
-.modal-footer {
-    border-top: 1px solid var(--light-gray);
-    background-color: #f8f9fa;
-    border-radius: 0 0 12px 12px;
-}
+    .orders-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
 
-.note-content {
-    background-color: #fff;
-    padding: 1rem;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.6rem);
+    }
 
-.note-content p {
-    margin-bottom: 0;
-    line-height: 1.6;
-    color: #495057;
-}
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
 
-.modal-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+    .header-badge {
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
 
-.modal-title i {
-    font-size: 1.2rem;
-}
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
 
-.text-muted i {
-    margin-right: 0.25rem;
-}
-</style>
+    .back-chip:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.1);
+    }
 
-<script>
-function updateCountdowns() {
-    document.querySelectorAll('.countdown').forEach(countdownElement => {
-        const completionTime = new Date(countdownElement.dataset.completionTime);
-        const now = new Date();
-        const timeDiff = completionTime - now;
+    .orders-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
 
-        if (timeDiff <= 0) {
-            // Time's up - auto complete the order
-            const orderId = countdownElement.dataset.orderId;
-            fetch(`/api/auto_complete_order/${orderId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }).then(response => {
-                if (response.ok) {
-                    location.reload(); // Refresh the page to show updated status
-                }
-            });
-            return;
+    .summary-card {
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.75);
+        padding: 1.4rem;
+        backdrop-filter: blur(18px);
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .summary-card strong {
+        font-size: 2rem;
+    }
+
+    .summary-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .summary-card.warning-card {
+        border-color: rgba(255, 193, 7, 0.35);
+        background: rgba(255, 193, 7, 0.12);
+    }
+
+    .summary-card.info-card {
+        border-color: rgba(13, 110, 253, 0.35);
+        background: rgba(13, 110, 253, 0.12);
+    }
+
+    .summary-card.neutral-card {
+        border-color: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .orders-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.75rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .block-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+    .status-chip {
+        border-radius: 999px;
+        padding: 0.45rem 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .status-chip.status-pending {
+        background: rgba(255, 193, 7, 0.15);
+        border: 1px solid rgba(255, 193, 7, 0.4);
+        color: #ffe082;
+    }
+
+    .status-chip.status-preparing {
+        background: rgba(13, 110, 253, 0.15);
+        border: 1px solid rgba(13, 110, 253, 0.4);
+        color: #9ec5ff;
+    }
+
+    .order-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .order-card {
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .order-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .order-id {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .order-date {
+        margin: 0;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .status-badge {
+        border-radius: 999px;
+        padding: 0.4rem 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-badge.pending {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffda6a;
+    }
+
+    .status-badge.preparing {
+        background: rgba(13, 110, 253, 0.15);
+        color: #9ec5ff;
+    }
+
+    .order-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .order-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .order-section.split {
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+    .order-section.split > div {
+        flex: 1;
+    }
+
+    .muted-label {
+        color: var(--text-gray);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.75rem;
+        margin: 0;
+    }
+
+    .order-section .value {
+        margin: 0;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .value.small span {
+        display: block;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 0.85rem;
+    }
+
+    .items-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.25rem;
+    }
+
+    .chip {
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border: 1px solid transparent;
+    }
+
+    .chip-primary {
+        background: rgba(13, 110, 253, 0.12);
+        border-color: rgba(13, 110, 253, 0.35);
+        color: #9ec5ff;
+    }
+
+    .chip-info {
+        background: rgba(23, 162, 184, 0.12);
+        border-color: rgba(23, 162, 184, 0.35);
+        color: #94d5e1;
+    }
+
+    .chip-success {
+        background: rgba(40, 167, 69, 0.12);
+        border-color: rgba(40, 167, 69, 0.35);
+        color: #a6ffce;
+    }
+
+    .note-preview {
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 0.85rem 1rem;
+    }
+
+    .order-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: flex-start;
+    }
+
+    .ghost-btn {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 0.6rem 1.2rem;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-light);
+        display: inline-flex;
+        gap: 0.4rem;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .ghost-btn.success {
+        border-color: rgba(40, 167, 69, 0.35);
+        color: #a6ffce;
+    }
+
+    .ghost-btn.danger {
+        border-color: rgba(220, 53, 69, 0.4);
+        color: #ff9f9f;
+    }
+
+    .primary-btn.small {
+        padding: 0.65rem 1.25rem;
+        font-size: 0.9rem;
+    }
+
+    .empty-state {
+        border-radius: 22px;
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        padding: 2rem;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .empty-state i {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+        display: inline-block;
+        color: var(--yellow);
+    }
+
+    @media (max-width: 991.98px) {
+        .orders-header {
+            grid-template-columns: 1fr;
         }
 
-        // Calculate remaining time
-        const minutes = Math.floor(timeDiff / 60000);
-        const seconds = Math.floor((timeDiff % 60000) / 1000);
-        countdownElement.querySelector('.countdown-timer').textContent = 
-            `${minutes}m ${seconds}s`;
-    });
-}
+        .orders-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 
-// Update countdowns every second
-setInterval(updateCountdowns, 1000);
-updateCountdowns(); // Initial update
-</script>
+    @media (max-width: 575.98px) {
+        .orders-admin-page {
+            padding: 2.5rem 0 3rem;
+        }
 
-{% for order in orders %}
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5 class="card-title">{{ get_translation('order_details') }}</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>{{ get_translation('order_id') }}:</strong> #{{ order.id }}</p>
-                    <p><strong>{{ get_translation('order_date') }}:</strong> {{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</p>
-                    <p><strong>{{ get_translation('order_status') }}:</strong> 
-                        <span class="badge bg-{{ order.status_color }}">{{ get_translation(order.status) }}</span>
-                    </p>
-                    <p><strong>{{ get_translation('total_amount') }}:</strong> {{ order.total_amount }} {{ get_translation('currency') }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>{{ get_translation('customer') }}:</strong> {{ order.user.username }}</p>
-                    <p><strong>{{ get_translation('phone') }}:</strong> <span dir="ltr" style="display: inline-block; direction: ltr;">{{ order.user.phone_number }}</span></p>
-                </div>
-            </div>
-            {% if order.description %}
-            <div class="mt-3">
-                <h6 class="mb-2">{{ get_translation('order_description') }}:</h6>
-                <p class="text-muted">{{ order.description }}</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-{% endfor %}
-{% endblock %} 
+        .glass-card {
+            padding: 1.4rem;
+        }
+
+        .order-section.split {
+            flex-direction: column;
+        }
+    }
+</style>
+
+{% endblock %}

@@ -3,88 +3,672 @@
 {% block title %}{{ get_translation('edit_store_location') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2 class="card-title mb-0">{{ get_translation('edit_store_location') }}</h2>
-                        <a href="{{ url_for('admin_locations') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-arrow-left me-2"></i>{{ get_translation('back_to_locations') }}
-                        </a>
+<section class="location-form-page">
+    <div class="location-backdrop"></div>
+    <div class="location-backdrop location-backdrop-2"></div>
+
+    <div class="container location-form-container">
+        <header class="location-form-header">
+            <a href="{{ request.referrer or url_for('admin_locations') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back_to_locations') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('store_locations') }}</p>
+                <h1>{{ get_translation('edit_store_location') }}</h1>
+                <p>{{ get_translation('edit_location_subtitle') or 'مشخصات شعبه را هم‌سو با تجربه جدید فروشگاه به‌روزرسانی کنید.' }}</p>
+            </div>
+            <div class="header-badge">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>{{ get_translation('delivery_spots') }}</span>
+            </div>
+        </header>
+
+        <div class="location-form-layout">
+            <form method="POST" class="glass-card primary-form" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div class="card-heading">
+                    <p class="muted-label">{{ get_translation('location_details') or 'جزئیات موقعیت' }}</p>
+                    <h3>{{ get_translation('edit_location_information') or 'اطلاعات شعبه' }}</h3>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">{{ get_translation('store_name') }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-store"></i>
+                            <input type="text" id="name" name="name" placeholder="{{ get_translation('store_name_placeholder') or get_translation('store_name') }}" value="{{ location.name }}" required>
+                        </div>
                     </div>
 
-                    <form method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        
-                        <div class="mb-3">
-                            <label for="name" class="form-label">{{ get_translation('store_name') }}</label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ location.name }}" required>
+                    <div class="form-group">
+                        <label for="city">{{ get_translation('city') or 'شهر' }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-city"></i>
+                            <input type="text" id="city" name="city" placeholder="{{ get_translation('city_placeholder') or 'تهران' }}" value="{{ location.city or '' }}">
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label for="address" class="form-label">{{ get_translation('address') }}</label>
-                            <textarea class="form-control" id="address" name="address" rows="3" required>{{ location.address }}</textarea>
+                    <div class="form-group">
+                        <label for="contact_phone">{{ get_translation('contact_phone') or 'شماره تماس' }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="contact_phone" name="contact_phone" placeholder="{{ get_translation('phone_placeholder') or '+98...' }}" value="{{ location.contact_phone or '' }}">
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if location.is_active %}checked{% endif %}>
-                                <label class="form-check-label" for="is_active">{{ get_translation('active_location') }}</label>
-                            </div>
+                    <div class="form-group full-width">
+                        <label for="address">{{ get_translation('address') }}</label>
+                        <div class="input-with-icon textarea-wrap">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <textarea id="address" name="address" rows="3" placeholder="{{ get_translation('store_address_placeholder') or get_translation('address') }}" required>{{ location.address or '' }}</textarea>
                         </div>
+                    </div>
 
-                        <button type="submit" class="btn" style="background-color: var(--primary-red); color: white;">
-                            <i class="fas fa-save me-2"></i>{{ get_translation('save_changes') }}
-                        </button>
-                    </form>
+                    <div class="form-group">
+                        <label for="working_hours">{{ get_translation('working_hours') or 'ساعات کاری' }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-clock"></i>
+                            <input type="text" id="working_hours" name="working_hours" placeholder="{{ get_translation('working_hours_placeholder') or '08:00 - 22:00' }}" value="{{ location.working_hours or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="delivery_radius">{{ get_translation('delivery_radius_km') or 'محدوده ارسال (کیلومتر)' }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-ruler-combined"></i>
+                            <input type="number" min="1" id="delivery_radius" name="delivery_radius" placeholder="10" value="{{ location.delivery_radius or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="latitude">{{ get_translation('latitude') or 'عرض جغرافیایی' }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-compass"></i>
+                            <input type="text" id="latitude" name="latitude" placeholder="35.6892" value="{{ location.latitude or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="longitude">{{ get_translation('longitude') or 'طول جغرافیایی' }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-location-arrow"></i>
+                            <input type="text" id="longitude" name="longitude" placeholder="51.3890" value="{{ location.longitude or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="map_url">{{ get_translation('map_url') or 'لینک نقشه' }}</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-link"></i>
+                            <input type="text" id="map_url" name="map_url" placeholder="https://maps.google.com/..." value="{{ location.map_url or '' }}">
+                        </div>
+                        <small>{{ get_translation('map_url_hint') or 'لینک مستقیم نقشه شعبه را وارد کنید.' }}</small>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="notes">{{ get_translation('notes') or 'توضیحات' }}</label>
+                        <textarea id="notes" name="notes" rows="3" placeholder="{{ get_translation('location_notes_placeholder') or 'توضیحات اضافی برای پیک یا مشتریان.' }}">{{ location.notes or '' }}</textarea>
+                    </div>
                 </div>
-            </div>
+
+                <div class="status-grid">
+                    <div class="status-chip success">
+                        <div class="chip-info">
+                            <i class="fas fa-check-circle"></i>
+                            <span>{{ get_translation('active_location') }}</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="is_active" name="is_active" {% if location.is_active %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="status-chip info">
+                        <div class="chip-info">
+                            <i class="fas fa-star"></i>
+                            <span>{{ get_translation('primary_hub') or 'شعبه اصلی' }}</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="is_primary" name="is_primary" {% if location.is_primary %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <div class="helper-callout">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>{{ get_translation('location_guidelines_title') or 'راهنمای ثبت موقعیت' }}</strong>
+                            <p>{{ get_translation('location_guidelines_hint') or 'آدرس دقیق و نشانه‌های اطراف کمک می‌کند پیک سریع‌تر شما را پیدا کند.' }}</p>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="submit" class="primary-btn">
+                            <span>{{ get_translation('save_location') or get_translation('save_changes') }}</span>
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <a href="{{ url_for('admin_locations') }}" class="ghost-btn">
+                            <i class="fas fa-times"></i>
+                            <span>{{ get_translation('cancel') }}</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+
+            <aside class="glass-card tips-card">
+                <div class="card-heading">
+                    <p class="muted-label">{{ get_translation('tips') if get_translation('tips') else 'راهنما' }}</p>
+                    <h3>{{ get_translation('location_tips_title') or 'نمایش بهتر شعبه' }}</h3>
+                </div>
+                <div class="map-preview">
+                    <div class="glow-ring"></div>
+                    <div class="map-placeholder">
+                        <i class="fas fa-map"></i>
+                        <p>{{ get_translation('map_preview_hint') or 'پیش‌نمایش لینک نقشه در اینجا نمایش داده می‌شود.' }}</p>
+                        <a class="map-link ghost-btn d-none" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span>{{ get_translation('open_map') or 'مشاهده نقشه' }}</span>
+                        </a>
+                    </div>
+                </div>
+                <ul>
+                    <li>
+                        <i class="fas fa-thumbtack"></i>
+                        <div>
+                            <strong>{{ get_translation('location_tip_accuracy') or 'آدرس دقیق' }}</strong>
+                            <p>{{ get_translation('location_tip_accuracy_desc') or 'نام خیابان، پلاک و توضیح مسیر را دقیق ثبت کنید.' }}</p>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <strong>{{ get_translation('location_tip_hours') or 'ساعات کاری' }}</strong>
+                            <p>{{ get_translation('location_tip_hours_desc') or 'در توضیحات ساعات حضور یا محدوده زمانی فعال را اضافه کنید.' }}</p>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-route"></i>
+                        <div>
+                            <strong>{{ get_translation('location_tip_landmarks') or 'نشانه‌های اطراف' }}</strong>
+                            <p>{{ get_translation('location_tip_landmarks_desc') or 'نزدیکی به مراکز معروف یا ایستگاه‌ها را برای راهنمایی اضافه کنید.' }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </aside>
         </div>
     </div>
-</div>
+</section>
 
 <style>
-    .card {
-        border: none;
-        border-radius: 12px;
+    .location-form-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
     }
 
-    .card-title {
-        color: var(--dark-text);
+    .location-backdrop {
+        position: absolute;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
+
+    .location-backdrop:first-of-type {
+        left: -140px;
+        bottom: 8%;
+    }
+
+    .location-backdrop-2 {
+        right: -120px;
+        top: 12%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 3s;
+    }
+
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .location-form-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .location-form-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.6rem);
+    }
+
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .header-badge {
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .back-chip:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    .location-form-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.75rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .card-heading {
+        margin-bottom: 1.5rem;
+    }
+
+    .card-heading h3 {
+        margin: 0.25rem 0 0;
+    }
+
+    .muted-label {
+        color: var(--text-gray);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
         font-weight: 600;
+        color: var(--text-light);
     }
 
-    .form-label {
-        color: var(--dark-text);
-        font-weight: 500;
+    .input-with-icon {
+        position: relative;
     }
 
-    .form-control {
-        border: 2px solid var(--light-gray);
-        border-radius: 8px;
-        padding: 0.8rem 1rem;
+    .input-with-icon i {
+        position: absolute;
+        top: 50%;
+        right: 1rem;
+        transform: translateY(-50%);
+        color: var(--text-gray);
     }
 
-    .form-control:focus {
-        border-color: var(--primary-red);
-        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+    .input-with-icon input,
+    .input-with-icon textarea {
+        width: 100%;
+        padding: 0.85rem 3rem 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
     }
 
-    .form-check-input:checked {
-        background-color: var(--primary-red);
-        border-color: var(--primary-red);
+    .input-with-icon textarea {
+        min-height: 120px;
+        resize: none;
     }
 
-    .btn-outline-primary {
-        border-color: var(--primary-red);
-        color: var(--primary-red);
+    textarea {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
     }
 
-    .btn-outline-primary:hover {
-        background-color: var(--primary-red);
-        color: white;
+    input:focus,
+    textarea:focus,
+    select:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+    }
+
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .status-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.85rem 1.2rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        gap: 0.85rem;
+    }
+
+    .status-chip.success {
+        border-color: rgba(40, 167, 69, 0.35);
+        background: rgba(40, 167, 69, 0.15);
+        color: #a6ffce;
+    }
+
+    .status-chip.info {
+        border-color: rgba(16, 70, 255, 0.25);
+        background: rgba(16, 70, 255, 0.12);
+        color: #9ec5ff;
+    }
+
+    .chip-info {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .switch {
+        position: relative;
+        width: 46px;
+        height: 24px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .slider::before {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        top: 3px;
+        right: 3px;
+        transition: transform 0.3s ease;
+    }
+
+    .switch input:checked + .slider {
+        background: var(--yellow);
+    }
+
+    .switch input:checked + .slider::before {
+        transform: translateX(-22px);
+    }
+
+    .form-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .helper-callout {
+        display: flex;
+        gap: 0.85rem;
+        align-items: flex-start;
+        padding: 1rem 1.2rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .helper-callout i {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        background: rgba(212, 175, 55, 0.15);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--yellow);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .primary-btn,
+    .ghost-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 18px;
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .primary-btn {
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+    }
+
+    .primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(212, 175, 55, 0.4);
+    }
+
+    .ghost-btn {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text-light);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tips-card {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .map-preview {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.5rem;
+    }
+
+    .glow-ring {
+        position: absolute;
+        inset: -60%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.22), transparent 70%);
+        filter: blur(30px);
+        animation: pulse 8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%,100% { transform: scale(0.9); opacity: 0.7; }
+        50% { transform: scale(1.1); opacity: 1; }
+    }
+
+    .map-placeholder {
+        position: relative;
+        text-align: center;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        align-items: center;
+    }
+
+    .map-placeholder i {
+        font-size: 2rem;
+        color: var(--yellow);
+    }
+
+    .map-placeholder p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+    }
+
+    .map-link {
+        margin-top: 0.4rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 999px;
+    }
+
+    .tips-card ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .tips-card li {
+        display: flex;
+        gap: 0.85rem;
+        align-items: flex-start;
+    }
+
+    .tips-card i {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--yellow);
+    }
+
+    .tips-card p {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0.15rem 0 0;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .location-form-header {
+            grid-template-columns: 1fr;
+        }
+
+        .location-form-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .location-form-page {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .glass-card {
+            padding: 1.4rem;
+        }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const mapInput = document.getElementById('map_url');
+    const mapPlaceholder = document.querySelector('.map-placeholder p');
+    const mapLink = document.querySelector('.map-link');
+
+    function updateMapPreview(value) {
+        const trimmed = (value || '').trim();
+        if (!mapPlaceholder || !mapLink) {
+            return;
+        }
+        if (!trimmed) {
+            mapPlaceholder.textContent = "{{ get_translation('map_preview_hint') or 'پیش‌نمایش لینک نقشه در اینجا نمایش داده می‌شود.' }}";
+            mapLink.classList.add('d-none');
+            mapLink.removeAttribute('href');
+            return;
+        }
+        mapPlaceholder.textContent = "{{ get_translation('map_preview_ready') or 'لینک نقشه آماده است. قبل از ذخیره صحت آن را بررسی کنید.' }}";
+        mapLink.classList.remove('d-none');
+        mapLink.href = trimmed;
+    }
+
+    if (mapInput) {
+        updateMapPreview(mapInput.value);
+        mapInput.addEventListener('input', function () {
+            updateMapPreview(mapInput.value);
+        });
+    }
+});
+</script>
 {% endblock %} 

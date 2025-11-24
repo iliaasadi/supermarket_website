@@ -3,401 +3,694 @@
 {% block title %}{{ get_translation('order_details') }} #{{ order.id }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row">
-        <!-- Order Details -->
-        <div class="col-md-8">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h4 class="card-title mb-0">{{ get_translation('order_details') }} #{{ order.id }}</h4>
+<section class="order-status-page">
+    <div class="order-backdrop"></div>
+    <div class="order-backdrop order-backdrop-2"></div>
+
+    <div class="container order-status-container">
+        <div class="order-header">
+            <a href="{{ request.referrer or url_for('orders') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('order_tracking') or 'پیگیری سفارش' }}</p>
+                <h1>{{ get_translation('order_details') }} #{{ order.id }}</h1>
+                <p>{{ get_translation('order_overview') or 'مرور کامل جزئیات سفارش و وضعیت ارسال' }}</p>
+            </div>
+            <div class="header-meta">
+                <div class="summary-card">
+                    <span>{{ get_translation('order_status') }}</span>
+                    <div class="status-chip status-{{ order.status|replace('_', '-') }}">
+                        {{ get_translation('order_status_' + order.status) }}
+                    </div>
+                    <small>{{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</small>
                 </div>
-                <div class="card-body">
-                    <!-- Order Status -->
-                    <div class="mb-4">
-                        <h5 class="mb-3">{{ get_translation('order_status') }}</h5>
-                        <div class="d-flex align-items-center">
-                            <span class="badge {% if order.status == 'completed' %}bg-success
-                                             {% elif order.status == 'pending_approval' %}bg-warning
-                                             {% elif order.status == 'preparing' %}bg-info
-                                             {% elif order.status == 'cancelled' %}bg-secondary
-                                             {% else %}bg-danger{% endif %} me-2">
-                                {{ get_translation(order.status) }}
-                            </span>
-                            <small class="text-muted">{{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</small>
-                        </div>
-                    </div>
-
-                    <!-- Order Items -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">{{ get_translation('order_items') }}</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                    <div class="mb-4">
-                        <h5 class="mb-3">{{ get_translation('order_items') }}</h5>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>{{ get_translation('product') }}</th>
-                                        <th>{{ get_translation('quantity') }}</th>
-                                        <th>{{ get_translation('price') }}</th>
-                                        <th>{{ get_translation('total') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in order.items %}
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <img src="{{ get_image_or_default(item.product.image_url) }}" alt="{{ item.product.name }}" loading="lazy"
-                                                     class="me-2" style="width: 50px; height: 50px; object-fit: cover;">
-                                                <div>
-                                                    <div>{{ item.product.name }}</div>
-                                                    <small class="text-muted">{{ item.product.category }}</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>{{ item.quantity }}</td>
-                                        <td>{{ "{:,.0f}".format(item.price) }} {{ get_translation('tooman') }}</td>
-                                        <td>{{ "{:,.0f}".format(item.price * item.quantity) }} {{ get_translation('tooman') }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="3" class="text-end"><strong>{{ get_translation('subtotal') }}:</strong></td>
-                                        <td>{{ "{:,.0f}".format(order.total_amount - order.delivery_fee) }} {{ get_translation('tooman') }}</td>
-                                    </tr>
-                                    {% if order.delivery_type == 'delivery' and order.delivery_fee > 0 %}
-                                    <tr>
-                                        <td colspan="3" class="text-end"><strong>{{ get_translation('delivery_fee') }}:</strong></td>
-                                        <td>{{ "{:,.0f}".format(order.delivery_fee) }} {{ get_translation('tooman') }}</td>
-                                    </tr>
-                                    {% endif %}
-                                    <tr>
-                                        <td colspan="3" class="text-end"><strong>{{ get_translation('total') }}:</strong></td>
-                                        <td><strong>{{ "{:,.0f}".format(order.total_amount) }} {{ get_translation('tooman') }}</strong></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Delivery Information -->
-                    <div class="mb-4">
-                        <h5 class="mb-3">{{ get_translation('delivery_information') }}</h5>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>{{ get_translation('delivery_type') }}:</strong> {{ get_translation(order.delivery_type) }}</p>
-                                {% if order.delivery_type == 'pickup' %}
-                                <p><strong>{{ get_translation('pickup_location') }}:</strong> {{ order.store_location.name }}</p>
-                                {% else %}
-                                <p><strong>{{ get_translation('delivery_address') }}:</strong> {{ order.address.street }}</p>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>{{ get_translation('payment_method') }}:</strong> {{ get_translation('pay_online') }}</p>
-                                {% if order.description %}
-                                <p><strong>{{ get_translation('order_notes') }}:</strong> {{ order.description }}</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Order Timeline -->
-                    <div class="mb-4">
-                        <h5 class="mb-3">{{ get_translation('order_timeline') }}</h5>
-                        <div class="timeline">
-                            <div class="timeline-item">
-                                <div class="timeline-date">{{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</div>
-                                <div class="timeline-content">
-                                    <i class="fas fa-shopping-cart"></i>
-                                    {{ get_translation('order_placed') }}
-                                </div>
-                            </div>
-                            {% if order.status != 'pending_approval' and order.preparation_start %}
-                            <div class="timeline-item">
-                                <div class="timeline-date">{{ to_tehran_time(order.preparation_start).strftime('%Y/%m/%d %H:%M') }}</div>
-                                <div class="timeline-content">
-                                    <i class="fas fa-check-circle"></i>
-                                    {{ get_translation('order_approved') }}
-                                </div>
-                            </div>
-                            {% endif %}
-                            {% if order.status == 'completed' and order.completed_at %}
-                            <div class="timeline-item">
-                                <div class="timeline-date">{{ to_tehran_time(order.completed_at).strftime('%Y/%m/%d %H:%M') }}</div>
-                                <div class="timeline-content">
-                                    <i class="fas fa-flag-checkered"></i>
-                                    {{ get_translation('order_completed') }}
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
+                <div class="summary-card">
+                    <span>{{ get_translation('order_total') }}</span>
+                    <strong>{{ "{:,.0f}".format(order.total_amount) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                    <small>{{ order.items|length }} {{ get_translation('items') }}</small>
                 </div>
             </div>
+        </div>
 
-            <!-- Order Comments -->
-            {% if order.comment %}
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">{{ get_translation('order_rating') }}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">{{ get_translation('food_quality') }}</label>
-                                <div class="rating-display">
-                                    {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < order.comment.food_quality %}text-warning{% else %}text-muted{% endif %}"></i>
-                                    {% endfor %}
+        <div class="order-layout">
+            <div class="order-main">
+                <article class="glass-card">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('order_items') }}</p>
+                        <h3>{{ get_translation('items_summary') or 'جزئیات آیتم‌ها' }}</h3>
+                    </div>
+                    <div class="items-list">
+                        {% for item in order.items %}
+                        <div class="item-row">
+                            <img src="{{ get_image_or_default(item.product.image_url) }}" alt="{{ item.product.name }}" loading="lazy">
+                            <div class="item-info">
+                                <div class="item-top">
+                                    <h4>{{ item.product.name }}</h4>
+                                    <span>x{{ item.quantity }}</span>
                                 </div>
+                                <p>{{ item.product.category }}</p>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">{{ get_translation('delivery_service') }}</label>
-                                <div class="rating-display">
-                                    {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < order.comment.delivery_service %}text-warning{% else %}text-muted{% endif %}"></i>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">{{ get_translation('packaging') }}</label>
-                                <div class="rating-display">
-                                    {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < order.comment.packaging %}text-warning{% else %}text-muted{% endif %}"></i>
-                                    {% endfor %}
-                                </div>
+                            <div class="item-price">
+                                {{ "{:,.0f}".format(item.price * item.quantity) }} {{ get_translation('currency_toman') or get_translation('tooman') }}
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">{{ get_translation('value_for_money') }}</label>
-                                <div class="rating-display">
-                                    {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < order.comment.value_for_money %}text-warning{% else %}text-muted{% endif %}"></i>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">{{ get_translation('overall_experience') }}</label>
-                                <div class="rating-display">
-                                    {% for i in range(5) %}
-                                    <i class="fas fa-star {% if i < order.comment.overall_experience %}text-warning{% else %}text-muted{% endif %}"></i>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            {% if order.comment.comment %}
-                            <div class="mt-3">
-                                <label class="form-label">{{ get_translation('comment') }}</label>
-                                <p class="mb-0">{{ order.comment.comment }}</p>
-                            </div>
-                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="totals">
+                        <div>
+                            <span>{{ get_translation('subtotal') }}</span>
+                            <strong>{{ "{:,.0f}".format(order.total_amount - order.delivery_fee) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                        </div>
+                        {% if order.delivery_type == 'delivery' and order.delivery_fee > 0 %}
+                        <div>
+                            <span>{{ get_translation('delivery_fee') }}</span>
+                            <strong>{{ "{:,.0f}".format(order.delivery_fee) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <span>{{ get_translation('total') }}</span>
+                            <strong>{{ "{:,.0f}".format(order.total_amount) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
                         </div>
                     </div>
-                </div>
-            </div>
-            {% elif order.status == 'completed' and not order.comment %}
-            <div class="card shadow-sm" id="ratingCard">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">{{ get_translation('rate_your_order') }}</h5>
-                </div>
-                <div class="card-body">
+                </article>
+
+                <article class="glass-card timeline-card">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('order_timeline') }}</p>
+                        <h3>{{ get_translation('timeline_progress') or 'مراحل سفارش' }}</h3>
+                    </div>
+                    <div class="timeline">
+                        <div class="timeline-item active">
+                            <div class="dot"></div>
+                            <div>
+                                <p class="timeline-title">{{ get_translation('order_placed') }}</p>
+                                <small>{{ to_tehran_time(order.created_at).strftime('%Y/%m/%d %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% if order.status != 'pending_approval' and order.preparation_start %}
+                        <div class="timeline-item {% if order.preparation_start %}active{% endif %}">
+                            <div class="dot"></div>
+                            <div>
+                                <p class="timeline-title">{{ get_translation('order_approved') }}</p>
+                                <small>{{ to_tehran_time(order.preparation_start).strftime('%Y/%m/%d %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if order.status == 'completed' and order.completed_at %}
+                        <div class="timeline-item active">
+                            <div class="dot"></div>
+                            <div>
+                                <p class="timeline-title">{{ get_translation('order_completed') }}</p>
+                                <small>{{ to_tehran_time(order.completed_at).strftime('%Y/%m/%d %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </article>
+
+                {% if order.comment %}
+                <article class="glass-card">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('order_rating') }}</p>
+                        <h3>{{ get_translation('customer_feedback') or 'بازخورد شما' }}</h3>
+                    </div>
+                    <div class="ratings-grid">
+                        <div>
+                            <span>{{ get_translation('food_quality') }}</span>
+                            <div class="rating-display">
+                                {% for i in range(5) %}
+                                <i class="fas fa-star {% if i < order.comment.food_quality %}filled{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <span>{{ get_translation('delivery_service') }}</span>
+                            <div class="rating-display">
+                                {% for i in range(5) %}
+                                <i class="fas fa-star {% if i < order.comment.delivery_service %}filled{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <span>{{ get_translation('packaging') }}</span>
+                            <div class="rating-display">
+                                {% for i in range(5) %}
+                                <i class="fas fa-star {% if i < order.comment.packaging %}filled{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <span>{{ get_translation('value_for_money') }}</span>
+                            <div class="rating-display">
+                                {% for i in range(5) %}
+                                <i class="fas fa-star {% if i < order.comment.value_for_money %}filled{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <span>{{ get_translation('overall_experience') }}</span>
+                            <div class="rating-display">
+                                {% for i in range(5) %}
+                                <i class="fas fa-star {% if i < order.comment.overall_experience %}filled{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if order.comment.comment %}
+                    <div class="comment-box">
+                        <span>{{ get_translation('comment') }}</span>
+                        <p>{{ order.comment.comment }}</p>
+                    </div>
+                    {% endif %}
+                </article>
+                {% elif order.status == 'completed' and not order.comment %}
+                <article class="glass-card" id="ratingCard">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('review_your_order') or 'ثبت تجربه شما' }}</p>
+                        <h3>{{ get_translation('rate_your_order') }}</h3>
+                    </div>
                     <form id="ratingForm" method="POST" action="{{ url_for('order_comment', order_id=order.id) }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">{{ get_translation('overall_experience') }}</label>
-                                    <div class="rating-input">
-                                        {% for i in range(5, 0, -1) %}
-                                        <input type="radio" name="overall_experience" value="{{ i }}" id="overall_experience_{{ i }}" required>
-                                        <label for="overall_experience_{{ i }}">
-                                            <i class="fas fa-star"></i>
-                                        </label>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">{{ get_translation('value_for_money') }}</label>
-                                    <div class="rating-input">
-                                        {% for i in range(5, 0, -1) %}
-                                        <input type="radio" name="value_for_money" value="{{ i }}" id="value_for_money_{{ i }}" required>
-                                        <label for="value_for_money_{{ i }}">
-                                            <i class="fas fa-star"></i>
-                                        </label>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">{{ get_translation('packaging') }}</label>
-                                    <div class="rating-input">
-                                        {% for i in range(5, 0, -1) %}
-                                        <input type="radio" name="packaging" value="{{ i }}" id="packaging_{{ i }}" required>
-                                        <label for="packaging_{{ i }}">
-                                            <i class="fas fa-star"></i>
-                                        </label>
-                                        {% endfor %}
-                                    </div>
+                        <div class="rating-grid">
+                            <div class="rating-field">
+                                <label>{{ get_translation('overall_experience') }}</label>
+                                <div class="rating-input">
+                                    {% for i in range(5, 0, -1) %}
+                                    <input type="radio" name="overall_experience" value="{{ i }}" id="overall_experience_{{ i }}" required>
+                                    <label for="overall_experience_{{ i }}"><i class="fas fa-star"></i></label>
+                                    {% endfor %}
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">{{ get_translation('delivery_service') }}</label>
-                                    <div class="rating-input">
-                                        {% for i in range(5, 0, -1) %}
-                                        <input type="radio" name="delivery_service" value="{{ i }}" id="delivery_service_{{ i }}" required>
-                                        <label for="delivery_service_{{ i }}">
-                                            <i class="fas fa-star"></i>
-                                        </label>
-                                        {% endfor %}
-                                    </div>
+                            <div class="rating-field">
+                                <label>{{ get_translation('value_for_money') }}</label>
+                                <div class="rating-input">
+                                    {% for i in range(5, 0, -1) %}
+                                    <input type="radio" name="value_for_money" value="{{ i }}" id="value_for_money_{{ i }}" required>
+                                    <label for="value_for_money_{{ i }}"><i class="fas fa-star"></i></label>
+                                    {% endfor %}
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">{{ get_translation('food_quality') }}</label>
-                                    <div class="rating-input">
-                                        {% for i in range(5, 0, -1) %}
-                                        <input type="radio" name="food_quality" value="{{ i }}" id="food_quality_{{ i }}" required>
-                                        <label for="food_quality_{{ i }}">
-                                            <i class="fas fa-star"></i>
-                                        </label>
-                                        {% endfor %}
-                                    </div>
+                            </div>
+                            <div class="rating-field">
+                                <label>{{ get_translation('packaging') }}</label>
+                                <div class="rating-input">
+                                    {% for i in range(5, 0, -1) %}
+                                    <input type="radio" name="packaging" value="{{ i }}" id="packaging_{{ i }}" required>
+                                    <label for="packaging_{{ i }}"><i class="fas fa-star"></i></label>
+                                    {% endfor %}
                                 </div>
-                                <div class="mb-3">
-                                    <label for="comment" class="form-label">{{ get_translation('comment') }}</label>
-                                    <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+                            </div>
+                            <div class="rating-field">
+                                <label>{{ get_translation('delivery_service') }}</label>
+                                <div class="rating-input">
+                                    {% for i in range(5, 0, -1) %}
+                                    <input type="radio" name="delivery_service" value="{{ i }}" id="delivery_service_{{ i }}" required>
+                                    <label for="delivery_service_{{ i }}"><i class="fas fa-star"></i></label>
+                                    {% endfor %}
                                 </div>
-                                <button type="submit" id="submitRating" class="btn btn-primary">
-                                    {{ get_translation('submit_rating') }}
-                                </button>
+                            </div>
+                            <div class="rating-field">
+                                <label>{{ get_translation('food_quality') }}</label>
+                                <div class="rating-input">
+                                    {% for i in range(5, 0, -1) %}
+                                    <input type="radio" name="food_quality" value="{{ i }}" id="food_quality_{{ i }}" required>
+                                    <label for="food_quality_{{ i }}"><i class="fas fa-star"></i></label>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
+                        <label for="comment">{{ get_translation('comment') }}</label>
+                        <textarea class="styled-textarea" id="comment" name="comment" rows="3"></textarea>
+                        <button type="submit" id="submitRating" class="primary-btn">
+                            <span>{{ get_translation('submit_rating') }}</span>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
                     </form>
-                </div>
+                </article>
+
+                <article id="successMessage" class="glass-card d-none">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('thank_you_for_rating') }}</p>
+                        <h3>{{ get_translation('rating_submitted_successfully') }}</h3>
+                    </div>
+                    <p>{{ get_translation('rating_success_hint') or 'بازخورد شما ثبت شد و به بهبود خدمات ما کمک می‌کند.' }}</p>
+                </article>
+                {% endif %}
             </div>
 
-            <!-- Success Message (Initially Hidden) -->
-            <div id="successMessage" class="card shadow-sm d-none">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">{{ get_translation('thank_you_for_rating') }}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-success">
-                        {{ get_translation('rating_submitted_successfully') }}
+            <aside class="order-side">
+                <div class="glass-card">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('delivery_information') }}</p>
+                        <h3>{{ get_translation('delivery_summary') or 'خلاصه ارسال' }}</h3>
+                    </div>
+                    <div class="info-grid">
+                        <div>
+                            <span>{{ get_translation('delivery_type') }}</span>
+                            <strong>{{ get_translation(order.delivery_type) }}</strong>
+                        </div>
+                        <div>
+                            <span>{{ get_translation('payment_method') }}</span>
+                            <strong>{{ get_translation('pay_online') }}</strong>
+                        </div>
+                        {% if order.delivery_type == 'pickup' %}
+                        <div>
+                            <span>{{ get_translation('pickup_location') }}</span>
+                            <strong>{{ order.store_location.name }}</strong>
+                        </div>
+                        {% else %}
+                        <div>
+                            <span>{{ get_translation('delivery_address') }}</span>
+                            <strong>{{ order.address.street }}</strong>
+                        </div>
+                        {% endif %}
+                        {% if order.description %}
+                        <div class="notes">
+                            <span>{{ get_translation('order_notes') }}</span>
+                            <p>{{ order.description }}</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
-            </div>
-            {% endif %}
-        </div>
 
-        <!-- Order Actions -->
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">{{ get_translation('order_actions') }}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('orders') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-arrow-left me-2"></i>{{ get_translation('back_to_orders') }}
+                <div class="glass-card action-card">
+                    <div class="card-heading">
+                        <p class="muted-label">{{ get_translation('order_actions') }}</p>
+                        <h3>{{ get_translation('need_help') or 'نیاز به راهنما؟' }}</h3>
+                    </div>
+                    <div class="action-buttons">
+                        <a href="{{ url_for('orders') }}" class="ghost-btn">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>{{ get_translation('back_to_orders') }}</span>
                         </a>
-                        <!-- {% if order.status in ['pending_approval', 'preparing'] %}
-                        <form method="POST" action="{{ url_for('cancel_order', order_id=order.id) }}" class="d-grid">
-                            <button type="submit" class="btn btn-outline-danger">
-                                <i class="fas fa-times me-2"></i>{{ get_translation('cancel_order') }}
-                            </button>
-                        </form>
-                        {% endif %} -->
+                        <a href="{{ url_for('support') }}" class="ghost-btn">
+                            <i class="fas fa-headset"></i>
+                            <span>{{ get_translation('support_center') or 'مرکز پشتیبانی' }}</span>
+                        </a>
                     </div>
                 </div>
-            </div>
+            </aside>
         </div>
     </div>
-</div>
+</section>
 
 <style>
-.timeline {
-    position: relative;
-    padding: 20px 0;
-}
+    .order-status-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
+    }
 
-.timeline-item {
-    position: relative;
-    padding-left: 30px;
-    margin-bottom: 20px;
-}
+    .order-backdrop {
+        position: absolute;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
+    }
 
-.timeline-item:before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #e9ecef;
-}
+    .order-backdrop:first-of-type {
+        left: -150px;
+        bottom: 10%;
+    }
 
-.timeline-item:last-child:before {
-    bottom: 50%;
-}
+    .order-backdrop-2 {
+        right: -130px;
+        top: 15%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 3s;
+    }
 
-.timeline-item:after {
-    content: '';
-    position: absolute;
-    left: -4px;
-    top: 0;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--primary-red);
-}
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
 
-.timeline-date {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin-bottom: 5px;
-}
+    .order-status-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
 
-.timeline-content {
-    color: #212529;
-}
+    .order-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
 
-.rating-input {
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: flex-end;
-}
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+    }
 
-.rating-input input {
-    display: none;
-}
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
 
-.rating-input label {
-    cursor: pointer;
-    font-size: 1.5rem;
-    color: #ddd;
-    padding: 0 2px;
-}
+    .header-meta {
+        display: flex;
+        gap: 1rem;
+    }
 
-.rating-input label:hover,
-.rating-input label:hover ~ label,
-.rating-input input:checked ~ label {
-    color: #ffc107;
-}
+    .summary-card {
+        min-width: 180px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.7);
+        padding: 1rem 1.25rem;
+        text-align: center;
+    }
 
-.rating-display {
-    display: flex;
-    gap: 5px;
-}
+    .summary-card span {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-gray);
+    }
 
-.rating-display i {
-    font-size: 1.25rem;
-}
+    .summary-card strong {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 1.4rem;
+    }
+
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .order-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 0.8fr);
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.75rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .card-heading {
+        margin-bottom: 1.5rem;
+    }
+
+    .card-heading h3 {
+        margin: 0;
+        font-size: 1.4rem;
+    }
+
+    .items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .item-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .item-row img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .item-info h4 {
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    .item-info p {
+        margin: 0.2rem 0 0;
+        color: var(--text-gray);
+        font-size: 0.85rem;
+    }
+
+    .item-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .item-price {
+        font-weight: 600;
+    }
+
+    .totals {
+        margin-top: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .totals span {
+        display: block;
+        color: var(--text-gray);
+        font-size: 0.85rem;
+    }
+
+    .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 0.9rem;
+        align-items: center;
+    }
+
+    .timeline-item .dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .timeline-item.active .dot {
+        background: var(--yellow);
+        border-color: var(--yellow);
+        box-shadow: 0 0 12px rgba(212, 175, 55, 0.6);
+    }
+
+    .timeline-title {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .timeline-item small {
+        color: var(--text-gray);
+    }
+
+    .ratings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+    }
+
+    .rating-display {
+        display: flex;
+        gap: 0.25rem;
+        margin-top: 0.3rem;
+    }
+
+    .rating-display i {
+        color: rgba(255, 255, 255, 0.2);
+    }
+
+    .rating-display i.filled {
+        color: #ffc107;
+    }
+
+    .comment-box {
+        margin-top: 1.25rem;
+        padding: 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .rating-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .rating-field label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-weight: 600;
+    }
+
+    .rating-input {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+        gap: 0.2rem;
+    }
+
+    .rating-input input {
+        display: none;
+    }
+
+    .rating-input label {
+        cursor: pointer;
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .rating-input label:hover,
+    .rating-input label:hover ~ label,
+    .rating-input input:checked ~ label {
+        color: #ffc107;
+    }
+
+    .styled-textarea {
+        width: 100%;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-light);
+        padding: 1rem;
+        margin: 1rem 0;
+        resize: none;
+    }
+
+    .order-side .info-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .info-grid span {
+        color: var(--text-gray);
+        font-size: 0.85rem;
+    }
+
+    .info-grid strong {
+        display: block;
+        margin-top: 0.3rem;
+    }
+
+    .notes p {
+        margin: 0.4rem 0 0;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .ghost-btn,
+    .primary-btn {
+        border-radius: 18px;
+        padding: 0.85rem 1.4rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        text-decoration: none;
+        font-weight: 600;
+        border: none;
+        justify-content: center;
+    }
+
+    .ghost-btn {
+        color: var(--text-light);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .primary-btn {
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+    }
+
+    .status-pending-approval { background: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.35); color: #ffd66b; }
+    .status-preparing { background: rgba(0, 123, 255, 0.15); border: 1px solid rgba(0, 123, 255, 0.35); color: #7fd1ff; }
+    .status-completed { background: rgba(40, 167, 69, 0.15); border: 1px solid rgba(40, 167, 69, 0.35); color: #9dffbb; }
+    .status-cancelled,
+    .status-rejected { background: rgba(231, 76, 60, 0.18); border: 1px solid rgba(231, 76, 60, 0.4); color: #ff9d94; }
+
+    .status-chip {
+        border-radius: 999px;
+        padding: 0.4rem 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .order-header {
+            grid-template-columns: 1fr;
+        }
+
+        .header-meta {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .order-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .order-status-page {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .glass-card {
+            padding: 1.4rem;
+        }
+
+        .item-row {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+
+        .item-price {
+            justify-self: center;
+        }
+    }
 </style>
 
 {% block scripts %}

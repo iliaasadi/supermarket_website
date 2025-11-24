@@ -3,94 +3,641 @@
 {% block title %}{{ product.name }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row">
-        <!-- Product Image -->
-        <div class="col-md-6 mb-4">
-            <div class="position-relative">
-                <img src="{{ get_image_or_default(product.image_url) }}" class="img-fluid rounded" alt="{{ product.name }}" loading="lazy">
-                {% if product.discount > 0 %}
-                    <div class="position-absolute top-0 end-0 m-3">
-                        <span class="badge bg-danger fs-5">-{{ product.discount }}%</span>
-                    </div>
-                {% endif %}
+<section class="product-details-page">
+    <div class="product-backdrop"></div>
+    <div class="product-backdrop product-backdrop-2"></div>
+
+    <div class="container product-container">
+        <div class="product-header">
+            <a href="{{ request.referrer or url_for('index') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back') }}</span>
+            </a>
+            <div class="crumbs" aria-label="breadcrumb">
+                <a href="{{ url_for('index') }}">{{ get_translation('home') }}</a>
+                <span>/</span>
+                <a href="{{ url_for('category', category=product.category) }}">{{ product.category }}</a>
+                <span>/</span>
+                <span>{{ product.name }}</span>
             </div>
         </div>
-        
-        <!-- Product Details -->
-        <div class="col-md-6">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">{{ get_translation('home') }}</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('category', category=product.category) }}">{{ product.category }}</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
-                </ol>
-            </nav>
-            
-            <h1 class="mb-3">{{ product.name }}</h1>
-            
-            <!-- {% if product.is_verified_only %}
-                <span class="badge bg-success mb-3">{{ get_translation('verified_product') }}</span>
-            {% endif %} -->
-            
-            <div class="mb-3">
-                <span class="badge bg-success">{{ product.category }}</span>
-                {% if product.discount > 0 %}
-                    <span class="badge bg-danger">-{{ product.discount }}%</span>
-                {% endif %}
-                {% if product.brand %}
-                    <div class="mt-2 d-flex align-items-center">
-                        <img src="{{ get_image_or_default(product.brand.image_url) }}" alt="{{ product.brand.name }}" 
-                             style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border: 1px solid #ddd; border-radius: 4px; padding: 4px;" loading="lazy">
-                        <span class="badge bg-info">{{ product.brand.name }}</span>
+
+        <div class="product-hero-card">
+            <div class="product-media">
+                <div class="media-frame">
+                    <img src="{{ get_image_or_default(product.image_url) }}" alt="{{ product.name }}" loading="lazy">
+                    {% if product.discount > 0 %}
+                    <div class="discount-chip">-{{ product.discount }}%</div>
+                    {% endif %}
+                </div>
+                <div class="media-meta">
+                    <div class="meta-item">
+                        <span>{{ get_translation('stock') }}</span>
+                        <strong>{{ product.stock }} {{ get_translation('items') }}</strong>
                     </div>
-                {% endif %}
+                    <div class="meta-item">
+                        <span>{{ get_translation('category') }}</span>
+                        <strong>{{ product.category }}</strong>
+                    </div>
+                    {% if product.brand %}
+                    <div class="meta-item brand">
+                        <span>{{ get_translation('brand') }}</span>
+                        <div class="brand-chip">
+                            <img src="{{ get_image_or_default(product.brand.image_url) }}" alt="{{ product.brand.name }}" loading="lazy">
+                            <strong>{{ product.brand.name }}</strong>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            
-            <div class="mb-4">
-                {% if product.discount > 0 %}
-                    <span class="text-decoration-line-through text-muted h5">{{ "%.0f"|format(product.price) }} تومان</span>
-                    <span class="text-success h4 ms-2">{{ "%.0f"|format(product.price * (1 - product.discount/100)) }} تومان</span>
-                {% else %}
-                    <span class="text-primary h4">{{ "%.0f"|format(product.price) }} تومان</span>
-                {% endif %}
-            </div>
-            
-            <div class="mb-4">
-                <h3 class="mb-2">{{ get_translation('stock') }}</h3>
-                <p class="mb-0">{{ product.stock }} {{ get_translation('items') }}</p>
-            </div>
-            
-            <p class="mb-4">{{ product.description }}</p>
-            
-            {% if current_user.is_authenticated %}
-                <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="mb-4">
+
+            <div class="product-info">
+                <div class="product-title-block">
+                    <p class="muted-label">{{ get_translation('exclusive_offer') or 'پیشنهاد ویژه' }}</p>
+                    <h1>{{ product.name }}</h1>
+                    <p class="subtitle">{{ product.description }}</p>
+                </div>
+
+                <div class="price-block">
+                    {% if product.discount > 0 %}
+                    <span class="old-price">{{ "%.0f"|format(product.price) }} {{ get_translation('currency_toman') or 'تومان' }}</span>
+                    <div class="current-price">
+                        <span>{{ "%.0f"|format(product.price * (1 - product.discount/100)) }}</span>
+                        <small>{{ get_translation('currency_toman') or 'تومان' }}</small>
+                    </div>
+                    {% else %}
+                    <div class="current-price no-discount">
+                        <span>{{ "%.0f"|format(product.price) }}</span>
+                        <small>{{ get_translation('currency_toman') or 'تومان' }}</small>
+                    </div>
+                    {% endif %}
+                    <div class="price-badges">
+                        <span class="chip">
+                            <i class="fas fa-shield-check"></i>
+                            {{ get_translation('secure_payment') or 'پرداخت امن' }}
+                        </span>
+                        <span class="chip">
+                            <i class="fas fa-shipping-fast"></i>
+                            {{ get_translation('fast_delivery') or 'ارسال سریع' }}
+                        </span>
+                    </div>
+                </div>
+
+                {% if current_user.is_authenticated %}
+                <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="purchase-panel">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <div class="input-group mb-3" style="max-width: 200px;">
-                        <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(-1)">-</button>
-                        <input type="number" class="form-control text-center" name="quantity" id="quantity" value="1" min="1" max="{{ product.stock }}">
-                        <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity(1)">+</button>
+                    <div class="quantity-controller">
+                        <button type="button" class="qty-btn" onclick="updateQuantity(-1)">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <input type="number" name="quantity" id="quantity" value="1" min="1" max="{{ product.stock }}" readonly>
+                        <button type="button" class="qty-btn" onclick="updateQuantity(1)">
+                            <i class="fas fa-plus"></i>
+                        </button>
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-cart-plus"></i> {{ get_translation('add_to_cart') }}
+                    <button type="submit" class="primary-action">
+                        <div>
+                            <span>{{ get_translation('add_to_cart') }}</span>
+                            <small>{{ get_translation('instant_checkout') or 'تکمیل خرید سریع' }}</small>
+                        </div>
+                        <i class="fas fa-cart-plus"></i>
                     </button>
                 </form>
-            {% else %}
-                <a href="{{ url_for('login') }}" class="btn btn-primary">
-                    {{ get_translation('login') }} {{ get_translation('to_add_to_cart') }}
+                {% else %}
+                <a href="{{ url_for('login') }}" class="primary-action ghost emphasize-login">
+                    <div>
+                        <span>{{ get_translation('login') }}</span>
+                        <small>{{ get_translation('to_add_to_cart') }}</small>
+                    </div>
+                    <i class="fas fa-unlock"></i>
                 </a>
-            {% endif %}
+                {% endif %}
+
+                <div class="info-grid">
+                    
+                    <div class="info-card">
+                        <i class="fas fa-headset"></i>
+                        <div>
+                            <p>{{ get_translation('support') or 'پشتیبانی' }}</p>
+                            <small>{{ get_translation('support_hours') or 'پشتیبانی ۲۴/۷' }}</small>
+                            <a href="{{ url_for('support') }}" class="support-link">
+                                {{ get_translation('view_support_options') or 'ورود به صفحه پشتیبانی' }}
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-award"></i>
+                        <div>
+                            <p>{{ get_translation('quality') or 'کیفیت تضمینی' }}</p>
+                            <small>{{ get_translation('original_products') or 'محصولات اصل' }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="product-details-grid">
+            <div class="detail-card">
+                <div class="card-header">
+                    <p class="muted-label">{{ get_translation('product_highlights') or 'ویژگی‌ها' }}</p>
+                    <h3>{{ get_translation('about_product') or 'درباره محصول' }}</h3>
+                </div>
+                <ul class="highlight-list">
+                    <li>
+                        <span>{{ get_translation('category') }}</span>
+                        <strong>{{ product.category }}</strong>
+                    </li>
+                    <li>
+                        <span>{{ get_translation('brand') }}</span>
+                        <strong>{{ product.brand.name if product.brand else get_translation('not_available') }}</strong>
+                    </li>
+                    <li>
+                        <span>{{ get_translation('stock') }}</span>
+                        <strong>{{ product.stock }} {{ get_translation('items') }}</strong>
+                    </li>
+                    <li>
+                        <span>{{ get_translation('discount') }}</span>
+                        <strong>{% if product.discount > 0 %}-{{ product.discount }}%{% else %}{{ get_translation('not_available') }}{% endif %}</strong>
+                    </li>
+                </ul>
+            </div>
+            <div class="detail-card">
+                <div class="card-header">
+                    <p class="muted-label">{{ get_translation('delivery_information') or 'اطلاعات ارسال' }}</p>
+                    <h3>{{ get_translation('shipping_details') or 'جزئیات ارسال' }}</h3>
+                </div>
+                <div class="shipping-grid">
+                    <div>
+                        <span>{{ get_translation('delivery_type') or 'نوع ارسال' }}</span>
+                        <strong>{{ get_translation('fast_delivery') or 'ارسال سریع' }}</strong>
+                    </div>
+                    <div>
+                        <span>{{ get_translation('payment') or 'پرداخت' }}</span>
+                        <strong>{{ get_translation('secure_payment') or 'پرداخت امن' }}</strong>
+                    </div>
+                    
+                </div>
+            </div>
         </div>
     </div>
-</div>
+</section>
 
 <script>
 function updateQuantity(change) {
     const input = document.getElementById('quantity');
-    const newValue = parseInt(input.value) + change;
-    if (newValue >= 1 && newValue <= {{ product.stock }}) {
-        input.value = newValue;
+    if (!input) return;
+    const currentValue = parseInt(input.value, 10);
+    const max = parseInt(input.getAttribute('max'), 10);
+    const min = parseInt(input.getAttribute('min'), 10);
+    const nextValue = currentValue + change;
+    if (nextValue >= min && nextValue <= max) {
+        input.value = nextValue;
     }
 }
 </script>
-{% endblock %} 
+
+<style>
+    .product-details-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
+    }
+
+    .product-backdrop {
+        position: absolute;
+        inset: auto auto 10% -150px;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        animation: float 12s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    .product-backdrop-2 {
+        inset: 5% -120px auto auto;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(20, 62, 255, 0.25), transparent 60%);
+        animation-delay: 3s;
+    }
+
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .product-container {
+        position: relative;
+        z-index: 2;
+    }
+
+    .product-header {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        align-items: center;
+    }
+
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.4rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        color: var(--text-light);
+        text-decoration: none;
+    }
+
+    .back-chip:hover {
+        color: var(--yellow);
+    }
+
+    .crumbs {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        color: var(--text-gray);
+    }
+
+    .crumbs a {
+        color: var(--yellow);
+        text-decoration: none;
+    }
+
+    .product-hero-card {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+        padding: 2rem;
+        border-radius: 30px;
+        background: rgba(10, 14, 39, 0.75);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        backdrop-filter: blur(25px);
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    .media-frame {
+        position: relative;
+        border-radius: 28px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(6, 8, 24, 0.8);
+        min-height: 360px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+    }
+
+    .media-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .discount-chip {
+        position: absolute;
+        top: 1.5rem;
+        left: 1.5rem;
+        background: linear-gradient(135deg, #ff6b6b, #ff4757);
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        font-weight: 700;
+        color: #fff;
+        box-shadow: 0 10px 25px rgba(255, 71, 87, 0.4);
+    }
+
+    .media-meta {
+        margin-top: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .meta-item {
+        padding: 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .meta-item span {
+        font-size: 0.9rem;
+        color: var(--text-gray);
+    }
+
+    .meta-item strong {
+        display: block;
+        margin-top: 0.4rem;
+        font-size: 1.1rem;
+        color: var(--text-light);
+    }
+
+    .meta-item.brand {
+        grid-column: span 2;
+    }
+
+    .brand-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: 0.5rem;
+    }
+
+    .brand-chip img {
+        width: 42px;
+        height: 42px;
+        object-fit: contain;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.4rem;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .product-info {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .product-title-block .muted-label {
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        color: var(--text-gray);
+        margin-bottom: 0.3rem;
+        font-size: 0.85rem;
+    }
+
+    .product-title-block h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 2.7rem);
+    }
+
+    .subtitle {
+        color: rgba(255, 255, 255, 0.75);
+        margin-top: 0.4rem;
+    }
+
+    .price-block {
+        padding: 1.5rem;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .old-price {
+        color: var(--text-gray);
+        text-decoration: line-through;
+    }
+
+    .current-price {
+        display: flex;
+        align-items: baseline;
+        gap: 0.3rem;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        font-weight: 700;
+        color: var(--yellow);
+    }
+
+    .current-price small {
+        font-size: 1rem;
+        color: var(--text-light);
+    }
+
+    .price-badges {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        background: rgba(212, 175, 55, 0.12);
+        border: 1px solid rgba(212, 175, 55, 0.35);
+        color: var(--yellow-bright);
+        font-size: 0.9rem;
+    }
+
+    .purchase-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .quantity-controller {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .qty-btn {
+        width: 52px;
+        height: 52px;
+        border: none;
+        background: transparent;
+        color: var(--text-light);
+        font-size: 1.1rem;
+        cursor: pointer;
+    }
+
+    .qty-btn:hover {
+        color: var(--yellow);
+    }
+
+    .quantity-controller input {
+        width: 70px;
+        text-align: center;
+        border: none;
+        background: transparent;
+        color: var(--text-light);
+        font-size: 1.2rem;
+        pointer-events: none;
+    }
+
+    .primary-action {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-radius: 22px;
+        border: none;
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .primary-action small {
+        display: block;
+        font-size: 0.8rem;
+        color: rgba(5, 8, 24, 0.7);
+        font-weight: 500;
+    }
+
+    .primary-action.ghost {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-light);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-card {
+        display: flex;
+        gap: 0.8rem;
+        padding: 1rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .info-card i {
+        font-size: 1.5rem;
+        color: var(--yellow);
+    }
+
+    .info-card p {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .info-card small {
+        color: var(--text-gray);
+    }
+
+    .primary-action.emphasize-login {
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--yellow-bright);
+    }
+
+    .primary-action.emphasize-login small {
+        color: var(--yellow);
+    }
+
+    .support-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 0.4rem;
+        color: var(--yellow);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .support-link:hover {
+        color: var(--yellow-bright);
+    }
+
+    .product-details-grid {
+        margin-top: 2.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .detail-card {
+        padding: 1.75rem;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(15px);
+    }
+
+    .card-header .muted-label {
+        color: var(--text-gray);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 0.2rem;
+    }
+
+    .highlight-list {
+        list-style: none;
+        margin: 1.2rem 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .highlight-list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 0.8rem;
+    }
+
+    .highlight-list li span {
+        color: var(--text-gray);
+    }
+
+    .shipping-grid {
+        margin-top: 1.2rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .shipping-grid span {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-gray);
+    }
+
+    @media (max-width: 575.98px) {
+        .product-details-page {
+            padding: 2rem 0 3rem;
+        }
+
+        .product-hero-card {
+            padding: 1.25rem;
+        }
+
+        .media-frame {
+            min-height: 280px;
+        }
+
+        .purchase-panel {
+            flex-direction: column;
+        }
+
+        .quantity-controller {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .quantity-controller input {
+            flex: 1;
+        }
+
+        .meta-item.brand {
+            grid-column: span 1;
+        }
+    }
+</style>
+{% endblock %}

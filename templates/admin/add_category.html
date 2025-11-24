@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_translation('edit_category') }} - AMAZOON MARKET{% endblock %}
+{% block title %}{{ get_translation('add_category') }} - AMAZOON MARKET{% endblock %}
 
 {% block content %}
 <section class="category-form-page">
@@ -15,8 +15,8 @@
             </a>
             <div class="header-text">
                 <p class="muted-label">{{ get_translation('category_management') }}</p>
-                <h1>{{ get_translation('edit_category') }}</h1>
-                <p>{{ get_translation('edit_category_subtitle') or 'دسته فعلی را با تصویر و نام تازه به‌روزرسانی کنید.' }}</p>
+                <h1>{{ get_translation('add_category') }}</h1>
+                <p>{{ get_translation('add_category_subtitle') or 'دسته‌بندی جدیدی برای محصولات ایجاد کنید.' }}</p>
             </div>
             <div class="header-badge">
                 <i class="fas fa-layer-group"></i>
@@ -25,7 +25,7 @@
         </header>
 
         <div class="category-form-layout">
-            <form method="POST" enctype="multipart/form-data" class="glass-card primary-form" novalidate>
+            <form method="POST" action="{{ url_for('admin_add_category') }}" enctype="multipart/form-data" class="glass-card primary-form" novalidate>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
                 <div class="card-heading">
@@ -37,20 +37,15 @@
                     <label for="category_name">{{ get_translation('category_name') }}</label>
                     <div class="input-with-icon">
                         <i class="fas fa-pen-nib"></i>
-                        <input type="text" id="category_name" name="category_name"
-                               placeholder="{{ get_translation('new_category_name') }}"
-                               value="{{ category.name if category.name else category }}"
-                               required>
+                        <input type="text" id="category_name" name="category_name" placeholder="{{ get_translation('new_category_name') }}" required>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="image_url">{{ get_translation('category_image') }} ({{ get_translation('optional') }})</label>
+                    <label for="image_url">{{ get_translation('category_image') }}</label>
                     <div class="input-with-icon">
                         <i class="fas fa-link"></i>
-                        <input type="text" id="image_url" name="image_url"
-                               placeholder="{{ get_translation('or_enter_url') }}"
-                               value="{{ category.image_url if category.image_url and not category.image_url.startswith('/static/uploads/') else '' }}">
+                        <input type="text" id="image_url" name="image_url" placeholder="{{ get_translation('or_enter_url') }}">
                     </div>
                     <small>{{ get_translation('image_url_help') }}</small>
                 </div>
@@ -62,44 +57,33 @@
                         <span>{{ get_translation('drag_drop_hint') }}</span>
                         <input type="file" id="image" name="image" accept="image/*">
                     </div>
-
-                    <div class="current-image">
-                        <p class="muted-label">{{ get_translation('current_image') or 'تصویر فعلی' }}</p>
-                        <div class="image-frame">
-                            <img src="{{ get_image_or_default(category.image_url) }}"
-                                 alt="{{ category.name if category.name else category }}"
-                                 loading="lazy">
-                        </div>
-                    </div>
-
                     <div id="imagePreview" class="image-preview d-none">
                         <img src="" alt="preview" loading="lazy">
                         <button type="button" class="ghost-btn remove-preview">
                             <i class="fas fa-times"></i>
-                            <span>{{ get_translation('remove_image') or get_translation('remove') or 'حذف' }}</span>
+                            <span>{{ get_translation('remove') or 'حذف' }}</span>
                         </button>
                     </div>
-
-                    <small>{{ get_translation('image_upload_help') }}</small>
                 </div>
 
-                <div class="helper-callout secondary">
-                    <i class="fas fa-info-circle"></i>
-                    <div>
-                        <strong>{{ get_translation('category_update_hint') or 'به‌روزرسانی سریع' }}</strong>
-                        <p>{{ get_translation('category_update_desc') or 'اطمینان حاصل کنید تصویر جدید با سایر دسته‌ها هماهنگ باشد.' }}</p>
+                <div class="form-footer">
+                    <div class="helper-callout">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>{{ get_translation('category_guidelines_title') or get_translation('category_tips_title') }}</strong>
+                            <p>{{ get_translation('category_visibility_hint') or 'دسته‌بندی دقیق باعث می‌شود مشتری سریع‌تر محصول را پیدا کند.' }}</p>
+                        </div>
                     </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button type="submit" class="primary-btn">
-                        <span>{{ get_translation('save_category') or get_translation('save') }}</span>
-                        <i class="fas fa-save"></i>
-                    </button>
-                    <a href="{{ url_for('admin_dashboard') }}" class="ghost-btn">
-                        <i class="fas fa-times"></i>
-                        <span>{{ get_translation('cancel') }}</span>
-                    </a>
+                    <div class="action-buttons">
+                        <button type="submit" class="primary-btn">
+                            <span>{{ get_translation('save_category') or get_translation('add_category') }}</span>
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <a href="{{ url_for('admin_dashboard') }}" class="ghost-btn">
+                            <i class="fas fa-times"></i>
+                            <span>{{ get_translation('cancel') }}</span>
+                        </a>
+                    </div>
                 </div>
             </form>
 
@@ -110,24 +94,24 @@
                 </div>
                 <ul>
                     <li>
-                        <i class="fas fa-refresh"></i>
+                        <i class="fas fa-check-circle"></i>
                         <div>
-                            <strong>{{ get_translation('category_tip_update') or 'هماهنگی ظاهری' }}</strong>
-                            <p>{{ get_translation('category_tip_update_desc') or 'پس از تغییر تصویر، لیست محصولات را نیز بررسی کنید.' }}</p>
+                            <strong>{{ get_translation('category_tip_unique') or 'نام یکتا' }}</strong>
+                            <p>{{ get_translation('category_tip_unique') or 'نام دسته‌بندی باید یکتا و مرتبط باشد.' }}</p>
                         </div>
                     </li>
                     <li>
-                        <i class="fas fa-eye"></i>
+                        <i class="fas fa-image"></i>
                         <div>
-                            <strong>{{ get_translation('category_tip_visibility') or 'نمایش بهتر' }}</strong>
-                            <p>{{ get_translation('category_visibility_hint') or 'عنوان کوتاه و دقیق انتخاب کنید تا روی موبایل نیز به‌خوبی دیده شود.' }}</p>
+                            <strong>{{ get_translation('category_tip_image') or 'تصویر مناسب' }}</strong>
+                            <p>{{ get_translation('category_cover_hint') or 'از تصویر با کیفیت و پس‌زمینه ساده برای نمایش بهتر استفاده کنید.' }}</p>
                         </div>
                     </li>
                     <li>
-                        <i class="fas fa-chart-line"></i>
+                        <i class="fas fa-sitemap"></i>
                         <div>
-                            <strong>{{ get_translation('category_tip_metrics') or 'اثر بر فروش' }}</strong>
-                            <p>{{ get_translation('category_showcase_hint') or 'دسته‌بندی واضح مسیر خرید سریع‌تری برای مشتریان ایجاد می‌کند.' }}</p>
+                            <strong>{{ get_translation('category_structure_hint') or 'ساختار مرتب' }}</strong>
+                            <p>{{ get_translation('category_showcase_hint') or 'بازدیدکننده باید بتواند با یک نگاه متوجه محصولات این دسته شود.' }}</p>
                         </div>
                     </li>
                 </ul>
@@ -318,27 +302,6 @@
         cursor: pointer;
     }
 
-    .current-image {
-        margin-top: 1rem;
-        padding: 1rem;
-        border-radius: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.02);
-    }
-
-    .image-frame {
-        border-radius: 18px;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .image-frame img {
-        width: 100%;
-        max-height: 220px;
-        object-fit: cover;
-        display: block;
-    }
-
     .image-preview {
         margin-top: 0.9rem;
         border-radius: 18px;
@@ -358,6 +321,13 @@
         border-radius: 14px;
     }
 
+    .form-footer {
+        margin-top: 1.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
     .helper-callout {
         display: flex;
         gap: 0.85rem;
@@ -366,12 +336,6 @@
         border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         background: rgba(255, 255, 255, 0.03);
-        margin-bottom: 1.25rem;
-    }
-
-    .helper-callout.secondary {
-        background: rgba(16, 70, 255, 0.08);
-        border: 1px solid rgba(16, 70, 255, 0.25);
     }
 
     .helper-callout i {
@@ -410,11 +374,6 @@
         background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
         color: var(--dark-blue-night);
         box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
-    }
-
-    .primary-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 15px 35px rgba(212, 175, 55, 0.4);
     }
 
     .ghost-btn {
@@ -478,7 +437,7 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('image');
     const previewWrapper = document.getElementById('imagePreview');
     const previewImg = previewWrapper?.querySelector('img');
@@ -488,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    fileInput.addEventListener('change', function (event) {
+    fileInput.addEventListener('change', function(event) {
         const file = event.target.files && event.target.files[0];
         if (!file) {
             previewWrapper.classList.add('d-none');
@@ -497,14 +456,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const reader = new FileReader();
-        reader.onload = function (e) {
+        reader.onload = function(e) {
             previewImg.src = e.target.result;
             previewWrapper.classList.remove('d-none');
         };
         reader.readAsDataURL(file);
     });
 
-    removeBtn.addEventListener('click', function () {
+    removeBtn.addEventListener('click', function() {
         fileInput.value = '';
         previewWrapper.classList.add('d-none');
         previewImg.src = '';

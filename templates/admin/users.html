@@ -3,191 +3,580 @@
 {% block admin_title %}{{ get_translation('users') }}{% endblock %}
 
 {% block admin_content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-users me-2"></i>{{ get_translation('users') }}</h2>
-        <span class="badge bg-primary">{{ users|length }} {{ get_translation('users') }}</span>
-    </div>
+{% set total_users = users|length %}
+{% set admin_users = users|selectattr('is_admin', 'equalto', True)|list %}
+{% set regular_users = users|selectattr('is_admin', 'equalto', False)|list %}
 
-    <!-- Search Form -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="GET" action="{{ url_for('admin_users') }}" class="row g-3">
-                <div class="col-md-10">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" 
-                               class="form-control" 
-                               name="search" 
-                               placeholder="{{ get_translation('search_by_name_or_phone') }}"
-                               value="{{ search_query }}">
+<section class="users-admin-page">
+    <div class="users-backdrop"></div>
+    <div class="users-backdrop users-backdrop-2"></div>
+
+    <div class="container users-container">
+        <header class="users-header">
+            <a href="{{ request.referrer or url_for('admin_dashboard') }}" class="back-chip">
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ get_translation('back_to_dashboard') or get_translation('back') }}</span>
+            </a>
+            <div class="header-text">
+                <p class="muted-label">{{ get_translation('user_management') or get_translation('users') }}</p>
+                <h1>{{ get_translation('users') }}</h1>
+                <p>{{ get_translation('users_subtitle_admin') or 'وضعیت کاربران و سفارش‌های اخیرشان را مرور کنید.' }}</p>
+            </div>
+            <div class="header-badge">
+                <i class="fas fa-users"></i>
+                <span>{{ total_users }} {{ get_translation('users') }}</span>
+            </div>
+        </header>
+
+        <div class="search-card glass-card">
+            <form method="GET" action="{{ url_for('admin_users') }}" class="search-grid">
+                <div class="form-group full-width">
+                    <label for="search">{{ get_translation('search') }}</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search" name="search" placeholder="{{ get_translation('search_by_name_or_phone') }}" value="{{ search_query }}">
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-search me-1"></i>{{ get_translation('search') }}
-                    </button>
-                </div>
+                <button type="submit" class="primary-btn">
+                    <span>{{ get_translation('search') }}</span>
+                    <i class="fas fa-search"></i>
+                </button>
                 {% if search_query %}
-                <div class="col-12">
-                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-times me-1"></i>{{ get_translation('clear_search') }}
-                    </a>
-                </div>
+                <a href="{{ url_for('admin_users') }}" class="ghost-btn">
+                    <i class="fas fa-times"></i>
+                    <span>{{ get_translation('clear_search') }}</span>
+                </a>
                 {% endif %}
             </form>
         </div>
-    </div>
 
-    <!-- Users List -->
-    {% if users %}
-    <div class="row">
-        {% for user in users %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="fas fa-user me-2"></i>{{ user.username or get_translation('no_username') }}
-                        </h5>
-                        {% if user.is_admin %}
-                        <span class="badge bg-warning text-dark">
-                            <i class="fas fa-crown me-1"></i>{{ get_translation('admin') }}
-                        </span>
-                        {% endif %}
-                    </div>
+        <div class="users-summary">
+            <div class="summary-card neutral-card">
+                <div class="summary-top">
+                    <span>{{ get_translation('total_users') or get_translation('users') }}</span>
+                    <i class="fas fa-users"></i>
                 </div>
-                    <div class="card-body">
-                    <div class="mb-3">
-                        <p class="mb-2">
-                            <i class="fas fa-phone me-2 text-muted"></i>
-                            <strong>{{ get_translation('phone') }}:</strong> <span dir="ltr" style="display: inline-block; direction: ltr;">{{ user.phone_number }}</span>
+                <strong>{{ total_users }}</strong>
+                <small>{{ get_translation('active_accounts') or 'حساب فعال' }}</small>
+            </div>
+            <div class="summary-card info-card">
+                <div class="summary-top">
+                    <span>{{ get_translation('admin_users') or get_translation('admin') }}</span>
+                    <i class="fas fa-crown"></i>
+                </div>
+                <strong>{{ admin_users|length }}</strong>
+                <small>{{ get_translation('team_members_hint') or 'اعضای تیم' }}</small>
+            </div>
+            <div class="summary-card warning-card">
+                <div class="summary-top">
+                    <span>{{ get_translation('regular_users') or get_translation('users') }}</span>
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <strong>{{ regular_users|length }}</strong>
+                <small>{{ get_translation('customers_active') or 'مشتریان فعال' }}</small>
+            </div>
+        </div>
+
+        {% if users %}
+        <div class="users-grid">
+            {% for user in users %}
+            <article class="user-card glass-card">
+                <div class="user-header">
+                    <div>
+                        <p class="muted-label">{{ get_translation('customer') }}</p>
+                        <h3>{{ user.username or get_translation('no_username') }}</h3>
+                    </div>
+                    {% if user.is_admin %}
+                    <span class="status-chip status-admin">
+                        <i class="fas fa-crown"></i>
+                        {{ get_translation('admin') }}
+                    </span>
+                    {% else %}
+                    <span class="status-chip status-user">
+                        <i class="fas fa-user"></i>
+                        {{ get_translation('customer') }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="user-info">
+                    <div>
+                        <p class="muted-label">{{ get_translation('phone') }}</p>
+                        <p class="value">
+                            <i class="fas fa-phone"></i>
+                            <span dir="ltr" style="display:inline-block;direction:ltr;">{{ user.phone_number }}</span>
                         </p>
-                        <p class="mb-2">
-                            <i class="fas fa-calendar me-2 text-muted"></i>
-                            <strong>{{ get_translation('registered') }}:</strong> 
+                    </div>
+                    <div>
+                        <p class="muted-label">{{ get_translation('registered') }}</p>
+                        <p class="value">
+                            <i class="fas fa-calendar"></i>
                             {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}
                         </p>
-                        <p class="mb-2">
-                            <i class="fas fa-shopping-cart me-2 text-muted"></i>
-                            <strong>{{ get_translation('total_orders') }}:</strong> 
-                            <span class="badge bg-info">{{ user.order_count }}</span>
-                        </p>
-                        <p class="mb-0">
-                            <i class="fas fa-money-bill-wave me-2 text-muted"></i>
-                            <strong>{{ get_translation('total_spent') }}:</strong> 
-                            <span class="badge bg-success">{{ "%.0f"|format(user.total_spent) }} تومان</span>
-                        </p>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div>
+                        <p class="muted-label">{{ get_translation('total_orders') }}</p>
+                        <p class="metric">{{ user.order_count }}</p>
+                    </div>
+                    <div>
+                        <p class="muted-label">{{ get_translation('total_spent') }}</p>
+                        <p class="metric">{{ "{:,.0f}".format(user.total_spent|default(0)) }} {{ get_translation('currency_toman') or 'تومان' }}</p>
+                    </div>
+                </div>
+
+                <div class="orders-history {% if not user.orders %}empty{% endif %}">
+                    <div class="history-header">
+                        <p class="muted-label">{{ get_translation('recent_orders') or get_translation('orders') }}</p>
+                        {% if user.order_count %}
+                        <span class="history-count">{{ user.order_count }}</span>
+                        {% endif %}
                     </div>
 
-                    <!-- Orders Accordion -->
                     {% if user.orders %}
-                    <div class="accordion" id="ordersAccordion{{ user.id }}">
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="heading{{ user.id }}">
-                                <button class="accordion-button collapsed" 
-                                        type="button" 
-                                        data-bs-toggle="collapse" 
-                                        data-bs-target="#collapse{{ user.id }}" 
-                                        aria-expanded="false" 
-                                        aria-controls="collapse{{ user.id }}">
-                                    <i class="fas fa-list me-2"></i>
-                                    {{ get_translation('view_orders') }} ({{ user.order_count }})
-                                </button>
-                            </h2>
-                            <div id="collapse{{ user.id }}" 
-                                 class="accordion-collapse collapse" 
-                                 aria-labelledby="heading{{ user.id }}" 
-                                 data-bs-parent="#ordersAccordion{{ user.id }}">
-                                <div class="accordion-body">
-                                    <div class="list-group">
-                                        {% for order in user.orders|sort(attribute='created_at', reverse=true) %}
-                                        <div class="list-group-item">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-1">
-                                                        <a href="{{ url_for('admin_order_details', order_id=order.id) }}" 
-                                                           class="text-decoration-none">
-                                                            {{ get_translation('order') }} #{{ order.id }}
-                                                        </a>
-                                                    </h6>
-                                                    <p class="mb-1 text-muted small">
-                                                        <i class="fas fa-calendar me-1"></i>
-                                                        {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
-                                                    </p>
-                                                    <p class="mb-1">
-                                                        <strong>{{ get_translation('total') }}:</strong> 
-                                                        {{ "%.0f"|format(order.total_amount) }} تومان
-                                                    </p>
-                                                    <p class="mb-0">
-                                                        <strong>{{ get_translation('items') }}:</strong> 
-                                                        {{ order.items|length }}
-                                                    </p>
-                                                </div>
-                                                <div class="text-end">
-                                                    <span class="badge 
-                                                        {% if order.status == 'pending_approval' %}bg-warning
-                                                        {% elif order.status == 'preparing' %}bg-info
-                                                        {% elif order.status == 'completed' %}bg-success
-                                                        {% elif order.status == 'cancelled' %}bg-secondary
-                                                        {% else %}bg-danger{% endif %}">
-                                                        {{ get_translation(order.status) }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endfor %}
-                </div>
-            </div>
+                    <div class="orders-list">
+                        {% for order in user.orders|sort(attribute='created_at', reverse=True)[:3] %}
+                        <div class="order-row">
+                            <div>
+                                <a href="{{ url_for('admin_order_details', order_id=order.id) }}" class="order-link">
+                                    {{ get_translation('order') }} #{{ order.id }}
+                                </a>
+                                <p class="order-date">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            </div>
+                            <div class="order-meta">
+                                <span>{{ "{:,.0f}".format(order.total_amount|default(0)) }} {{ get_translation('currency_toman') or 'تومان' }}</span>
+                                <span class="mini-chip {% if order.status == 'completed' %}mini-success{% elif order.status == 'pending_approval' %}mini-warning{% elif order.status == 'preparing' %}mini-info{% else %}mini-neutral{% endif %}">
+                                    {{ get_translation(order.status) }}
+                                </span>
+                            </div>
                         </div>
-                        </div>
+                        {% endfor %}
                     </div>
                     {% else %}
-                    <div class="alert alert-info mb-0">
-                        <i class="fas fa-info-circle me-2"></i>
-                        {{ get_translation('no_orders') }}
+                    <div class="empty-state">
+                        <i class="fas fa-info-circle"></i>
+                        <p>{{ get_translation('no_orders') }}</p>
                     </div>
                     {% endif %}
                 </div>
-            </div>
-            </div>
-        {% endfor %}
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state global">
+            <i class="fas fa-users-slash"></i>
+            <h4>{{ get_translation('no_users_found') }}</h4>
+            <p>{{ get_translation('no_users_hint') or 'کاربری با مشخصات فعلی پیدا نشد.' }}</p>
+        </div>
+        {% endif %}
     </div>
-    {% else %}
-    <div class="alert alert-info text-center">
-        <i class="fas fa-info-circle fa-2x mb-3"></i>
-        <p class="mb-0">{{ get_translation('no_users_found') }}</p>
-    </div>
-    {% endif %}
-</div>
+</section>
 
 <style>
-    .card {
-        transition: transform 0.2s, box-shadow 0.2s;
+    .users-admin-page {
+        position: relative;
+        padding: 3rem 0 4rem;
+        min-height: calc(100vh - 200px);
+        overflow: hidden;
     }
-    
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+
+    .users-backdrop {
+        position: absolute;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.35), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.6;
+        pointer-events: none;
+        animation: float 12s ease-in-out infinite;
     }
-    
-    .accordion-button {
+
+    .users-backdrop:first-of-type {
+        left: -140px;
+        bottom: 8%;
+    }
+
+    .users-backdrop-2 {
+        right: -120px;
+        top: 12%;
+        background: radial-gradient(circle, rgba(16, 70, 255, 0.3), transparent 60%);
+        animation-delay: 3s;
+    }
+
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .users-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .users-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .header-text h1 {
+        margin: 0.25rem 0;
+        font-size: clamp(2rem, 4vw, 2.6rem);
+    }
+
+    .header-text p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .back-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 175, 55, 0.5);
+        color: var(--text-light);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .back-chip:hover {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        background: rgba(212, 175, 55, 0.1);
+    }
+
+    .search-card {
+        padding: 1.4rem;
+    }
+
+    .search-grid {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .form-group.full-width {
+        flex: 1;
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon i {
+        position: absolute;
+        top: 50%;
+        right: 1rem;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+    }
+
+    .input-with-icon input {
+        width: 100%;
+        padding: 0.85rem 3rem 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+    }
+
+    .users-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .summary-card {
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.75);
+        padding: 1.4rem;
+        backdrop-filter: blur(18px);
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .summary-card strong {
+        font-size: 2rem;
+    }
+
+    .summary-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         font-size: 0.9rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.8);
     }
-    
-    .list-group-item {
-        border-left: 3px solid transparent;
-        transition: all 0.2s;
+
+    .summary-card.neutral-card {
+        border-color: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
     }
-    
-    .list-group-item:hover {
-        border-left-color: var(--primary-red);
-        background-color: #f8f9fa;
+
+    .summary-card.info-card {
+        border-color: rgba(13, 110, 253, 0.35);
+        background: rgba(13, 110, 253, 0.12);
     }
-    
-    .badge {
+
+    .summary-card.warning-card {
+        border-color: rgba(255, 193, 7, 0.35);
+        background: rgba(255, 193, 7, 0.12);
+    }
+
+    .users-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .glass-card {
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(10, 14, 39, 0.78);
+        padding: 1.5rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .user-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .status-chip {
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
         font-size: 0.85rem;
-        padding: 0.4em 0.6em;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border: 1px solid transparent;
+    }
+
+    .status-chip.status-admin {
+        border-color: rgba(255, 215, 0, 0.3);
+        color: #ffe082;
+        background: rgba(255, 215, 0, 0.12);
+    }
+
+    .status-chip.status-user {
+        border-color: rgba(13, 110, 253, 0.35);
+        color: #9ec5ff;
+        background: rgba(13, 110, 253, 0.12);
+    }
+
+    .user-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .value {
+        margin: 0;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .metric {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .orders-history {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 1rem 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .orders-history.empty {
+        border-style: dashed;
+    }
+
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .history-count {
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+
+    .order-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.65rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .order-row:last-child {
+        border-bottom: none;
+    }
+
+    .order-link {
+        color: var(--text-light);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .order-link:hover {
+        color: var(--yellow);
+    }
+
+    .order-date {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .order-meta {
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-width: 150px;
+    }
+
+    .mini-chip {
+        border-radius: 999px;
+        padding: 0.25rem 0.65rem;
+        font-size: 0.75rem;
+        display: inline-flex;
+        justify-content: flex-end;
+    }
+
+    .mini-success {
+        background: rgba(40, 167, 69, 0.15);
+        color: #a6ffce;
+    }
+
+    .mini-warning {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffda6a;
+    }
+
+    .mini-info {
+        background: rgba(13, 110, 253, 0.15);
+        color: #9ec5ff;
+    }
+
+    .mini-neutral {
+        background: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.75);
+    }
+
+    .empty-state {
+        border-radius: 18px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        padding: 1.2rem;
+        text-align: center;
+    }
+
+    .empty-state.global {
+        padding: 2.5rem;
+    }
+
+    .ghost-btn,
+    .primary-btn {
+        border-radius: 16px;
+        padding: 0.7rem 1.3rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .ghost-btn {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-light);
+    }
+
+    .primary-btn {
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+    }
+
+    @media (max-width: 991.98px) {
+        .users-header {
+            grid-template-columns: 1fr;
+        }
+
+        .search-grid {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .users-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .users-admin-page {
+            padding: 2.5rem 0 3rem;
+        }
+
+        .glass-card {
+            padding: 1.4rem;
+        }
+
+        .order-meta {
+            text-align: left;
+            min-width: auto;
+        }
     }
 </style>
-{% endblock %} 
+
+{% endblock %}
+
