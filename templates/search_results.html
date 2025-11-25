@@ -278,6 +278,12 @@
         padding: 2rem 0;
     }
 
+    .search-container {
+        margin-top: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
     /* Back Button */
     .back-button-container {
         max-width: 1200px;
@@ -322,8 +328,10 @@
         background: rgba(10, 14, 39, 0.7);
         border-bottom: 1px solid rgba(212, 175, 55, 0.2);
         padding: 2rem 0;
-        margin-bottom: 2rem;
+        margin-bottom: 3.5rem;
         backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 10;
     }
 
     .search-header-content {
@@ -367,10 +375,12 @@
         margin: 0 auto;
         width: 100%;
         position: relative;
+        z-index: 100;
     }
 
     .search-form {
         position: relative;
+        z-index: 100;
     }
 
     .search-input-group {
@@ -438,12 +448,13 @@
         background: rgba(10, 14, 39, 0.95);
         border: 1px solid rgba(212, 175, 55, 0.3);
         border-radius: 15px;
-        max-height: 400px;
+        max-height: 350px;
         overflow-y: auto;
         z-index: 1000;
         display: none;
         backdrop-filter: blur(20px);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        margin-bottom: 1rem;
     }
 
     .autocomplete-item {
@@ -488,8 +499,11 @@
         border: 1px solid rgba(212, 175, 55, 0.2);
         border-radius: 20px;
         margin-bottom: 2rem;
+        margin-top: 1rem;
         overflow: hidden;
         backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 1;
     }
 
     .filters-header {

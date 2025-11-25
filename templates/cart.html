@@ -25,6 +25,22 @@
         </header>
 
         {% if cart_items %}
+        {% if cart_expires_at %}
+        <div class="cart-timer-warning glass-card" id="cart-timer">
+            <div class="timer-content">
+                <div class="timer-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="timer-text">
+                    <p class="timer-label">{{ get_translation('cart_expires_in') or 'زمان باقی‌مانده برای تکمیل سفارش' }}</p>
+                    <div class="timer-display" id="timer-display">
+                        <span class="timer-value" id="timer-value">--:--</span>
+                    </div>
+                    <p class="timer-hint">{{ get_translation('cart_expires_hint') or 'لطفاً سفارش خود را در مدت یک ساعت تکمیل کنید' }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
         <div class="cart-stats">
             <div class="stat-card neutral-card">
                 <span>{{ get_translation('items') }}</span>
@@ -41,7 +57,7 @@
                 <strong>{{ "{:,.0f}".format(delivery_fee) }}</strong>
                 <small>{{ get_translation('tooman') }}</small>
             </div>
-        </div>
+                </div>
 
         <div class="cart-layout">
             <div class="cart-items glass-card">
@@ -57,8 +73,8 @@
                                 <img src="{{ get_image_or_default(item.product.image_url) }}" alt="{{ item.product.name }}" loading="lazy">
                             </div>
                             <div class="details">
-                                <h4>{{ item.product.name }}</h4>
-                                <p>{{ item.product.category }}</p>
+                            <h4>{{ item.product.name }}</h4>
+                            <p>{{ item.product.category }}</p>
                                 {% if item.product.discount > 0 %}
                                 <div class="price-dual">
                                     <span class="old-price">{{ "%.0f"|format(item.product.price) }} {{ get_translation('tooman') }}</span>
@@ -76,33 +92,33 @@
                                 <button type="button" class="qty-btn" data-direction="decrease" data-item="{{ item.id }}">
                                     <i class="fas fa-minus"></i>
                                 </button>
-                                <input type="number" id="quantity-{{ item.id }}" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" readonly>
+                            <input type="number" id="quantity-{{ item.id }}" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" readonly>
                                 <button type="button" class="qty-btn" data-direction="increase" data-item="{{ item.id }}">
                                     <i class="fas fa-plus"></i>
                                 </button>
                                 <button type="button" class="ghost-btn mini update-btn" data-item="{{ item.id }}">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </div>
-                            <div class="item-total">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="item-total">
                                 <span>{{ get_translation('total') }}</span>
                                 <strong>
-                                    {% if item.product.discount > 0 %}
+                            {% if item.product.discount > 0 %}
                                     {{ "{:,.0f}".format(item.product.price * (1 - item.product.discount/100) * item.quantity) }}
-                                    {% else %}
+                            {% else %}
                                     {{ "{:,.0f}".format(item.product.price * item.quantity) }}
-                                    {% endif %}
+                            {% endif %}
                                     {{ get_translation('tooman') }}
                                 </strong>
-                            </div>
-                            <form action="{{ url_for('remove_from_cart', item_id=item.id) }}" method="POST" class="inline-form">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                <button type="submit" class="ghost-btn danger mini">
-                                    <i class="fas fa-trash"></i>
-                                    <span>{{ get_translation('delete') }}</span>
-                                </button>
-                            </form>
                         </div>
+                            <form action="{{ url_for('remove_from_cart', item_id=item.id) }}" method="POST" class="inline-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="ghost-btn danger mini">
+                                <i class="fas fa-trash"></i>
+                                    <span>{{ get_translation('delete') }}</span>
+                            </button>
+                        </form>
+                    </div>
                     </article>
                     {% endfor %}
                 </div>
@@ -115,73 +131,73 @@
                 </div>
 
                 <div class="summary-rows">
-                    <div class="summary-row">
-                        <span>{{ get_translation('subtotal') }}</span>
+                <div class="summary-row">
+                    <span>{{ get_translation('subtotal') }}</span>
                         <strong>{{ "{:,.0f}".format(subtotal) }} {{ get_translation('tooman') }}</strong>
-                    </div>
+                </div>
                     <div class="summary-row delivery-fee-row" style="display: none;">
-                        <span>{{ get_translation('delivery_fee') }}</span>
+                    <span>{{ get_translation('delivery_fee') }}</span>
                         <strong class="delivery-fee">{{ "{:,.0f}".format(delivery_fee) }} {{ get_translation('tooman') }}</strong>
-                    </div>
+                </div>
                     <div class="summary-divider"></div>
                     <div class="summary-row total">
-                        <span>{{ get_translation('total') }}</span>
+                    <span>{{ get_translation('total') }}</span>
                         <strong class="total-amount">{{ "{:,.0f}".format(subtotal) }} {{ get_translation('tooman') }}</strong>
                     </div>
                 </div>
 
                 <div class="delivery-card">
                     <p class="muted-label">{{ get_translation('delivery_type') }}</p>
-                    <div class="delivery-options">
+                <div class="delivery-options">
                         <label class="delivery-chip active">
                             <input type="radio" name="delivery_type" value="pickup" checked>
-                            <div>
-                                <strong>{{ get_translation('pickup_from_store') }}</strong>
+                        <div>
+                            <strong>{{ get_translation('pickup_from_store') }}</strong>
                                 <small>{{ get_translation('pickup_from_store_desc') or 'تحویل سریع از فروشگاه' }}</small>
-                            </div>
-                        </label>
+                        </div>
+                    </label>
                         <label class="delivery-chip">
                             <input type="radio" name="delivery_type" value="delivery">
-                            <div>
+                        <div>
                                 <strong>{{ get_translation('delivery_to_address').format("%.0f"|format(delivery_fee)) }}</strong>
                                 <small>{{ get_translation('delivery_to_address_desc') or 'ارسال به درب منزل' }}</small>
-                            </div>
-                        </label>
-                    </div>
+                        </div>
+                    </label>
+                </div>
 
-                    <div id="store-location" class="form-group">
-                        <label for="store_location_id">{{ get_translation('select_store_location') }}</label>
+                <div id="store-location" class="form-group">
+                    <label for="store_location_id">{{ get_translation('select_store_location') }}</label>
                         <select id="store_location_id" class="control-input">
-                            {% if default_location %}
-                                {% for location in locations %}
+                        {% if default_location %}
+                            {% for location in locations %}
                                 <option value="{{ location.id }}" {% if location.id == default_location.id %}selected{% endif %}>
                                     {{ location.name }} - {{ location.address }}
                                 </option>
-                                {% endfor %}
-                            {% else %}
-                            <option value="">{{ get_translation('choose_location') }}</option>
-                            {% for location in locations %}
-                            <option value="{{ location.id }}">{{ location.name }} - {{ location.address }}</option>
                             {% endfor %}
-                            {% endif %}
-                        </select>
-                    </div>
+                        {% else %}
+                        <option value="">{{ get_translation('choose_location') }}</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}">{{ location.name }} - {{ location.address }}</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
 
                     <div id="delivery-address" class="form-group" style="display: none;">
-                        <label for="delivery_address_id">{{ get_translation('select_delivery_address') }}</label>
-                        {% if addresses %}
+                    <label for="delivery_address_id">{{ get_translation('select_delivery_address') }}</label>
+                    {% if addresses %}
                         <select id="delivery_address_id" class="control-input">
-                            <option value="">{{ get_translation('choose_address') }}</option>
-                            {% for address in addresses %}
-                            <option value="{{ address.id }}">{{ address.street }}, {{ address.tag }}</option>
-                            {% endfor %}
-                        </select>
-                        {% else %}
+                        <option value="">{{ get_translation('choose_address') }}</option>
+                        {% for address in addresses %}
+                        <option value="{{ address.id }}">{{ address.street }}, {{ address.tag }}</option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
                         <div class="empty-hint">
                             <i class="fas fa-info-circle"></i>
                             <p>{{ get_translation('no_delivery_addresses') }}</p>
-                        </div>
-                        {% endif %}
+                    </div>
+                    {% endif %}
                     </div>
                 </div>
 
@@ -327,6 +343,112 @@
         color: var(--yellow);
         border-color: var(--yellow);
         background: rgba(212, 175, 55, 0.1);
+    }
+
+    .cart-timer-warning {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 152, 0, 0.15) 100%);
+        border: 2px solid rgba(255, 193, 7, 0.4);
+        padding: 1.5rem 2rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        animation: pulse-glow 2s ease-in-out infinite;
+        box-shadow: 0 8px 30px rgba(255, 193, 7, 0.2);
+    }
+
+    .cart-timer-warning.warning-low {
+        background: linear-gradient(135deg, rgba(255, 87, 34, 0.15) 0%, rgba(244, 67, 54, 0.15) 100%);
+        border-color: rgba(255, 87, 34, 0.5);
+        box-shadow: 0 8px 30px rgba(255, 87, 34, 0.3);
+        animation: pulse-glow-red 1s ease-in-out infinite;
+    }
+
+    .cart-timer-warning.expired {
+        background: linear-gradient(135deg, rgba(244, 67, 54, 0.2) 0%, rgba(198, 40, 40, 0.2) 100%);
+        border-color: rgba(244, 67, 54, 0.6);
+        box-shadow: 0 8px 30px rgba(244, 67, 54, 0.4);
+    }
+
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 8px 30px rgba(255, 193, 7, 0.2); }
+        50% { box-shadow: 0 8px 40px rgba(255, 193, 7, 0.4); }
+    }
+
+    @keyframes pulse-glow-red {
+        0%, 100% { box-shadow: 0 8px 30px rgba(255, 87, 34, 0.3); }
+        50% { box-shadow: 0 8px 50px rgba(255, 87, 34, 0.5); }
+    }
+
+    .timer-content {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .timer-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 152, 0, 0.2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .cart-timer-warning.warning-low .timer-icon {
+        background: linear-gradient(135deg, rgba(255, 87, 34, 0.2), rgba(244, 67, 54, 0.2));
+    }
+
+    .timer-icon i {
+        font-size: 1.75rem;
+        color: var(--yellow);
+    }
+
+    .cart-timer-warning.warning-low .timer-icon i {
+        color: #ff5722;
+    }
+
+    .timer-text {
+        flex: 1;
+    }
+
+    .timer-label {
+        font-size: 0.9rem;
+        color: var(--text-gray);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .timer-display {
+        margin: 0.5rem 0;
+    }
+
+    .timer-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--yellow);
+        font-family: 'Courier New', monospace;
+        letter-spacing: 2px;
+    }
+
+    .cart-timer-warning.warning-low .timer-value {
+        color: #ff5722;
+        animation: blink 1s ease-in-out infinite;
+    }
+
+    .cart-timer-warning.expired .timer-value {
+        color: #f44336;
+    }
+
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+
+    .timer-hint {
+        font-size: 0.85rem;
+        color: var(--text-gray);
+        margin-top: 0.5rem;
     }
 
     .cart-stats {
@@ -722,7 +844,7 @@
     select.control-input {
         border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(10, 14, 39, 0.85);
         color: var(--text-light);
         padding: 0.9rem 1.1rem;
         font-size: 0.95rem;
@@ -739,6 +861,21 @@
         background-position: left 1rem center;
         padding-left: 2.5rem;
         cursor: pointer;
+        background-color: rgba(10, 14, 39, 0.9) !important;
+        color-scheme: dark;
+    }
+
+    select.control-input option {
+        background-color: rgba(10, 14, 39, 0.95) !important;
+        color: var(--text-light) !important;
+        padding: 0.75rem 1rem;
+    }
+
+    select.control-input option:hover,
+    select.control-input option:checked,
+    select.control-input option:focus {
+        background-color: rgba(212, 175, 55, 0.2) !important;
+        color: var(--yellow) !important;
     }
 
     textarea.control-input {
@@ -753,7 +890,7 @@
         outline: none;
         border-color: var(--yellow);
         box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
-        background: rgba(255, 255, 255, 0.06);
+        background: rgba(10, 14, 39, 0.95);
     }
 
     .control-input::placeholder,
@@ -875,6 +1012,34 @@
     }
 
     @media (max-width: 767.98px) {
+        .cart-timer-warning {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .timer-content {
+            gap: 1rem;
+        }
+
+        .timer-icon {
+            width: 50px;
+            height: 50px;
+        }
+
+        .timer-icon i {
+            font-size: 1.5rem;
+        }
+
+        .timer-value {
+            font-size: 1.75rem;
+        }
+
+        .timer-label {
+            font-size: 0.85rem;
+        }
+
+        .timer-hint {
+            font-size: 0.8rem;
+        }
         .item-row {
             padding: 1rem;
         }
@@ -1114,7 +1279,7 @@
         document.querySelectorAll('.delivery-chip').forEach(chip => chip.classList.remove('active'));
         const activeChip = document.querySelector(`.delivery-chip input[value="${type}"]`)?.parentElement;
         if (activeChip) activeChip.classList.add('active');
-    }
+        }
 
     deliveryRadios.forEach(radio => {
         radio.addEventListener('change', () => updateTotals(radio.value));
@@ -1198,6 +1363,57 @@ window.submitQuantityUpdate = function(itemId) {
     document.body.appendChild(form);
     form.submit();
 };
+
+// Cart expiration timer
+{% if cart_expires_at %}
+(function() {
+    const cartTimer = document.getElementById('cart-timer');
+    const timerValue = document.getElementById('timer-value');
+    if (!cartTimer || !timerValue) return;
+
+    const expiresAt = {{ cart_expires_at }};
+    
+    function updateTimer() {
+        const now = Date.now();
+        const remaining = expiresAt - now;
+        
+        if (remaining <= 0) {
+            timerValue.textContent = '00:00';
+            cartTimer.classList.add('expired');
+            cartTimer.querySelector('.timer-label').textContent = '{{ get_translation("cart_expired") or "زمان شما به پایان رسید" }}';
+            cartTimer.querySelector('.timer-hint').textContent = '{{ get_translation("cart_expired_hint") or "سبد خرید شما منقضی شده است. لطفاً صفحه را رفرش کنید." }}';
+            
+            // Reload page after 3 seconds to clear expired cart
+            setTimeout(function() {
+                window.location.reload();
+            }, 3000);
+            return;
+        }
+        
+        // Update warning state when less than 5 minutes remain
+        if (remaining < 5 * 60 * 1000) {
+            cartTimer.classList.add('warning-low');
+        } else {
+            cartTimer.classList.remove('warning-low');
+        }
+        
+        // Calculate time components
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        
+        // Format as MM:SS
+        timerValue.textContent = 
+            String(minutes).padStart(2, '0') + ':' + 
+            String(seconds).padStart(2, '0');
+    }
+    
+    // Update immediately
+    updateTimer();
+    
+    // Update every second
+    setInterval(updateTimer, 1000);
+})();
+{% endif %}
 </script>
 {% endblock %}
 {% endblock %}

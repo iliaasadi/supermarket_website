@@ -55,9 +55,16 @@ def get_translation(key):
     # Always use Farsi translations
     return translations['fa'].get(key, key)
 
-def flash_translated(message_key, category='message'):
-    """Flash a translated message"""
+def flash_translated(message_key, category='message', **kwargs):
+    """Flash a translated message with optional parameter substitution"""
     message = get_translation(message_key)
+    if kwargs:
+        # Support parameter substitution using .format()
+        try:
+            message = message.format(**kwargs)
+        except (KeyError, ValueError):
+            # If formatting fails, use the message as-is
+            pass
     flash(message, category)
 
 login_manager.login_message = 'login_required_message'
@@ -107,19 +114,36 @@ def inject_timestamp():
     return dict(timestamp=logo_mtime)
 
 def cleanup_old_cart_items():
-    """Remove cart items older than 3 days for all users"""
-    from datetime import timedelta, timezone
+    """Remove cart items older than 1 hour for all users"""
     try:
-        # Check if created_at column exists and has data
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=3)
-        # Filter out NULL values and items older than 3 days
+        # Get current time in UTC (timezone-aware)
+        now = datetime.now(timezone.utc)
+        cutoff_date = now - timedelta(hours=1)
+        
+        # Filter out NULL values and items older than 1 hour
+        # Handle both timezone-aware and timezone-naive datetimes
         old_items = CartItem.query.filter(
-            CartItem.created_at.isnot(None),
-            CartItem.created_at < cutoff_date
+            CartItem.created_at.isnot(None)
         ).all()
-        count = len(old_items)
-        if old_items:
-            for item in old_items:
+        
+        # Filter items that are older than 1 hour
+        expired_items = []
+        for item in old_items:
+            if item.created_at:
+                # Convert timezone-naive to timezone-aware if needed
+                item_time = item.created_at
+                if item_time.tzinfo is None:
+                    # Assume UTC if timezone-naive
+                    from datetime import timezone as tz
+                    item_time = item_time.replace(tzinfo=tz.utc)
+                
+                # Compare with cutoff date
+                if item_time < cutoff_date:
+                    expired_items.append(item)
+        
+        count = len(expired_items)
+        if expired_items:
+            for item in expired_items:
                 db.session.delete(item)
             db.session.commit()
         return count
@@ -901,10 +925,52 @@ def logout():
 @app.route('/cart')
 @login_required
 def cart():
-    # Clean up old cart items (older than 3 days) for all users
+    # Clean up old cart items (older than 1 hour) for all users
     cleanup_old_cart_items()
     
+    # Get cart items after cleanup (only non-expired items)
     cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    
+    # Filter out any items that might have expired (safety check)
+    valid_cart_items = []
+    now = datetime.now(timezone.utc)
+    cutoff_date = now - timedelta(hours=1)
+    
+    for item in cart_items:
+        if item.created_at:
+            # Ensure timezone-aware datetime
+            item_time = item.created_at
+            if item_time.tzinfo is None:
+                item_time = item_time.replace(tzinfo=timezone.utc)
+            
+            # Only include items that haven't expired
+            if item_time >= cutoff_date:
+                valid_cart_items.append(item)
+            else:
+                # Item expired, delete it
+                db.session.delete(item)
+    
+    # Commit any deletions
+    if len(valid_cart_items) < len(cart_items):
+        db.session.commit()
+        cart_items = valid_cart_items
+    
+    # Calculate cart expiration time (1 hour from oldest item)
+    cart_expires_at = None
+    if cart_items:
+        # Find the oldest cart item
+        oldest_item = min(cart_items, key=lambda x: x.created_at if x.created_at else datetime.now(timezone.utc))
+        if oldest_item.created_at:
+            # Ensure timezone-aware datetime
+            oldest_time = oldest_item.created_at
+            if oldest_time.tzinfo is None:
+                # Convert timezone-naive to timezone-aware (assume UTC)
+                oldest_time = oldest_time.replace(tzinfo=timezone.utc)
+            
+            # Calculate expiration: 1 hour from when the oldest item was created
+            expiration_time = oldest_time + timedelta(hours=1)
+            # Convert to UTC timestamp for JavaScript (milliseconds)
+            cart_expires_at = int(expiration_time.timestamp() * 1000)
     
     # Calculate subtotal without discounts
     subtotal = sum(
@@ -934,7 +1000,8 @@ def cart():
                          total=total,
                          addresses=addresses,
                          locations=locations,
-                         default_location=default_location)
+                         default_location=default_location,
+                         cart_expires_at=cart_expires_at)
 
 @app.route('/cart/update/<int:item_id>', methods=['POST'])
 @login_required
@@ -954,10 +1021,12 @@ def update_cart(item_id):
         return redirect(url_for('cart'))
     
     if quantity > cart_item.product.stock:
-        flash_translated('only_x_items_available_in_stock', {'x': cart_item.product.stock}, 'danger')
+        flash_translated('only_x_items_available_in_stock', 'danger', x=cart_item.product.stock)
         return redirect(url_for('cart'))
     
     cart_item.quantity = quantity
+    # Update the updated_at timestamp (but keep created_at unchanged)
+    cart_item.updated_at = datetime.now(timezone.utc)
     db.session.commit()
     
     flash_translated('cart_updated')
@@ -977,33 +1046,41 @@ def add_to_cart(product_id):
         flash_translated('quantity_must_be_at_least_1', 'danger')
         return redirect(request.referrer or url_for('index'))
     
-    # Check if user has already ordered all available stock
-    existing_cart_item = CartItem.query.filter_by(
-        user_id=current_user.id,
-        product_id=product_id
-    ).first()
-    
-    if existing_cart_item and existing_cart_item.quantity >= product.stock:
-        flash_translated('all_stock_ordered', 'danger')
-        return redirect(request.referrer or url_for('index'))
-    
-    if quantity > product.stock:
-        flash_translated('only_x_items_available_in_stock', {'x': product.stock}, 'danger')
-        return redirect(request.referrer or url_for('index'))
-    
+    # Get existing cart item if any
     cart_item = CartItem.query.filter_by(
         user_id=current_user.id,
         product_id=product_id
     ).first()
     
+    # Calculate available stock (total stock minus what's already in cart)
+    current_cart_quantity = cart_item.quantity if cart_item else 0
+    available_stock = product.stock - current_cart_quantity
+    
+    # Check if user has already ordered all available stock
+    if current_cart_quantity >= product.stock:
+        flash_translated('all_stock_ordered', 'danger')
+        return redirect(request.referrer or url_for('index'))
+    
+    # Check if requested quantity exceeds available stock
+    if quantity > available_stock:
+        flash_translated('only_x_items_available_in_stock', 'danger', x=available_stock)
+        return redirect(request.referrer or url_for('index'))
+    
+    # Add or update cart item
     if cart_item:
-        # Check if adding the new quantity would exceed stock
-        if cart_item.quantity + quantity > product.stock:
-            flash_translated('only_x_items_available_in_stock', {'x': product.stock}, 'danger')
-            return redirect(request.referrer or url_for('index'))
+        # Update existing item - keep original created_at timestamp
         cart_item.quantity += quantity
+        # Update the updated_at timestamp
+        cart_item.updated_at = datetime.now(timezone.utc)
     else:
-        cart_item = CartItem(user_id=current_user.id, product_id=product_id, quantity=quantity)
+        # Create new item with explicit timestamp
+        cart_item = CartItem(
+            user_id=current_user.id, 
+            product_id=product_id, 
+            quantity=quantity,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
         db.session.add(cart_item)
     
     db.session.commit()
@@ -1150,8 +1227,10 @@ def delete_address(address_id):
 @app.route('/admin/users')
 @admin_required
 def admin_users():
-    # Get search query
+    # Get search query and page number
     search_query = request.args.get('search', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
     
     # Base query with orders loaded
     query = User.query.options(joinedload(User.orders))
@@ -1166,15 +1245,24 @@ def admin_users():
             )
         )
     
-    # Order by creation date (newest first)
-    users = query.order_by(User.created_at.desc()).all()
+    # Order by creation date (newest first) and paginate
+    pagination = query.order_by(User.created_at.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    
+    users = pagination.items
     
     # Get order counts for each user
     for user in users:
         user.order_count = len(user.orders)
         user.total_spent = sum(order.total_amount for order in user.orders)
     
-    return render_template('admin/users.html', users=users, search_query=search_query)
+    return render_template('admin/users.html', 
+                         users=users, 
+                         search_query=search_query,
+                         pagination=pagination)
 
 @app.route('/api/search/autocomplete')
 def search_autocomplete():
@@ -1404,6 +1492,66 @@ def checkout():
         # Payment method is always online
         payment_method = 'online'
         
+        # Check if user has special phone number to skip payment
+        special_phone = '+989131111111'
+        skip_payment = current_user.phone_number == special_phone
+        
+        if skip_payment:
+            # Skip payment and create order directly
+            try:
+                # Create order directly
+                order = Order(
+                    user_id=current_user.id,
+                    total_amount=total,
+                    delivery_fee=delivery_fee,
+                    status='pending_approval',
+                    payment_method='online',
+                    delivery_type=delivery_type,
+                    store_location_id=store_location_id if delivery_type == 'pickup' else None,
+                    address_id=address_id if delivery_type == 'delivery' else None,
+                    description=request.form.get('order_description', '').strip()
+                )
+                db.session.add(order)
+                db.session.flush()  # Get order ID
+                
+                # Get cart items
+                cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+                
+                if not cart_items:
+                    db.session.rollback()
+                    flash_translated('cart_empty', 'error')
+                    return redirect(url_for('cart'))
+                
+                # Add order items from cart
+                for item in cart_items:
+                    order_item = OrderItem(
+                        order_id=order.id,
+                        product_id=item.product_id,
+                        quantity=item.quantity,
+                        price=item.product.price
+                    )
+                    db.session.add(order_item)
+                    
+                    # Update product stock
+                    item.product.stock -= item.quantity
+                
+                # Commit order and order items
+                db.session.commit()
+                
+                # Clear cart after successful commit
+                for item in cart_items:
+                    db.session.delete(item)
+                db.session.commit()
+                
+                flash_translated('order_placed_successfully', 'success')
+                return redirect(url_for('order_status', order_id=order.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error creating order: {str(e)}")
+                flash_translated('error_creating_order', 'error')
+                return redirect(url_for('cart'))
+        
         if payment_method == 'online':
             # Store order details in session for payment success
             session['order_total'] = total
@@ -1631,7 +1779,9 @@ def admin_update_category_icon(category):
 @admin_required
 def admin_order_details(order_id):
     order = Order.query.get_or_404(order_id)
-    return render_template('admin/order_details.html', order=order)
+    # Get order comment if it exists
+    order_comment = OrderComment.query.filter_by(order_id=order_id).first()
+    return render_template('admin/order_details.html', order=order, order_comment=order_comment)
 
 @app.cli.command("create-admin")
 def create_admin():
@@ -1984,52 +2134,45 @@ def order_comment(order_id):
 @app.route('/admin/order-comments')
 @admin_required
 def admin_order_comments():
-    # Get date filter from query parameters
-    selected_date = request.args.get('date')
+    # Get page numbers for both sections
+    waiting_page = request.args.get('waiting_page', 1, type=int)
+    completed_page = request.args.get('completed_page', 1, type=int)
+    per_page = 10
     
-    if selected_date:
-        # Convert Shamsi date to Gregorian
-        try:
-            year, month, day = map(int, selected_date.split('-'))
-            shamsi_date = jdatetime.date(year, month, day)
-            filter_date = shamsi_date.togregorian()
-        except ValueError:
-            # If date is invalid, use today's date
-            filter_date = datetime.now().date()
-    else:
-        # If no date provided, use today's date
-        filter_date = datetime.now().date()
+    # Get all completed and rejected orders
+    completed_orders_query = Order.query.filter(
+        Order.status.in_(['completed', 'rejected'])
+    ).order_by(Order.completed_at.desc())
     
-    # Get completed and rejected orders for the selected date
-    completed_orders = Order.query.filter(
-        Order.status.in_(['completed', 'rejected']),
-        func.date(Order.completed_at) == filter_date
-    ).order_by(Order.completed_at.desc()).all()
+    # Get all comments
+    comments_query = OrderComment.query.join(Order).filter(
+        Order.status.in_(['completed', 'rejected'])
+    ).order_by(OrderComment.created_at.desc())
     
-    # Get comments for the selected date
-    comments = OrderComment.query.join(Order).filter(
-        Order.status.in_(['completed', 'rejected']),
-        func.date(OrderComment.created_at) == filter_date
-    ).order_by(OrderComment.created_at.desc()).all()
+    # Get all comments to find which orders have comments
+    all_comments = comments_query.all()
+    commented_order_ids = {comment.order_id for comment in all_comments}
     
-    # Create a set of order IDs that have comments
-    commented_order_ids = {comment.order_id for comment in comments}
+    # Get all completed orders
+    all_completed_orders = completed_orders_query.all()
     
-    # Create entries list with both comments and waiting entries
-    entries = []
+    # Separate waiting and completed entries
+    waiting_entries_list = []
+    completed_entries_list = []
     
-    # Add actual comments first
-    for comment in comments:
-        comment.is_waiting = False  # Explicitly set is_waiting to False for actual comments
-        entries.append(comment)
+    # Add actual comments
+    for comment in all_comments:
+        comment.is_waiting = False
+        completed_entries_list.append(comment)
     
-    # Add "Waiting For User Comment" entries for completed/rejected orders without comments
-    for order in completed_orders:
-        if order.id not in commented_order_ids:
-            # Create a custom object for waiting comments
+    # Add waiting entries for orders without comments (only completed orders, not rejected)
+    for order in all_completed_orders:
+        if order.id not in commented_order_ids and order.status == 'completed':
+            # Use completed_at or created_at as fallback
+            order_date = order.completed_at or order.created_at
             waiting_comment = type('WaitingComment', (), {
                 'order': order,
-                'created_at': order.completed_at or order.rejected_at,  # Use completed_at or rejected_at
+                'created_at': order_date,
                 'is_waiting': True,
                 'food_quality': '-',
                 'delivery_service': '-',
@@ -2038,16 +2181,55 @@ def admin_order_comments():
                 'overall_experience': '-',
                 'comment': None
             })
-            entries.append(waiting_comment)
+            waiting_entries_list.append(waiting_comment)
     
-    # Sort entries by created_at in descending order
-    entries.sort(key=lambda x: x.created_at, reverse=True)
+    # Sort both lists
+    waiting_entries_list.sort(key=lambda x: x.created_at, reverse=True)
+    completed_entries_list.sort(key=lambda x: x.created_at, reverse=True)
     
-    # Convert filter_date back to Shamsi for display
-    shamsi_display_date = jdatetime.date.fromgregorian(date=filter_date)
-    selected_date = shamsi_display_date.strftime('%Y-%m-%d')
+    # Paginate waiting entries
+    waiting_total = len(waiting_entries_list)
+    waiting_start = (waiting_page - 1) * per_page
+    waiting_end = waiting_start + per_page
+    waiting_entries = waiting_entries_list[waiting_start:waiting_end]
     
-    return render_template('admin/order_comments.html', entries=entries, selected_date=selected_date)
+    # Create pagination object for waiting
+    waiting_pages = (waiting_total + per_page - 1) // per_page if waiting_total > 0 else 1
+    waiting_pagination = type('Pagination', (), {
+        'page': waiting_page,
+        'per_page': per_page,
+        'total': waiting_total,
+        'pages': waiting_pages,
+        'has_prev': waiting_page > 1,
+        'has_next': waiting_end < waiting_total,
+        'prev_num': waiting_page - 1 if waiting_page > 1 else None,
+        'next_num': waiting_page + 1 if waiting_end < waiting_total else None
+    })()
+    
+    # Paginate completed entries
+    completed_total = len(completed_entries_list)
+    completed_start = (completed_page - 1) * per_page
+    completed_end = completed_start + per_page
+    completed_entries = completed_entries_list[completed_start:completed_end]
+    
+    # Create pagination object for completed
+    completed_pages = (completed_total + per_page - 1) // per_page if completed_total > 0 else 1
+    completed_pagination = type('Pagination', (), {
+        'page': completed_page,
+        'per_page': per_page,
+        'total': completed_total,
+        'pages': completed_pages,
+        'has_prev': completed_page > 1,
+        'has_next': completed_end < completed_total,
+        'prev_num': completed_page - 1 if completed_page > 1 else None,
+        'next_num': completed_page + 1 if completed_end < completed_total else None
+    })()
+    
+    return render_template('admin/order_comments.html', 
+                         waiting_entries=waiting_entries,
+                         completed_entries=completed_entries,
+                         waiting_pagination=waiting_pagination,
+                         completed_pagination=completed_pagination)
 
 @app.route('/api/order/<int:order_id>/status')
 @login_required

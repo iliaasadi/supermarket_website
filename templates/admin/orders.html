@@ -626,6 +626,28 @@
         color: #ff9f9f;
     }
 
+    .primary-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 16px;
+        padding: 0.7rem 1.3rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        background: linear-gradient(120deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+        color: var(--dark-blue-night);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+        justify-content: center;
+    }
+
+    .primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(212, 175, 55, 0.4);
+    }
+
     .primary-btn.small {
         padding: 0.65rem 1.25rem;
         font-size: 0.9rem;

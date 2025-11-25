@@ -3,7 +3,7 @@
 {% block admin_title %}{{ get_translation('users') }}{% endblock %}
 
 {% block admin_content %}
-{% set total_users = users|length %}
+{% set total_users = pagination.total if pagination else users|length %}
 {% set admin_users = users|selectattr('is_admin', 'equalto', True)|list %}
 {% set regular_users = users|selectattr('is_admin', 'equalto', False)|list %}
 
@@ -59,32 +59,36 @@
                 <strong>{{ total_users }}</strong>
                 <small>{{ get_translation('active_accounts') or 'حساب فعال' }}</small>
             </div>
-            <div class="summary-card info-card">
-                <div class="summary-top">
-                    <span>{{ get_translation('admin_users') or get_translation('admin') }}</span>
-                    <i class="fas fa-crown"></i>
-                </div>
-                <strong>{{ admin_users|length }}</strong>
-                <small>{{ get_translation('team_members_hint') or 'اعضای تیم' }}</small>
-            </div>
-            <div class="summary-card warning-card">
-                <div class="summary-top">
-                    <span>{{ get_translation('regular_users') or get_translation('users') }}</span>
-                    <i class="fas fa-user-check"></i>
-                </div>
-                <strong>{{ regular_users|length }}</strong>
-                <small>{{ get_translation('customers_active') or 'مشتریان فعال' }}</small>
-            </div>
+            
         </div>
 
         {% if users %}
         <div class="users-grid">
             {% for user in users %}
-            <article class="user-card glass-card">
-                <div class="user-header">
-                    <div>
-                        <p class="muted-label">{{ get_translation('customer') }}</p>
-                        <h3>{{ user.username or get_translation('no_username') }}</h3>
+            <article class="user-card glass-card compact">
+                <div class="user-header-compact">
+                    <div class="user-main-info">
+                        <h3 class="user-name">{{ user.username or get_translation('no_username') }}</h3>
+                        <div class="user-meta-compact">
+                            <span class="user-phone">
+                                <i class="fas fa-phone"></i>
+                                <span dir="ltr" style="display:inline-block;direction:ltr;">{{ user.phone_number }}</span>
+                            </span>
+                            <span class="user-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ user.created_at.strftime('%Y-%m-%d') }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="user-stats-compact">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ user.order_count }}</span>
+                            <span class="stat-label">{{ get_translation('orders') }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ "{:,.0f}".format(user.total_spent|default(0)) }}</span>
+                            <span class="stat-label">{{ get_translation('currency_toman') or 'تومان' }}</span>
+                        </div>
                     </div>
                     {% if user.is_admin %}
                     <span class="status-chip status-admin">
@@ -94,59 +98,29 @@
                     {% else %}
                     <span class="status-chip status-user">
                         <i class="fas fa-user"></i>
-                        {{ get_translation('customer') }}
                     </span>
                     {% endif %}
                 </div>
 
-                <div class="user-info">
-                    <div>
-                        <p class="muted-label">{{ get_translation('phone') }}</p>
-                        <p class="value">
-                            <i class="fas fa-phone"></i>
-                            <span dir="ltr" style="display:inline-block;direction:ltr;">{{ user.phone_number }}</span>
-                        </p>
-                    </div>
-                    <div>
-                        <p class="muted-label">{{ get_translation('registered') }}</p>
-                        <p class="value">
-                            <i class="fas fa-calendar"></i>
-                            {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="metrics-grid">
-                    <div>
-                        <p class="muted-label">{{ get_translation('total_orders') }}</p>
-                        <p class="metric">{{ user.order_count }}</p>
-                    </div>
-                    <div>
-                        <p class="muted-label">{{ get_translation('total_spent') }}</p>
-                        <p class="metric">{{ "{:,.0f}".format(user.total_spent|default(0)) }} {{ get_translation('currency_toman') or 'تومان' }}</p>
-                    </div>
-                </div>
-
-                <div class="orders-history {% if not user.orders %}empty{% endif %}">
-                    <div class="history-header">
-                        <p class="muted-label">{{ get_translation('recent_orders') or get_translation('orders') }}</p>
+                <div class="orders-history-compact {% if not user.orders %}empty{% endif %}">
+                    <div class="history-header-compact">
+                        <span class="history-title">{{ get_translation('order_history') or get_translation('orders') }}</span>
                         {% if user.order_count %}
                         <span class="history-count">{{ user.order_count }}</span>
                         {% endif %}
                     </div>
 
                     {% if user.orders %}
-                    <div class="orders-list">
-                        {% for order in user.orders|sort(attribute='created_at', reverse=True)[:3] %}
-                        <div class="order-row">
-                            <div>
-                                <a href="{{ url_for('admin_order_details', order_id=order.id) }}" class="order-link">
-                                    {{ get_translation('order') }} #{{ order.id }}
-                                </a>
-                                <p class="order-date">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-                            </div>
-                            <div class="order-meta">
-                                <span>{{ "{:,.0f}".format(order.total_amount|default(0)) }} {{ get_translation('currency_toman') or 'تومان' }}</span>
+                    <div class="orders-list-compact">
+                        {% set sorted_orders = user.orders|sort(attribute='created_at', reverse=True) %}
+                        {% for order in sorted_orders %}
+                        <div class="order-row-compact">
+                            <a href="{{ url_for('admin_order_details', order_id=order.id) }}" class="order-link-compact">
+                                <span class="order-id">#{{ order.id }}</span>
+                                <span class="order-date-compact">{{ order.created_at.strftime('%Y-%m-%d') }}</span>
+                            </a>
+                            <div class="order-info-compact">
+                                <span class="order-amount-compact">{{ "{:,.0f}".format(order.total_amount|default(0)) }}</span>
                                 <span class="mini-chip {% if order.status == 'completed' %}mini-success{% elif order.status == 'pending_approval' %}mini-warning{% elif order.status == 'preparing' %}mini-info{% else %}mini-neutral{% endif %}">
                                     {{ get_translation(order.status) }}
                                 </span>
@@ -155,15 +129,56 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="empty-state">
+                    <div class="empty-state-compact">
                         <i class="fas fa-info-circle"></i>
-                        <p>{{ get_translation('no_orders') }}</p>
+                        <span>{{ get_translation('no_orders') }}</span>
                     </div>
                     {% endif %}
                 </div>
             </article>
             {% endfor %}
         </div>
+
+        {% if pagination %}
+        <div class="pagination-container glass-card">
+            <div class="pagination-info">
+                <span>{{ get_translation('showing') or 'نمایش' }} {{ pagination.per_page * (pagination.page - 1) + 1 }} - {{ pagination.per_page * pagination.page if pagination.per_page * pagination.page < pagination.total else pagination.total }} {{ get_translation('of') or 'از' }} {{ pagination.total }} {{ get_translation('users') }}</span>
+            </div>
+            <div class="pagination-controls">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('admin_users', page=pagination.prev_num, search=search_query) }}" class="pagination-btn">
+                    <i class="fas fa-chevron-right"></i>
+                    <span>{{ get_translation('previous') or 'قبلی' }}</span>
+                </a>
+                {% else %}
+                <span class="pagination-btn disabled">
+                    <i class="fas fa-chevron-right"></i>
+                    <span>{{ get_translation('previous') or 'قبلی' }}</span>
+                </span>
+                {% endif %}
+                
+                <form method="GET" action="{{ url_for('admin_users') }}" class="page-input-form">
+                    {% if search_query %}
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                    {% endif %}
+                    <label for="page-input">{{ get_translation('page') or 'صفحه' }}:</label>
+                    <input type="number" id="page-input" name="page" value="{{ pagination.page }}" min="1" max="{{ pagination.pages }}" class="page-input">
+                </form>
+
+                {% if pagination.has_next %}
+                <a href="{{ url_for('admin_users', page=pagination.next_num, search=search_query) }}" class="pagination-btn">
+                    <span>{{ get_translation('next') or 'بعدی' }}</span>
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                {% else %}
+                <span class="pagination-btn disabled">
+                    <span>{{ get_translation('next') or 'بعدی' }}</span>
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
         {% else %}
         <div class="empty-state global">
             <i class="fas fa-users-slash"></i>
@@ -294,8 +309,20 @@
         padding: 0.85rem 3rem 0.85rem 1rem;
         border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(10, 14, 39, 0.85);
         color: var(--text-light);
+        transition: all 0.3s ease;
+    }
+
+    .input-with-icon input:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+        background: rgba(10, 14, 39, 0.95);
+    }
+
+    .input-with-icon input::placeholder {
+        color: rgba(255, 255, 255, 0.4);
     }
 
     .users-summary {
@@ -346,12 +373,12 @@
 
     .users-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.25rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
     }
 
     .glass-card {
-        border-radius: 28px;
+        border-radius: 20px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(10, 14, 39, 0.78);
         padding: 1.5rem;
@@ -359,21 +386,89 @@
         backdrop-filter: blur(18px);
     }
 
-    .user-header {
+    .glass-card.compact {
+        padding: 1rem;
+    }
+
+    .user-header-compact {
         display: flex;
         justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .user-main-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        margin: 0 0 0.4rem 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-light);
+    }
+
+    .user-meta-compact {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .user-phone,
+    .user-date {
+        display: flex;
         align-items: center;
-        margin-bottom: 1rem;
+        gap: 0.35rem;
+    }
+
+    .user-phone i,
+    .user-date i {
+        font-size: 0.75rem;
+        color: var(--text-gray);
+    }
+
+    .user-stats-compact {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        text-align: center;
+        min-width: 80px;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .stat-value {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-light);
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .status-chip {
         border-radius: 999px;
-        padding: 0.35rem 0.75rem;
-        font-size: 0.85rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
+        gap: 0.25rem;
         border: 1px solid transparent;
+        flex-shrink: 0;
     }
 
     .status-chip.status-admin {
@@ -388,99 +483,119 @@
         background: rgba(13, 110, 253, 0.12);
     }
 
-    .user-info {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .value {
-        margin: 0;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-    }
-
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-    }
-
-    .metric {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    .orders-history {
-        border-radius: 18px;
+    .orders-history-compact {
+        border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(255, 255, 255, 0.02);
-        padding: 1rem 1.25rem;
+        padding: 0.75rem;
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.5rem;
+        max-height: 400px;
+        overflow-y: auto;
     }
 
-    .orders-history.empty {
+    .orders-history-compact.empty {
         border-style: dashed;
+        max-height: none;
     }
 
-    .history-header {
+    .history-header-compact {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-bottom: 0.25rem;
+    }
+
+    .history-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-gray);
+        font-weight: 600;
     }
 
     .history-count {
         border-radius: 999px;
-        padding: 0.3rem 0.7rem;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
         border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
     }
 
-    .orders-list {
+    .orders-list-compact {
         display: flex;
         flex-direction: column;
-        gap: 0.65rem;
+        gap: 0.4rem;
     }
 
-    .order-row {
+    .order-row-compact {
         display: flex;
         justify-content: space-between;
-        gap: 1rem;
-        padding: 0.65rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.6rem;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.2s ease;
     }
 
-    .order-row:last-child {
-        border-bottom: none;
+    .order-row-compact:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
     }
 
-    .order-link {
+    .order-link-compact {
         color: var(--text-light);
         text-decoration: none;
-        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        min-width: 0;
     }
 
-    .order-link:hover {
+    .order-link-compact:hover {
         color: var(--yellow);
     }
 
-    .order-date {
-        margin: 0;
+    .order-id {
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .order-date-compact {
+        font-size: 0.75rem;
         color: rgba(255, 255, 255, 0.6);
     }
 
-    .order-meta {
-        text-align: right;
+    .order-info-compact {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        min-width: 150px;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .order-amount-compact {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-light);
+    }
+
+    .empty-state-compact {
+        text-align: center;
+        padding: 1rem;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .empty-state-compact i {
+        font-size: 1rem;
     }
 
     .mini-chip {
@@ -547,6 +662,106 @@
         box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
     }
 
+    /* Pagination Styles */
+    .pagination-container {
+        padding: 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .pagination-info {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .pagination-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.6rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-light);
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+
+    .pagination-btn:hover:not(.disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--yellow);
+        color: var(--yellow);
+    }
+
+    .pagination-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-input-form {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .page-input-form label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.85rem;
+    }
+
+    .page-input {
+        width: 60px;
+        padding: 0.5rem 0.6rem;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(10, 14, 39, 0.85);
+        color: var(--text-light);
+        text-align: center;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+
+    .page-input:focus {
+        outline: none;
+        border-color: var(--yellow);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+        background: rgba(10, 14, 39, 0.95);
+    }
+
+    .page-total {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.85rem;
+    }
+
+    .page-go-btn {
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-light);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .page-go-btn:hover {
+        background: rgba(212, 175, 55, 0.15);
+        border-color: var(--yellow);
+        color: var(--yellow);
+    }
+
     @media (max-width: 991.98px) {
         .users-header {
             grid-template-columns: 1fr;
@@ -574,6 +789,25 @@
         .order-meta {
             text-align: left;
             min-width: auto;
+        }
+
+        .pagination-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .pagination-controls {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .user-header-compact {
+            flex-wrap: wrap;
+        }
+
+        .user-stats-compact {
+            flex-direction: row;
+            gap: 1rem;
         }
     }
 </style>

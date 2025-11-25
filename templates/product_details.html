@@ -13,13 +13,6 @@
                 <i class="fas fa-arrow-right"></i>
                 <span>{{ get_translation('back') }}</span>
             </a>
-            <div class="crumbs" aria-label="breadcrumb">
-                <a href="{{ url_for('index') }}">{{ get_translation('home') }}</a>
-                <span>/</span>
-                <a href="{{ url_for('category', category=product.category) }}">{{ product.category }}</a>
-                <span>/</span>
-                <span>{{ product.name }}</span>
-            </div>
         </div>
 
         <div class="product-hero-card">
