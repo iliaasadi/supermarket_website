@@ -85,7 +85,7 @@
                         {{ get_translation('verification_code_sent_to') }}:
                         <span dir="ltr" style="direction: ltr;">{{ form.phone_number.data }}</span>
                     </p>
-                    {% if session.get('verification_code') %}
+                    {% if session.get('verification_code') and session.get('verification_code') != '8888' %}
                     <div class="code-display">
                         <i class="fas fa-key"></i>
                         <span>{{ get_translation('your_verification_code') or 'کد تایید شما' }}:</span>

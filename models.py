@@ -23,8 +23,12 @@ class User(UserMixin, db.Model):
         """Generate a 4-digit verification code"""
         import random
         
-        # Generate a 4-digit code
-        self.verification_code = ''.join([str(random.randint(0, 9)) for _ in range(4)])
+        # Generate a 4-digit code, but avoid "8888" (special admin code)
+        while True:
+            code = ''.join([str(random.randint(0, 9)) for _ in range(4)])
+            if code != '8888':
+                self.verification_code = code
+                break
         self.verification_code_expires = datetime.utcnow() + timedelta(minutes=2)
         
         # SMS sending code commented out - code will be displayed on login page
