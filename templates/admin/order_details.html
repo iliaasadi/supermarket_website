@@ -67,7 +67,7 @@
                     </div>
                     {% endfor %}
                     <div class="items-footer">
-                        <span>{{ get_translation('total') }}</span>
+                        <span>{{ get_translation('total') }} {{ get_translation('all_with_discount') or ' نهایی با تخفیف' }}</span>
                         <span>{{ "{:,.0f}".format(order.total_amount|default(0)) }} {{ get_translation('currency_toman') or 'تومان' }}</span>
                     </div>
                 </div>

@@ -42,7 +42,8 @@
                         <h3>{{ get_translation('items_summary') or 'جزئیات آیتم‌ها' }}</h3>
                     </div>
                     <div class="items-list">
-                        {% for item in order.items %}
+                        {% for discount_info in item_discounts %}
+                        {% set item = discount_info.item %}
                         <div class="item-row">
                             <img src="{{ get_image_or_default(item.product.image_url) }}" alt="{{ item.product.name }}" loading="lazy">
                             <div class="item-info">
@@ -51,27 +52,43 @@
                                     <span>x{{ item.quantity }}</span>
                                 </div>
                                 <p>{{ item.product.category }}</p>
+                                {% if discount_info.discount and discount_info.discount > 0 %}
+                                <div class="item-discount-info">
+                                    <span class="original-price-line">{{ "{:,.0f}".format(discount_info.original_price|default(0)) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</span>
+                                    <span class="discount-badge">-{{ "{:,.0f}".format(discount_info.discount|default(0)) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</span>
+                                </div>
+                                {% endif %}
                             </div>
                             <div class="item-price">
-                                {{ "{:,.0f}".format(item.price * item.quantity) }} {{ get_translation('currency_toman') or get_translation('tooman') }}
+                                {{ "{:,.0f}".format(discount_info.discounted_price|default(0)) }} {{ get_translation('currency_toman') or get_translation('tooman') }}
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                     <div class="totals">
+                        {% if total_discount and total_discount > 0 %}
+                        <div>
+                            <span>{{ get_translation('original_total') or 'جمع کل (قبل از تخفیف)' }}</span>
+                            <strong style="text-decoration: line-through; color: var(--text-gray);">{{ "{:,.0f}".format(original_total|default(0)) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                        </div>
+                        <div class="discount-row">
+                            <span>{{ get_translation('total_discount') or 'تخفیف کل' }}</span>
+                            <strong style="color: #2ed573;">-{{ "{:,.0f}".format(total_discount|default(0)) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                        </div>
+                        {% endif %}
                         <div>
                             <span>{{ get_translation('subtotal') }}</span>
-                            <strong>{{ "{:,.0f}".format(order.total_amount - order.delivery_fee) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                            <strong>{{ "{:,.0f}".format(discounted_total|default(0)) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
                         </div>
-                        {% if order.delivery_type == 'delivery' and order.delivery_fee > 0 %}
+                        {% if order.delivery_type == 'delivery' and order.delivery_fee and order.delivery_fee > 0 %}
                         <div>
                             <span>{{ get_translation('delivery_fee') }}</span>
-                            <strong>{{ "{:,.0f}".format(order.delivery_fee) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                            <strong>{{ "{:,.0f}".format(order.delivery_fee|default(0)) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
                         </div>
                         {% endif %}
                         <div>
                             <span>{{ get_translation('total') }}</span>
-                            <strong>{{ "{:,.0f}".format(order.total_amount) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
+                            <strong>{{ "{:,.0f}".format(order.total_amount|default(0)) }} {{ get_translation('currency_toman') or get_translation('tooman') }}</strong>
                         </div>
                     </div>
                 </article>
@@ -465,6 +482,34 @@
 
     .item-price {
         font-weight: 600;
+    }
+
+    .item-discount-info {
+        margin-top: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .original-price-line {
+        text-decoration: line-through;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.85rem;
+    }
+
+    .discount-badge {
+        background: rgba(46, 213, 115, 0.15);
+        border: 1px solid rgba(46, 213, 115, 0.3);
+        color: #2ed573;
+        padding: 0.2rem 0.6rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .totals .discount-row {
+        color: #2ed573;
     }
 
     .totals {

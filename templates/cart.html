@@ -54,8 +54,7 @@
             </div>
             <div class="stat-card warning-card">
                 <span>{{ get_translation('delivery_fee') }}</span>
-                <strong>{{ "{:,.0f}".format(delivery_fee) }}</strong>
-                <small>{{ get_translation('tooman') }}</small>
+                <strong style="font-size: 0.85rem; line-height: 1.4;">هزینه ارسال بسته به محل زندگی شما متغیر است و هزینه آن با مشتری پس از تحویل محاسبه می‌گردد</strong>
             </div>
                 </div>
 
@@ -131,18 +130,28 @@
                 </div>
 
                 <div class="summary-rows">
+                {% if total_discount > 0 %}
+                <div class="summary-row">
+                    <span>{{ get_translation('original_total') or 'جمع کل (قبل از تخفیف)' }}</span>
+                    <strong style="text-decoration: line-through; color: var(--text-gray);">{{ "{:,.0f}".format(original_total) }} {{ get_translation('tooman') }}</strong>
+                </div>
+                <div class="summary-row discount-row">
+                    <span>{{ get_translation('total_discount') or 'تخفیف کل' }}</span>
+                    <strong class="discount-amount" style="color: #2ed573;">-{{ "{:,.0f}".format(total_discount) }} {{ get_translation('tooman') }}</strong>
+                </div>
+                {% endif %}
                 <div class="summary-row">
                     <span>{{ get_translation('subtotal') }}</span>
                         <strong>{{ "{:,.0f}".format(subtotal) }} {{ get_translation('tooman') }}</strong>
                 </div>
                     <div class="summary-row delivery-fee-row" style="display: none;">
                     <span>{{ get_translation('delivery_fee') }}</span>
-                        <strong class="delivery-fee">{{ "{:,.0f}".format(delivery_fee) }} {{ get_translation('tooman') }}</strong>
+                        <strong class="delivery-fee" style="font-size: 0.85rem; line-height: 1.4; text-align: right;">هزینه ارسال بسته به محل زندگی شما متغیر است و هزینه آن با مشتری پس از تحویل محاسبه می‌گردد</strong>
                 </div>
                     <div class="summary-divider"></div>
                     <div class="summary-row total">
                     <span>{{ get_translation('total') }}</span>
-                        <strong class="total-amount">{{ "{:,.0f}".format(subtotal) }} {{ get_translation('tooman') }}</strong>
+                        <strong class="total-amount">{{ "{:,.0f}".format(total) }} {{ get_translation('tooman') }}</strong>
                     </div>
                 </div>
 
@@ -159,7 +168,7 @@
                         <label class="delivery-chip">
                             <input type="radio" name="delivery_type" value="delivery">
                         <div>
-                                <strong>{{ get_translation('delivery_to_address').format("%.0f"|format(delivery_fee)) }}</strong>
+                                <strong>{{ get_translation('delivery_to_address') or 'ارسال به آدرس' }}</strong>
                                 <small>{{ get_translation('delivery_to_address_desc') or 'ارسال به درب منزل' }}</small>
                         </div>
                     </label>
@@ -1259,15 +1268,14 @@
     }
 
     function updateTotals(type) {
-        const fee = type === 'delivery' ? deliveryFee : 0;
+        const fee = 0;  // Delivery fee is 0 - cost varies by location
+        // Total = subtotal (already includes discounts) + delivery fee
         const total = subtotal + fee;
 
         if (deliveryFeeRow) {
             deliveryFeeRow.style.display = type === 'delivery' ? 'flex' : 'none';
         }
-        if (deliveryFeeEl) {
-            deliveryFeeEl.textContent = formatCurrency(fee);
-        }
+        // Delivery fee text is static - don't update it
         if (totalAmountEl) {
             totalAmountEl.textContent = formatCurrency(total);
         }

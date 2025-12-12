@@ -7,11 +7,11 @@ import json
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=True)
+    username = db.Column(db.String(80), unique=False, nullable=True)
     phone_number = db.Column(db.String(20), unique=True, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    verification_code = db.Column(db.String(6), nullable=True)
+    verification_code = db.Column(db.String(4), nullable=True)
     verification_code_expires = db.Column(db.DateTime, nullable=True)
     
     # Relationships
@@ -20,85 +20,88 @@ class User(UserMixin, db.Model):
     orders = db.relationship('Order', backref='user', lazy=True)
 
     def generate_verification_code(self):
-        """Generate a 6-digit verification code and send it via SMS"""
+        """Generate a 4-digit verification code"""
         import random
-        import http.client
-        import json
         
-        # Generate a 6-digit code
-        self.verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        # Generate a 4-digit code
+        self.verification_code = ''.join([str(random.randint(0, 9)) for _ in range(4)])
         self.verification_code_expires = datetime.utcnow() + timedelta(minutes=2)
         
-        try:
-            # Format phone number for SMS.ir (remove +98 if present and add 0)
-            phone = self.phone_number
-            if phone.startswith('+98'):
-                phone = '0' + phone[3:]
-            
-            print(f"Sending SMS to phone number: {phone}")
-            
-            # Prepare the API request
-            conn = http.client.HTTPSConnection("api.sms.ir")
-            
-            # Prepare payload
-            # IMPORTANT: For WebOTP auto-fill to work, the SMS template must include:
-            # - The domain: @marketamazoon.com
-            # - The code format: #CODE (where CODE is the 6-digit verification code)
-            # Example SMS format: "کد تایید شما: CODE @marketamazoon.com #CODE"
-            # Update your SMS.ir template (ID: 347229) to include this format
-            payload = json.dumps({
-                "mobile": phone,
-                "templateId": 347229,  # Replace with your actual template ID
-                "parameters": [
-                    {
-                        "name": "NAME",  # Note: lowercase 'name' and matches the template placeholder without #
-                        "value": phone  # The name value to insert
-                    },
-                    {
-                        "name": "CODE",  # Note: lowercase 'name' and matches the template placeholder without #
-                        "value": self.verification_code  # The verification code to insert
-                    },
-                    {
-                        "name": "DOMAIN",  # Domain for WebOTP API
-                        "value": "marketamazoon.com"  # Domain for auto-fill
-                    }
-                ]
-            })
-            
-            print(f"Request payload: {payload}")
-            
-            # Set headers
-            headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'text/plain',
-                'x-api-key': 'tHP6OXR2KNEfHgyXICTizpBOI0nRYOpyzadMDI0ZRbhVliyO'
-            }
-            
-            # Send request
-            conn.request("POST", "/v1/send/verify", payload, headers)
-            response = conn.getresponse()
-            data = response.read()
-            
-            print(f"Response status: {response.status}")
-            print(f"Response data: {data.decode('utf-8')}")
-            
-            # Check response
-            if response.status == 200:
+        # SMS sending code commented out - code will be displayed on login page
+        # try:
+        #     # Format phone number for SMS.ir (remove +98 if present and add 0)
+        #     phone = self.phone_number
+        #     if phone.startswith('+98'):
+        #         phone = '0' + phone[3:]
+        #     
+        #     print(f"Sending SMS to phone number: {phone}")
+        #     
+        #     # Prepare the API request
+        #     conn = http.client.HTTPSConnection("api.sms.ir")
+        #     
+        #     # Prepare payload
+        #     # IMPORTANT: For WebOTP auto-fill to work, the SMS template must include:
+        #     # - The domain: @marketamazoon.com
+        #     # - The code format: #CODE (where CODE is the 4-digit verification code)
+        #     # Example SMS format: "کد تایید شما: CODE @marketamazoon.com #CODE"
+        #     # Update your SMS.ir template (ID: 347229) to include this format
+        #     payload = json.dumps({
+        #         "mobile": phone,
+        #         "templateId": 347229,  # Replace with your actual template ID
+        #         "parameters": [
+        #             {
+        #                 "name": "NAME",  # Note: lowercase 'name' and matches the template placeholder without #
+        #                 "value": phone  # The name value to insert
+        #             },
+        #             {
+        #                 "name": "CODE",  # Note: lowercase 'name' and matches the template placeholder without #
+        #                 "value": self.verification_code  # The verification code to insert
+        #             },
+        #             {
+        #                 "name": "DOMAIN",  # Domain for WebOTP API
+        #                 "value": "marketamazoon.com"  # Domain for auto-fill
+        #             }
+        #         ]
+        #     })
+        #     
+        #     print(f"Request payload: {payload}")
+        #     
+        #     # Set headers
+        #     headers = {
+        #         'Content-Type': 'application/json',
+        #         'Accept': 'text/plain',
+        #         'x-api-key': 'tHP6OXR2KNEfHgyXICTizpBOI0nRYOpyzadMDI0ZRbhVliyO'
+        #     }
+        #     
+        #     # Send request
+        #     conn.request("POST", "/v1/send/verify", payload, headers)
+        #     response = conn.getresponse()
+        #     data = response.read()
+        #     
+        #     print(f"Response status: {response.status}")
+        #     print(f"Response data: {data.decode('utf-8')}")
+        #     
+        #     # Check response
+        #     if response.status == 200:
+        #         # Save changes to database
+        #         db.session.commit()
+        #         return True
+        #     else:
+        #         print(f"SMS.ir API Error: {data.decode('utf-8')}")
+        #         db.session.rollback()
+        #         return False
+        #     
+        # except Exception as e:
+        #     print(f"Error sending SMS: {str(e)}")
+        #     print(f"Error type: {type(e)}")
+        #     import traceback
+        #     print(f"Traceback: {traceback.format_exc()}")
+        #     db.session.rollback()
+        #     return False
+        
                 # Save changes to database
-                db.session.commit()
-                return True
-            else:
-                print(f"SMS.ir API Error: {data.decode('utf-8')}")
-                db.session.rollback()
-                return False
-            
-        except Exception as e:
-            print(f"Error sending SMS: {str(e)}")
-            print(f"Error type: {type(e)}")
-            import traceback
-            print(f"Traceback: {traceback.format_exc()}")
-            db.session.rollback()
-            return False
+        db.session.commit()
+        return True
 
     def verify_code(self, code):
         """Verify if the provided code is valid and not expired"""
@@ -140,7 +143,7 @@ class User(UserMixin, db.Model):
         # Remove any non-digit characters
         phone_number = ''.join(filter(str.isdigit, phone_number))
         
-        # If number starts with 0, replace it with +98
+        # If number starts with 0 (11 digits: 09xxxxxxxxx), replace it with +98
         if phone_number.startswith('0'):
             phone_number = '+98' + phone_number[1:]
         # If number doesn't start with +98 or 98, add +98
@@ -154,11 +157,11 @@ class User(UserMixin, db.Model):
 
     @classmethod
     def create_default_admin(cls):
-        admin = cls.query.filter_by(phone_number='+989137597568').first()
+        admin = cls.query.filter_by(phone_number='+989133454596').first()
         if not admin:
             admin = cls(
                 username='Admin',
-                phone_number='+989137597568',
+                phone_number='+989133454596',
                 is_admin=True
             )
             db.session.add(admin)
@@ -228,10 +231,30 @@ class OrderItem(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    price = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, nullable=False)  # Original price at order time
+    discount = db.Column(db.Float, default=0)  # Discount percentage at order time
     
     # Relationship
     product = db.relationship('Product', overlaps='order_items,product_item')
+    
+    def get_original_total(self):
+        """Get original total price (before discount)"""
+        if self.price is None or self.quantity is None:
+            return 0.0
+        return float(self.price) * int(self.quantity)
+    
+    def get_discounted_total(self):
+        """Get discounted total price (after discount)"""
+        if self.price is None or self.quantity is None:
+            return 0.0
+        discount = float(self.discount) if self.discount is not None else 0.0
+        return float(self.price) * (1 - discount/100) * int(self.quantity)
+    
+    def get_discount_amount(self):
+        """Get discount amount"""
+        original = self.get_original_total()
+        discounted = self.get_discounted_total()
+        return original - discounted
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)

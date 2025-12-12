@@ -26,12 +26,6 @@
                         <p>{{ get_translation('brand_products') or 'محصولات این برند' }}</p>
                     </div>
                 </div>
-                {% if current_user.is_admin %}
-                <a href="{{ url_for('admin_add_product') }}" class="add-product-btn">
-                    <i class="fas fa-plus"></i>
-                    <span>{{ get_translation('add_product') }}</span>
-                </a>
-                {% endif %}
             </div>
         </header>
 

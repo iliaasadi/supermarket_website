@@ -18,7 +18,7 @@ class LoginForm(FlaskForm):
     ])
     verification_code = StringField('Verification Code', validators=[
         DataRequired(),
-        Regexp(r'^\d{6}$', message='Verification code must be exactly 6 digits')
+        Regexp(r'^\d{4}$', message='Verification code must be exactly 4 digits')
     ])
     submit = SubmitField('Continue')
     step = 1  # Default step
@@ -38,8 +38,8 @@ class LoginForm(FlaskForm):
             return True
         else:
             # Only validate verification code
-            if not self.verification_code.data or len(self.verification_code.data) != 6:
-                self.verification_code.errors.append('کد تایید باید دقیقاً 6 رقم باشد.')
+            if not self.verification_code.data or len(self.verification_code.data) != 4:
+                self.verification_code.errors.append('کد تایید باید دقیقاً 4 رقم باشد.')
                 return False
             return True
 
